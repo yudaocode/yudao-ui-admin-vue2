@@ -24,9 +24,9 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-upload" size="mini" @click="openImportTable"
-                   v-hasPermi="['tool:codegen:create']">基于 DB 导入</el-button>
+                   v-hasPermi="['infra:codegen:create']">基于 DB 导入</el-button>
         <el-button type="info" plain icon="el-icon-upload" size="mini" @click="openImportSQL"
-                   v-hasPermi="['tool:codegen:create']">基于 SQL 导入</el-button>
+                   v-hasPermi="['infra:codegen:create']">基于 SQL 导入</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -48,11 +48,11 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button type="text" size="small" icon="el-icon-view" @click="handlePreview(scope.row)" v-hasPermi="['tool:codegen:preview']">预览</el-button>
-          <el-button type="text" size="small" icon="el-icon-edit" @click="handleEditTable(scope.row)" v-hasPermi="['tool:codegen:update']">编辑</el-button>
-          <el-button type="text" size="small" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:codegen:delete']">删除</el-button>
-          <el-button type="text" size="small" icon="el-icon-refresh" @click="handleSynchDb(scope.row)" v-hasPermi="['tool:codegen:update']">同步</el-button>
-          <el-button type="text" size="small" icon="el-icon-download" @click="handleGenTable(scope.row)" v-hasPermi="['tool:codegen:download']">生成代码</el-button>
+          <el-button type="text" size="small" icon="el-icon-view" @click="handlePreview(scope.row)" v-hasPermi="['infra:codegen:preview']">预览</el-button>
+          <el-button type="text" size="small" icon="el-icon-edit" @click="handleEditTable(scope.row)" v-hasPermi="['infra:codegen:update']">编辑</el-button>
+          <el-button type="text" size="small" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['infra:codegen:delete']">删除</el-button>
+          <el-button type="text" size="small" icon="el-icon-refresh" @click="handleSynchDb(scope.row)" v-hasPermi="['infra:codegen:update']">同步</el-button>
+          <el-button type="text" size="small" icon="el-icon-download" @click="handleGenTable(scope.row)" v-hasPermi="['infra:codegen:download']">生成代码</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -101,7 +101,7 @@
 
 <script>
 import { getCodegenTablePage, previewCodegen, downloadCodegen, deleteCodegen,
-  syncCodegenFromDB, syncCodegenFromSQL, createCodegenListFromSQL } from "@/api/tool/codegen";
+  syncCodegenFromDB, syncCodegenFromSQL, createCodegenListFromSQL } from "@/api/infra/codegen";
 
 import importTable from "./importTable";
 // 代码高亮插件

@@ -36,11 +36,11 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
-                   v-hasPermi="['tool:test-demo:create']">新增</el-button>
+                   v-hasPermi="['infra:test-demo:create']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
-                   v-hasPermi="['tool:test-demo:export']">导出</el-button>
+                   v-hasPermi="['infra:test-demo:export']">导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -61,9 +61,9 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
-                     v-hasPermi="['tool:test-demo:update']">修改</el-button>
+                     v-hasPermi="['infra:test-demo:update']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
-                     v-hasPermi="['tool:test-demo:delete']">删除</el-button>
+                     v-hasPermi="['infra:test-demo:delete']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -103,7 +103,7 @@
 </template>
 
 <script>
-import { createTestDemo, updateTestDemo, deleteTestDemo, getTestDemo, getTestDemoPage, exportTestDemoExcel } from "@/api/tool/testDemo";
+import { createTestDemo, updateTestDemo, deleteTestDemo, getTestDemo, getTestDemoPage, exportTestDemoExcel } from "@/api/infra/testDemo";
 
 export default {
   name: "TestDemo",

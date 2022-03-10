@@ -15,7 +15,7 @@
   </div>
 </template>
 <script>
-import { exportHtml, exportWord, exportMarkdown} from "@/api/tool/dbDoc";
+import { exportHtml, exportWord, exportMarkdown} from "@/api/infra/dbDoc";
 import iFrame from "@/components/iFrame/index";
 
 export default {

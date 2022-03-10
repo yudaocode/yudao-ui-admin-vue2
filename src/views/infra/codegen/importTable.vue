@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import { getSchemaTableList, createCodegenListFromDB } from "@/api/tool/codegen";
+import { getSchemaTableList, createCodegenListFromDB } from "@/api/infra/codegen";
 export default {
   data() {
     return {

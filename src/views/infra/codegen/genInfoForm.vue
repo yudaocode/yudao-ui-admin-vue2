@@ -5,7 +5,7 @@
         <el-form-item prop="templateType">
           <span slot="label">生成模板</span>
           <el-select v-model="info.templateType" @change="tplSelectChange">
-            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.TOOL_CODEGEN_TEMPLATE_TYPE)"
+            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.INFRA_CODEGEN_TEMPLATE_TYPE)"
                 :key="parseInt(dict.value)" :label="dict.label" :value="parseInt(dict.value)"/>
           </el-select>
         </el-form-item>
@@ -14,7 +14,7 @@
         <el-form-item prop="scene">
           <span slot="label">生成场景</span>
           <el-select v-model="info.scene">
-            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.TOOL_CODEGEN_SCENE)"
+            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.INFRA_CODEGEN_SCENE)"
                        :key="parseInt(dict.value)" :label="dict.label" :value="parseInt(dict.value)"/>
           </el-select>
         </el-form-item>

@@ -127,7 +127,7 @@
   </el-card>
 </template>
 <script>
-import { getCodegenDetail, updateCodegen } from "@/api/tool/codegen";
+import { getCodegenDetail, updateCodegen } from "@/api/infra/codegen";
 import { listAllSimple as listAllSimpleDictType } from "@/api/system/dict/type";
 import { listSimpleMenus } from "@/api/system/menu";
 import basicInfoForm from "./basicInfoForm";
@@ -213,7 +213,7 @@ export default {
     /** 关闭按钮 */
     close() {
       this.$tab.closeOpenPage({
-        path: "/tool/codegen",
+        path: "/infra/codegen",
         query: { t: Date.now(), pageNum: this.$route.query.pageNum } }
       );
     }

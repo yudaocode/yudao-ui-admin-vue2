@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 创建字典类型
 export function createTestDemo(data) {
   return request({
-    url: '/tool/test-demo/create',
+    url: '/infra/test-demo/create',
     method: 'post',
     data: data
   })
@@ -12,7 +12,7 @@ export function createTestDemo(data) {
 // 更新字典类型
 export function updateTestDemo(data) {
   return request({
-    url: '/tool/test-demo/update',
+    url: '/infra/test-demo/update',
     method: 'put',
     data: data
   })
@@ -21,7 +21,7 @@ export function updateTestDemo(data) {
 // 删除字典类型
 export function deleteTestDemo(id) {
   return request({
-    url: '/tool/test-demo/delete?id=' + id,
+    url: '/infra/test-demo/delete?id=' + id,
     method: 'delete'
   })
 }
@@ -29,7 +29,7 @@ export function deleteTestDemo(id) {
 // 获得字典类型
 export function getTestDemo(id) {
   return request({
-    url: '/tool/test-demo/get?id=' + id,
+    url: '/infra/test-demo/get?id=' + id,
     method: 'get'
   })
 }
@@ -37,7 +37,7 @@ export function getTestDemo(id) {
 // 获得字典类型分页
 export function getTestDemoPage(query) {
   return request({
-    url: '/tool/test-demo/page',
+    url: '/infra/test-demo/page',
     method: 'get',
     params: query
   })
@@ -46,7 +46,7 @@ export function getTestDemoPage(query) {
 // 导出字典类型 Excel
 export function exportTestDemoExcel(query) {
   return request({
-    url: '/tool/test-demo/export-excel',
+    url: '/infra/test-demo/export-excel',
     method: 'get',
     params: query,
     responseType: 'blob'
