@@ -22,7 +22,7 @@
 
 * 采用 [Vue Element Admin](https://panjiachen.github.io/vue-element-admin-site/zh/guide/) 实现
 
-![首页](/.image/首页.jpg)
+![首页](/.image/首页.png)
 
 ## 技术栈
 
