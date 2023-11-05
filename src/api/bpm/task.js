@@ -61,13 +61,13 @@ export function getTaskListByProcessInstanceId(processInstanceId) {
     method: 'get',
   })
 }
+
 export function getReturnList(taskId) {
   return request({
-    url: '/bpm/task/get-return-list?taskId='+ taskId,
+    url: '/bpm/task/return-list?taskId='+ taskId,
     method: 'get',
   })
 }
-
 
 export function returnTask(data) {
   return request({
@@ -76,6 +76,7 @@ export function returnTask(data) {
     data: data
   })
 }
+
 export function delegateTask(data) {
   return request({
     url: '/bpm/task/delegate',
