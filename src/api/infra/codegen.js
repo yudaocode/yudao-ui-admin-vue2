@@ -9,6 +9,14 @@ export function getCodegenTablePage(query) {
   })
 }
 
+// 查询列表代码生成表定义
+export const getCodegenTableList = (dataSourceConfigId) => {
+  return request({
+    url: '/infra/codegen/table/list?dataSourceConfigId=' + dataSourceConfigId,
+    method: 'get',
+  })
+}
+
 // 获得表和字段的明细
 export function getCodegenDetail(tableId) {
   return request({
