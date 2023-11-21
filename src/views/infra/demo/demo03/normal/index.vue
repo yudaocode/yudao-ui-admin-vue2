@@ -6,8 +6,14 @@
       <el-form-item label="名字" prop="name">
         <el-input v-model="queryParams.name" placeholder="请输入名字" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
-      <el-form-item label="父级编号" prop="parentId">
-        <el-input v-model="queryParams.parentId" placeholder="请输入父级编号" clearable @keyup.enter.native="handleQuery"/>
+      <el-form-item label="性别" prop="sex">
+        <el-select v-model="queryParams.sex" placeholder="请选择性别" clearable size="small">
+          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_USER_SEX)"
+                     :key="dict.value" :label="dict.label" :value="dict.value"/>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="出生日期" prop="birthday">
+        <el-date-picker clearable v-model="queryParams.birthday" type="date" value-format="yyyy-MM-dd" placeholder="选择出生日期" />
       </el-form-item>
       <el-form-item label="创建时间" prop="createTime">
         <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss" type="daterange"
@@ -23,33 +29,29 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="openForm(undefined)"
-                   v-hasPermi="['infra:demo02-category:create']">新增</el-button>
+                   v-hasPermi="['infra:demo03-student:create']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
-                   v-hasPermi="['infra:demo02-category:export']">导出</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">
-          展开/折叠
-        </el-button>
+                   v-hasPermi="['infra:demo03-student:export']">导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table
-      v-loading="loading"
-      :data="list"
-      :stripe="true"
-      :show-overflow-tooltip="true"
-      v-if="refreshTable"
-      row-key="id"
-      :default-expand-all="isExpandAll"
-      :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
-    >
+    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column label="名字" align="center" prop="name" />
-      <el-table-column label="父级编号" align="center" prop="parentId" />
+      <el-table-column label="性别" align="center" prop="sex">
+        <template v-slot="scope">
+          <dict-tag :type="DICT_TYPE.SYSTEM_USER_SEX" :value="scope.row.sex" />
+        </template>
+      </el-table-column>
+      <el-table-column label="出生日期" align="center" prop="birthday" width="180">
+        <template v-slot="scope">
+          <span>{{ parseTime(scope.row.birthday) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="简介" align="center" prop="description" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template v-slot="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -58,25 +60,27 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="openForm(scope.row.id)"
-                     v-hasPermi="['infra:demo02-category:update']">修改</el-button>
+                     v-hasPermi="['infra:demo03-student:update']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
-                     v-hasPermi="['infra:demo02-category:delete']">删除</el-button>
+                     v-hasPermi="['infra:demo03-student:delete']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
-
+    <!-- 分页组件 -->
+    <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
+                @pagination="getList"/>
     <!-- 对话框(添加 / 修改) -->
-    <Demo02CategoryForm ref="formRef" @success="getList" />
+    <Demo03StudentForm ref="formRef" @success="getList" />
   </div>
 </template>
 
 <script>
-import * as Demo02CategoryApi from '@/api/infra/demo02';
-import Demo02CategoryForm from './Demo02CategoryForm.vue';
+import * as Demo03StudentApi from '@/api/infra/demo03-normal';
+import Demo03StudentForm from './Demo03StudentForm.vue';
 export default {
-  name: "Demo02Category",
+  name: "Demo03Student",
   components: {
-    Demo02CategoryForm,
+    Demo03StudentForm,
   },
   data() {
     return {
@@ -87,7 +91,8 @@ export default {
       // 显示搜索条件
       showSearch: true,
       // 总条数
-      // 示例分类列表
+      total: 0,
+      // 学生列表
       list: [],
       // 是否展开，默认全部展开
       isExpandAll: true,
@@ -97,8 +102,12 @@ export default {
       currentRow: {},
       // 查询参数
       queryParams: {
+        pageNo: 1,
+        pageSize: 10,
         name: null,
-        parentId: null,
+        sex: null,
+        birthday: null,
+        description: null,
         createTime: [],
       }
     };
@@ -111,9 +120,10 @@ export default {
     getList() {
       try {
         this.loading = true;
-        Demo02CategoryApi.getDemo02CategoryList(this.queryParams).then(response => {
-          this.list = this.handleTree(response.data, 'id', 'parentId');
-        })
+        Demo03StudentApi.getDemo03StudentPage(this.queryParams).then(response => {
+          this.list = response.data.list;
+          this.total = response.data.total;
+        });
       } finally {
         this.loading = false;
       }
@@ -137,8 +147,8 @@ export default {
       const that = this;
       try {
         const id = row.id;
-        this.$modal.confirm('是否确认删除示例分类编号为"' + id + '"的数据项?').then(()=>{
-          return Demo02CategoryApi.deleteDemo02Category(id);
+        this.$modal.confirm('是否确认删除学生编号为"' + id + '"的数据项?').then(()=>{
+          return Demo03StudentApi.deleteDemo03Student(id);
         }).then(() => {
           that.getList();
           that.$modal.msgSuccess("删除成功");
@@ -149,25 +159,17 @@ export default {
     handleExport() {
       const that = this;
       try {
-        this.$modal.confirm('是否确认导出所有示例分类数据项?').then(() => {
+        this.$modal.confirm('是否确认导出所有学生数据项?').then(() => {
           that.exportLoading = true;
-          return Demo02CategoryApi.exportDemo02CategoryExcel(params);
+          return Demo03StudentApi.exportDemo03StudentExcel(params);
         }).then(response => {
-          that.$download.excel(response, '示例分类.xls');
+          that.$download.excel(response, '学生.xls');
         });
       } catch {
       } finally {
         that.exportLoading = false;
       }
     },
-    /** 展开/折叠操作 */
-    toggleExpandAll() {
-      this.refreshTable = false
-      this.isExpandAll = !this.isExpandAll
-      this.$nextTick(function () {
-        this.refreshTable = true
-      })
-    }
   }
 };
 </script>
