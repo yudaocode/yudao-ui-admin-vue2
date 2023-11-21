@@ -150,10 +150,6 @@
             <el-form-item label="发送时间：">{{ parseTime(form.sendTime) }}</el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="发送结果：">{{ form.sendCode }} | {{ form.sendMsg }}
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
             <el-form-item label="API 发送结果：">{{ form.apiSendCode }} | {{ form.apiSendMsg }}</el-form-item>
           </el-col>
           <el-col :span="24">
