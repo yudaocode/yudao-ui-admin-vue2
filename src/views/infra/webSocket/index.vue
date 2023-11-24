@@ -63,23 +63,25 @@ export default {
     const wsUrl = process.env.VUE_APP_BASE_API + "/infra/ws" + '?token=' + getAccessToken();
     this.url = wsUrl.replace("http", "ws");
     // 获取用户精简信息列表
-    const self = this;
     listSimpleUsers().then(res => {
-      self.userList = res.data;
+      this.userList = res.data;
     });
   },
   methods: {
+    /** 发起连接 */
     connect() {
       if (!'WebSocket' in window) {
         this.$modal.msgError("您的浏览器不支持WebSocket");
         return;
       }
+      // 建立连接
       this.ws = new WebSocket(this.url);
-      const self = this;
-      this.ws.onopen = function (event) {
-        self.content = self.content + "\n**********************连接开始**********************\n";
+      // 监听 open 事件
+      this.ws.onopen = (event) => {
+        this.content = this.content + "\n**********************连接开始**********************\n";
       };
-      this.ws.onmessage = function (event) {
+      // 监听 message 事件
+      this.ws.onmessage = (event) => {
         try {
           const data = event.data
           // 1. 收到心跳
@@ -91,40 +93,44 @@ export default {
           const type = jsonMessage.type
           const content = JSON.parse(jsonMessage.content)
           if (!type) {
-            self.$modal.msgError('未知的消息类型：' + data)
+            this.$modal.msgError('未知的消息类型：' + data)
             return
           }
           // 2.2 消息类型：demo-message-receive
           if (type === 'demo-message-receive') {
             const single = content.single
-            self.content = self.content + "接收时间：" + getNowDateTime() + "\n" +
+            this.content = this.content + "接收时间：" + getNowDateTime() + "\n" +
                 `【${single ? '单发' : '群发'}】用户编号(${content.fromUserId})：${content.text}` + "\n";
             return
           }
           // 2.3 消息类型：notice-push
           if (type === 'notice-push') {
-            self.content = self.content + "接收时间：" + getNowDateTime() + "\n" + `【系统通知】：${content.title}` + "\n";
+            this.content = this.content + "接收时间：" + getNowDateTime() + "\n" + `【系统通知】：${content.title}` + "\n";
             return
           }
-          self.$modal.msgError('未处理消息：' + data)
+          this.$modal.msgError('未处理消息：' + data)
         } catch (error) {
-          self.$modal.msgError('处理消息发生异常：' + event.data)
+          this.$modal.msgError('处理消息发生异常：' + event.data)
           console.error(error)
         }
       };
-      this.ws.onclose = function (event) {
-        self.content = self.content + "**********************连接关闭**********************\n";
+      // 监听 close 事件
+      this.ws.onclose = (event) => {
+        this.content = this.content + "**********************连接关闭**********************\n";
       };
-      this.ws.error = function (event) {
-        self.content = self.content + "**********************连接异常**********************\n";
+      // 监听 error 事件
+      this.ws.error = (event) => {
+        this.content = this.content + "**********************连接异常**********************\n";
       };
     },
+    /** 关闭连接 */
     exit() {
       if (this.ws) {
         this.ws.close();
         this.ws = null;
       }
     },
+    /** 发送消息 */
     send() {
       if (!this.ws || this.ws.readyState !== 1) {
         this.$modal.msgError("未连接到服务器");
