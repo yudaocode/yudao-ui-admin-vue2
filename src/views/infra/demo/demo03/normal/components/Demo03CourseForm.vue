@@ -31,6 +31,7 @@
         </el-table-column>
       </el-table>
     </el-form>
+    <!-- TODO @puhui999：居中没生效 -->
     <el-row justify="center" class="mt-3">
       <el-button @click="handleAdd" round>+ 添加学生课程</el-button>
     </el-row>
@@ -72,6 +73,7 @@ export default {
         }
         try {
           this.formLoading = true;
+          // TODO @puhui999：涉及到 that 的地方，看看怎么都改成 this
           const that = this;
           Demo03StudentApi.getDemo03CourseListByStudentId(val).then(res => {
             that.formData = res.data;

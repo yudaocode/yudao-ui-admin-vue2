@@ -39,6 +39,7 @@
     </el-row>
 
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+      <!-- TODO @puhui999：居中没生效 -->
       <!-- 子表的列表 -->
       <el-table-column type="expand">
         <template #default="scope">
@@ -157,6 +158,7 @@ export default {
     },
     /** 添加/修改操作 */
     openForm(id) {
+      // TODO @puhui999：$refs 在 vm 里面怎么写，可以看看这里噢。
       this.$refs["formRef"].open(id);
     },
     /** 删除按钮操作 */

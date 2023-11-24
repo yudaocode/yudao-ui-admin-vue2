@@ -18,6 +18,7 @@
         <el-form-item label="简介">
           <Editor v-model="formData.description" :min-height="192"/>
         </el-form-item>
+        <!-- TODO @puhui999：头像应该是 imageupload 组件 -->
         <el-form-item label="头像" prop="avatar">
           <el-input v-model="formData.avatar" placeholder="请输入头像" />
         </el-form-item>
@@ -90,9 +91,9 @@ export default {
       this.formLoading = true;
       try {
         const that = this;
-        let data = this.formData;
+        let data = this.formData; // TODO @puhui999：const data
 
-        this.getRef("formRef").validate(valid => {
+        this.getRef("formRef").validate(valid => { // TODO @puhui999：上面不用空行；
           if (!valid) {
             return;
           }
@@ -116,6 +117,7 @@ export default {
         this.formLoading = false
       }
     },
+    // TODO @puhui999：这个在研究下，看看有没办法回到 $refs
     getRef(refName){ // TODO puhui999: 获得表单 ref，提取出来的目的呢是解决 $ 在 if 中 end闭合不了的问题，代码生成后可删除此方法
       return this.$refs[refName]
     },

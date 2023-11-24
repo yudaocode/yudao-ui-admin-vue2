@@ -86,7 +86,7 @@
                 @pagination="getList"/>
     <!-- 对话框(添加 / 修改) -->
     <Demo03StudentForm ref="formRef" @success="getList"/>
-    <!-- 子表的列表 -->
+    <!-- 子表的列表 --> <!-- TODO @puhui999：Demo03CourseList 和 Demo03GradeList 是不是不要有边距，应该和上面列表一样，是顶格的 -->
     <el-tabs v-model="subTabsName">
       <el-tab-pane label="学生课程" name="demo03Course">
         <Demo03CourseList v-if="currentRow.id" :student-id="currentRow.id"/>

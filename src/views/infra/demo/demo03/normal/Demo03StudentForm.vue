@@ -103,6 +103,7 @@ export default {
         const that = this;
         let data = this.formData;
         let validate = false;
+        // TODO @puhui999：要不要改成 await 风格；
         // 校验主表
         this.getRef("formRef").validate(valid => {
           validate = valid;
