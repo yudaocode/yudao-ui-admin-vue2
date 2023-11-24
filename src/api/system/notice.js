@@ -42,3 +42,11 @@ export function delNotice(noticeId) {
     method: 'delete'
   })
 }
+
+// 推送公告
+export function pushNotice(noticeId) {
+  return request({
+    url: '/system/notice/push?id=' + noticeId,
+    method: 'post'
+  })
+}

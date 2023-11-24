@@ -2,10 +2,11 @@
   <el-card>
     <el-tabs v-model="activeName">
       <el-tab-pane label="基本信息" name="basic">
-        <basic-info-form ref="basicInfo" :info="table" />
+        <basic-info-form ref="basicInfo" :info="formData.table"/>
       </el-tab-pane>
       <el-tab-pane label="字段信息" name="cloum">
-        <el-table ref="dragTable" :data="columns" row-key="columnId" :max-height="tableHeight">
+        <el-table ref="dragTable" :data="formData.columns" row-key="columnId"
+                  :max-height="tableHeight">
           <el-table-column
             label="字段列名"
             prop="columnName"
@@ -26,13 +27,13 @@
           <el-table-column label="Java类型" min-width="11%">
             <template v-slot="scope">
               <el-select v-model="scope.row.javaType">
-                <el-option label="Long" value="Long" />
-                <el-option label="String" value="String" />
-                <el-option label="Integer" value="Integer" />
-                <el-option label="Double" value="Double" />
-                <el-option label="BigDecimal" value="BigDecimal" />
-                <el-option label="LocalDateTime" value="LocalDateTime" />
-                <el-option label="Boolean" value="Boolean" />
+                <el-option label="Long" value="Long"/>
+                <el-option label="String" value="String"/>
+                <el-option label="Integer" value="Integer"/>
+                <el-option label="Double" value="Double"/>
+                <el-option label="BigDecimal" value="BigDecimal"/>
+                <el-option label="LocalDateTime" value="LocalDateTime"/>
+                <el-option label="Boolean" value="Boolean"/>
               </el-select>
             </template>
           </el-table-column>
@@ -64,14 +65,14 @@
           <el-table-column label="查询方式" min-width="10%">
             <template v-slot="scope">
               <el-select v-model="scope.row.listOperationCondition">
-                <el-option label="=" value="=" />
-                <el-option label="!=" value="!=" />
-                <el-option label=">" value=">" />
-                <el-option label=">=" value=">=" />
-                <el-option label="<" value="<>" />
-                <el-option label="<=" value="<=" />
-                <el-option label="LIKE" value="LIKE" />
-                <el-option label="BETWEEN" value="BETWEEN" />
+                <el-option label="=" value="="/>
+                <el-option label="!=" value="!="/>
+                <el-option label=">" value=">"/>
+                <el-option label=">=" value=">="/>
+                <el-option label="<" value="<>"/>
+                <el-option label="<=" value="<="/>
+                <el-option label="LIKE" value="LIKE"/>
+                <el-option label="BETWEEN" value="BETWEEN"/>
               </el-select>
             </template>
           </el-table-column>
@@ -83,15 +84,15 @@
           <el-table-column label="显示类型" min-width="12%">
             <template v-slot="scope">
               <el-select v-model="scope.row.htmlType">
-                <el-option label="文本框" value="input" />
-                <el-option label="文本域" value="textarea" />
-                <el-option label="下拉框" value="select" />
-                <el-option label="单选框" value="radio" />
-                <el-option label="复选框" value="checkbox" />
-                <el-option label="日期控件" value="datetime" />
-                <el-option label="图片上传" value="imageUpload" />
-                <el-option label="文件上传" value="fileUpload" />
-                <el-option label="富文本控件" value="editor" />
+                <el-option label="文本框" value="input"/>
+                <el-option label="文本域" value="textarea"/>
+                <el-option label="下拉框" value="select"/>
+                <el-option label="单选框" value="radio"/>
+                <el-option label="复选框" value="checkbox"/>
+                <el-option label="日期控件" value="datetime"/>
+                <el-option label="图片上传" value="imageUpload"/>
+                <el-option label="文件上传" value="fileUpload"/>
+                <el-option label="富文本控件" value="editor"/>
               </el-select>
             </template>
           </el-table-column>
@@ -99,10 +100,10 @@
             <template v-slot="scope">
               <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择">
                 <el-option
-                    v-for="dict in dictOptions"
-                    :key="dict.id"
-                    :label="dict.name"
-                    :value="dict.type"
+                  v-for="dict in dictOptions"
+                  :key="dict.id"
+                  :label="dict.name"
+                  :value="dict.type"
                 />
               </el-select>
             </template>
@@ -115,7 +116,7 @@
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="生成信息" name="genInfo">
-        <gen-info-form ref="genInfo" :info="table" :tables="tables" :menus="menus"/>
+        <gen-info-form ref="genInfo" :form-data="formData.table" :columns="formData.columns" :menus="menus"/>
       </el-tab-pane>
     </el-tabs>
     <el-form label-width="100px">
@@ -127,9 +128,9 @@
   </el-card>
 </template>
 <script>
-import { getCodegenDetail, updateCodegen } from "@/api/infra/codegen";
-import { listAllSimple as listAllSimpleDictType } from "@/api/system/dict/type";
-import { listSimpleMenus } from "@/api/system/menu";
+import {getCodegenDetail, updateCodegen} from "@/api/infra/codegen";
+import {listAllSimple as listAllSimpleDictType} from "@/api/system/dict/type";
+import {listSimpleMenus} from "@/api/system/menu";
 import basicInfoForm from "./basicInfoForm";
 import genInfoForm from "./genInfoForm";
 import Sortable from 'sortablejs'
@@ -146,16 +147,11 @@ export default {
       activeName: "cloum",
       // 表格的高度
       tableHeight: document.documentElement.scrollHeight - 245 + "px",
-      // 表信息
-      tables: [],
-      // 表列信息
-      columns: [],
       // 字典信息
       dictOptions: [],
+      formData: {},
       // 菜单信息
-      menus: [],
-      // 表详细信息
-      table: {}
+      menus: []
     };
   },
   created() {
@@ -163,8 +159,7 @@ export default {
     if (tableId) {
       // 获取表详细信息
       getCodegenDetail(tableId).then(res => {
-        this.table = res.data.table;
-        this.columns = res.data.columns;
+        this.formData = res.data;
       });
       /** 查询字典下拉列表 */
       listAllSimpleDictType().then(response => {
@@ -187,7 +182,7 @@ export default {
         if (validateResult) {
           const genTable = {};
           genTable.table = Object.assign({}, basicForm.model, genForm.model);
-          genTable.columns = this.columns;
+          genTable.columns = this.formData.columns;
           genTable.params = {
             treeCode: genTable.treeCode,
             treeName: genTable.treeName,
@@ -213,8 +208,9 @@ export default {
     /** 关闭按钮 */
     close() {
       this.$tab.closeOpenPage({
-        path: "/infra/codegen",
-        query: { t: Date.now(), pageNum: this.$route.query.pageNum } }
+          path: "/infra/codegen",
+          query: {t: Date.now(), pageNum: this.$route.query.pageNum}
+        }
       );
     }
   },

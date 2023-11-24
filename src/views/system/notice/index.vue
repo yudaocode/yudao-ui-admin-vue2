@@ -6,7 +6,8 @@
       </el-form-item>
       <el-form-item label="公告状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="公告状态" clearable>
-          <el-option v-for="dict in statusDictDatas" :key="parseInt(dict.value)" :label="dict.label" :value="parseInt(dict.value)"/>
+          <el-option v-for="dict in statusDictDatas" :key="parseInt(dict.value)" :label="dict.label"
+                     :value="parseInt(dict.value)"/>
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -18,13 +19,14 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
-                   v-hasPermi="['system:notice:create']"s>新增</el-button>
+                   v-hasPermi="['system:notice:create']" s>新增
+        </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="noticeList">
-      <el-table-column label="序号" align="center" prop="id" width="100" />
+      <el-table-column label="序号" align="center" prop="id" width="100"/>
       <el-table-column label="公告标题" align="center" prop="title" :show-overflow-tooltip="true"/>
       <el-table-column label="公告类型" align="center" prop="type" width="100">
         <template v-slot="scope">
@@ -36,7 +38,7 @@
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="创建者" align="center" prop="createBy" width="100" />
+      <el-table-column label="创建者" align="center" prop="createBy" width="100"/>
       <el-table-column label="创建时间" align="center" prop="createTime" width="100">
         <template v-slot="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
@@ -45,9 +47,14 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
-                     v-hasPermi="['system:notice:update']">修改</el-button>
+                     v-hasPermi="['system:notice:update']">修改
+          </el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
-                     v-hasPermi="['system:notice:delete']">删除</el-button>
+                     v-hasPermi="['system:notice:delete']">删除
+          </el-button>
+          <el-button size="mini" type="text" @click="handlePush(scope.row.id)"
+                     v-hasPermi="['system:notice:update']">推送
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -61,7 +68,7 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="公告标题" prop="title">
-              <el-input v-model="form.title" placeholder="请输入公告标题" />
+              <el-input v-model="form.title" placeholder="请输入公告标题"/>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -83,7 +90,8 @@
                     v-for="dict in statusDictDatas"
                     :key="parseInt(dict.value)"
                     :label="parseInt(dict.value)"
-                >{{dict.label}}</el-radio>
+                >{{ dict.label }}
+                </el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -103,11 +111,11 @@
 </template>
 
 <script>
-import { listNotice, getNotice, delNotice, addNotice, updateNotice } from "@/api/system/notice";
+import {addNotice, delNotice, getNotice, listNotice, pushNotice, updateNotice} from "@/api/system/notice";
 import Editor from '@/components/Editor';
 
 import {CommonStatusEnum} from '@/utils/constants'
-import { getDictDatas, DICT_TYPE } from '@/utils/dict'
+import {DICT_TYPE, getDictDatas} from '@/utils/dict'
 
 export default {
   name: "SystemNotice",
@@ -140,10 +148,10 @@ export default {
       // 表单校验
       rules: {
         title: [
-          { required: true, message: "公告标题不能为空", trigger: "blur" }
+          {required: true, message: "公告标题不能为空", trigger: "blur"}
         ],
         type: [
-          { required: true, message: "公告类型不能为空", trigger: "change" }
+          {required: true, message: "公告类型不能为空", trigger: "change"}
         ]
       },
 
@@ -210,7 +218,7 @@ export default {
       });
     },
     /** 提交按钮 */
-    submitForm: function() {
+    submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
@@ -232,12 +240,27 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids
-      this.$modal.confirm('是否确认删除公告编号为"' + ids + '"的数据项?').then(function() {
-          return delNotice(ids);
-        }).then(() => {
-          this.getList();
-          this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
+      this.$modal.confirm('是否确认删除公告编号为"' + ids + '"的数据项?').then(function () {
+        return delNotice(ids);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {
+      });
+    },
+    /** 推送按钮操作 */
+    handlePush(id) {
+      try {
+        const self = this;
+        // 推送的二次确认
+        this.$modal.confirm('是否推送所选中通知？').then(() => {
+          // 发起推送
+          pushNotice(id).then(() => {
+            self.$modal.success('推送成功');
+          })
+        })
+      } catch {
+      }
     }
   }
 };
