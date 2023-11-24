@@ -16,8 +16,19 @@
           </el-form-item>
         </el-col>
       </el-row>
+      <el-form-item label="发给谁" size="small">
+        <el-select v-model="sendUserId" placeholder="请选择">
+          <el-option label="所有人" :value="null"/>
+          <el-option
+              v-for="item in userList"
+              :key="item.id"
+              :label="item.nickname"
+              :value="item.id">
+          </el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item label="发送内容" size="small">
-        <el-input type="textarea" v-model="message" :rows="5"/>
+        <el-input type="textarea" v-model="sendText" :rows="5"/>
       </el-form-item>
       <el-form-item label="" size="small">
         <el-button type="success" @click="send">发送消息</el-button>
@@ -33,20 +44,29 @@
 </template>
 
 <script>
-import store from "@/store";
 import {getNowDateTime} from "@/utils/ruoyi";
+import {getAccessToken} from "@/utils/auth";
+import {listSimpleUsers} from "@/api/system/user";
 
 export default {
   data() {
     return {
-      url: process.env.VUE_APP_BASE_API + "/websocket/message",
-      message: "",
+      url: "",
+      sendText: "",
       content: "",
       ws: null,
+      userList: [], // 用户列表
+      sendUserId: null // 发给谁，默认所有人
     };
   },
   created() {
-    this.url = this.url.replace("http", "ws")
+    const wsUrl = process.env.VUE_APP_BASE_API + "/infra/ws" + '?token=' + getAccessToken();
+    this.url = wsUrl.replace("http", "ws");
+    // 获取用户精简信息列表
+    const self = this;
+    listSimpleUsers().then(res => {
+      self.userList = res.data;
+    });
   },
   methods: {
     connect() {
@@ -54,14 +74,43 @@ export default {
         this.$modal.msgError("您的浏览器不支持WebSocket");
         return;
       }
-      const userId = store.getters.userId;
-      this.ws = new WebSocket(this.url + "?userId=" + userId);
+      this.ws = new WebSocket(this.url);
       const self = this;
       this.ws.onopen = function (event) {
         self.content = self.content + "\n**********************连接开始**********************\n";
       };
       this.ws.onmessage = function (event) {
-        self.content = self.content + "接收时间：" + getNowDateTime() + "\n" + event.data + "\n";
+        try {
+          const data = event.data
+          // 1. 收到心跳
+          if (data === 'pong') {
+            return
+          }
+          // 2.1 解析 type 消息类型
+          const jsonMessage = JSON.parse(data)
+          const type = jsonMessage.type
+          const content = JSON.parse(jsonMessage.content)
+          if (!type) {
+            self.$modal.msgError('未知的消息类型：' + data)
+            return
+          }
+          // 2.2 消息类型：demo-message-receive
+          if (type === 'demo-message-receive') {
+            const single = content.single
+            self.content = self.content + "接收时间：" + getNowDateTime() + "\n" +
+                `【${single ? '单发' : '群发'}】用户编号(${content.fromUserId})：${content.text}` + "\n";
+            return
+          }
+          // 2.3 消息类型：notice-push
+          if (type === 'notice-push') {
+            self.content = self.content + "接收时间：" + getNowDateTime() + "\n" + `【系统通知】：${content.title}` + "\n";
+            return
+          }
+          self.$modal.msgError('未处理消息：' + data)
+        } catch (error) {
+          self.$modal.msgError('处理消息发生异常：' + event.data)
+          console.error(error)
+        }
       };
       this.ws.onclose = function (event) {
         self.content = self.content + "**********************连接关闭**********************\n";
@@ -81,11 +130,24 @@ export default {
         this.$modal.msgError("未连接到服务器");
         return;
       }
-      if (!this.message) {
+      if (!this.sendText) {
         this.$modal.msgError("请输入发送内容");
         return;
       }
-      this.ws.send(this.message);
+
+      // 1.1 先 JSON 化 message 消息内容
+      const messageContent = JSON.stringify({
+        text: this.sendText,
+        toUserId: this.sendUserId
+      })
+      // 1.2 再 JSON 化整个消息
+      const jsonMessage = JSON.stringify({
+        type: 'demo-message-send',
+        content: messageContent
+      })
+      // 2. 最后发送消息
+      this.ws.send(jsonMessage)
+      this.sendText = ''
     }
   },
 };
