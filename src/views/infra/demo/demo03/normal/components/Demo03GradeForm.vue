@@ -1,11 +1,11 @@
 <template>
   <div class="app-container">
     <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="100px"
-        v-loading="formLoading"
+      ref="formRef"
+      :model="formData"
+      :rules="formRules"
+      label-width="100px"
+      v-loading="formLoading"
     >
       <el-form-item label="名字" prop="name">
         <el-input v-model="formData.name" placeholder="请输入名字" />
@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-normal'
+import * as Demo03StudentApi from '@/api/infra/demo03-normal';
 export default {
   name: "Demo03GradeForm",
   components: {

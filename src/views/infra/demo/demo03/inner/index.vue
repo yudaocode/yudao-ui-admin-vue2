@@ -1,6 +1,5 @@
 <template>
   <div class="app-container">
-
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="名字" prop="name">
@@ -90,8 +89,8 @@
 <script>
 import * as Demo03StudentApi from '@/api/infra/demo03-inner';
 import Demo03StudentForm from './Demo03StudentForm.vue';
-import Demo03CourseList from './components/Demo03CourseList.vue'
-import Demo03GradeList from './components/Demo03GradeList.vue'
+import Demo03CourseList from './components/Demo03CourseList.vue';
+import Demo03GradeList from './components/Demo03GradeList.vue';
 export default {
   name: "Demo03Student",
   components: {
@@ -164,7 +163,7 @@ export default {
       await this.$modal.confirm('是否确认删除学生编号为"' + id + '"的数据项?')
       try {
         await Demo03StudentApi.deleteDemo03Student(id);
-        this.getList();
+        await this.getList();
         this.$modal.msgSuccess("删除成功");
       } catch {}
     },
