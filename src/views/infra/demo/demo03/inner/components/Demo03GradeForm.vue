@@ -1,11 +1,11 @@
 <template>
   <div class="app-container">
     <el-form
-      ref="formRef"
-      :model="formData"
-      :rules="formRules"
-      label-width="100px"
-      v-loading="formLoading"
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        label-width="100px"
+        v-loading="formLoading"
     >
       <el-form-item label="名字" prop="name">
         <el-input v-model="formData.name" placeholder="请输入名字" />
@@ -57,7 +57,7 @@ export default {
         try {
           this.formLoading = true;
           const that = this;
-          Demo03StudentApi.getDemo03GradeByStudentId(val).then(res=>{
+          Demo03StudentApi.getDemo03GradeByStudentId(val).then(function (res){
             const data = res.data;
             if (!data) {
               return
@@ -74,11 +74,11 @@ export default {
   methods: {
     /** 表单校验 */
     validate(){
-      return this.$refs["formRef"].validate()
+      return this.$refs["formRef"].validate();
     },
     /** 表单值 */
     getData(){
-      return this.formData
+      return this.formData;
     }
   }
 };

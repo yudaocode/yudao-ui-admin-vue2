@@ -78,18 +78,16 @@ export default {
   },
   methods: {
     /** 打开弹窗 */
-    open(id) {
+    async open(id) {
       this.dialogVisible = true;
       this.reset();
-      const that = this;
       // 修改时，设置数据
       if (id) {
         this.formLoading = true;
         try {
-          Demo03StudentApi.getDemo03Student(id).then(res=>{
-            that.formData = res.data;
-            that.title = "修改学生";
-          })
+          const res = await Demo03StudentApi.getDemo03Student(id);
+          this.formData = res.data;
+          this.title = "修改学生";
         } finally {
           this.formLoading = false;
         }
@@ -97,84 +95,44 @@ export default {
       this.title = "新增学生";
     },
     /** 提交按钮 */
-    submitForm() {
+    async submitForm() {
+      // 校验主表
+      await this.$refs["formRef"].validate();
+      // 校验子表
+      try {
+        await this.$refs['demo03CourseFormRef'].validate();
+      } catch (e) {
+        this.subTabsName = 'demo03Course';
+        return;
+      }
+      try {
+        await this.$refs['demo03GradeFormRef'].validate();
+      } catch (e) {
+        this.subTabsName = 'demo03Grade';
+        return;
+      }
       this.formLoading = true;
       try {
-        const that = this;
-        let data = this.formData;
-        let validate = false;
-        // TODO @puhui999：要不要改成 await 风格；
-        // 校验主表
-        this.getRef("formRef").validate(valid => {
-          validate = valid;
-        });
-        // 校验子表
-        this.validateSubFrom01().then(() => {
-          // 全部校验通过-拼接子表的数据
-          // 拼接子表的数据
-          data.demo03Courses = that.getRef('demo03CourseFormRef').getData();
-          data.demo03Grade = that.getRef('demo03GradeFormRef').getData();
-        }).catch((err) => {
-          validate = false;
-          that.subTabsName = err.replace("FormRef", ""); // 定位到没有校验通过的子表单
-        })
-        // 所有表单校验通过后方可提交
-        if (!validate) {
-          return;
-        }
+        const data = this.formData;
+        // 拼接子表的数据
+        data.demo03Courses = this.$refs['demo03CourseFormRef'].getData();
+        data.demo03Grade = this.$refs['demo03GradeFormRef'].getData();
         // 修改的提交
         if (data.id) {
-          Demo03StudentApi.updateDemo03Student(data).then(response => {
-            that.$modal.msgSuccess("修改成功");
-            that.dialogVisible = false;
-            that.$emit('success');
-          });
+          await Demo03StudentApi.updateDemo03Student(data);
+          this.$modal.msgSuccess("修改成功");
+          this.dialogVisible = false;
+          this.$emit('success');
           return;
         }
         // 添加的提交
-        Demo03StudentApi.createDemo03Student(data).then(response => {
-          that.$modal.msgSuccess("新增成功");
-          that.dialogVisible = false;
-          that.$emit('success');
-        });
+        await Demo03StudentApi.createDemo03Student(data);
+        this.$modal.msgSuccess("新增成功");
+        this.dialogVisible = false;
+        this.$emit('success');
       }finally {
         this.formLoading = false;
       }
-    },
-    getRef(refName){ // TODO puhui999: 获得表单 ref，提取出来的目的呢是解决 $ 在 if 中 end闭合不了的问题，代码生成后可删除此方法
-      return this.$refs[refName];
-    },
-    /** 校验子表单 */
-    validateSubFrom(item) {
-      return new Promise((resolve, reject) => {
-        this.getRef(item).validate()
-          .then(() => {
-            resolve();
-          })
-          .catch(() => {
-            reject(item);
-          })
-      })
-    },
-    /** 校验所有子表单 */
-    validateSubFrom01() {
-      // 需要校验的表单 ref
-      const validFormRefArr = [
-        "demo03CourseFormRef",
-        "demo03GradeFormRef",
-      ];
-      const validArr = []; // 校验
-      for (const item of validFormRefArr) {
-        validArr.push(this.validateSubFrom(item));
-      }
-      return new Promise((resolve, reject) => {
-        // 校验所有
-        Promise.all(validArr).then(() => {
-          resolve();
-        }).catch((err) => {
-          reject(err);
-        })
-      })
     },
     /** 表单重置 */
     reset() {
@@ -186,7 +144,7 @@ export default {
         description: undefined,
       };
       this.resetForm("formRef");
-    },
+    }
   }
 };
 </script>

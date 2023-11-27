@@ -49,19 +49,17 @@ export default {
   },
   methods: {
     /** 打开弹窗 */
-    open(id, studentId) {
+    async open(id, studentId) {
       this.dialogVisible = true;
       this.reset();
-      const that = this;
       this.formData.studentId = studentId;
       // 修改时，设置数据
       if (id) {
         this.formLoading = true;
         try {
-          Demo03StudentApi.getDemo03Course(id).then(res=>{
-            that.formData = res.data;
-            that.dialogTitle = "修改学生课程";
-          })
+          const res = await Demo03StudentApi.getDemo03Course(id);
+          this.formData = res.data;
+          this.dialogTitle = "修改学生课程";
         } finally {
           this.formLoading = false;
         }
@@ -69,32 +67,26 @@ export default {
       this.dialogTitle = "新增学生课程";
     },
     /** 提交按钮 */
-    submitForm() {
+    async submitForm() {
+      await this.$refs["formRef"].validate();
       this.formLoading = true;
       try {
-        let data = this.formData;
-        this.$refs["formRef"].validate(valid => {
-          if (!valid) {
-            return;
-          }
-          // 修改的提交
-          if (data.id) {
-            Demo03StudentApi.updateDemo03Course(data).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.dialogVisible = false;
-              this.$emit('success');
-            });
-            return;
-          }
-          // 添加的提交
-          Demo03StudentApi.createDemo03Course(data).then(response => {
-            this.$modal.msgSuccess("新增成功");
-            this.dialogVisible = false;
-            this.$emit('success');
-          });
-        });
+        const data = this.formData;
+        // 修改的提交
+        if (data.id) {
+          await  Demo03StudentApi.updateDemo03Course(data);
+          this.$modal.msgSuccess("修改成功");
+          this.dialogVisible = false;
+          this.$emit('success');
+          return;
+        }
+        // 添加的提交
+        await Demo03StudentApi.createDemo03Course(data);
+        this.$modal.msgSuccess("新增成功");
+        this.dialogVisible = false;
+        this.$emit('success');
       }finally {
-        this.formLoading = false
+        this.formLoading = false;
       }
     },
     /** 表单重置 */

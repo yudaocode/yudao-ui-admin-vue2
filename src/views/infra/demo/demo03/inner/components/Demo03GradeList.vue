@@ -52,17 +52,15 @@ export default {
   },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       try {
         this.loading = true;
-        const that = this;
-        Demo03StudentApi.getDemo03GradeByStudentId(this.studentId).then(response=>{
-          const data = response.data;
-          if (!data) {
-            return
-          }
-          that.list.push(data)
-        })
+        const res = await  Demo03StudentApi.getDemo03GradeByStudentId(this.studentId);
+        const data = res.data;
+        if (!data) {
+          return;
+        }
+        this.list.push(data);
       } finally {
         this.loading = false;
       }

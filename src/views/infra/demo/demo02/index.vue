@@ -38,14 +38,14 @@
     </el-row>
 
     <el-table
-      v-loading="loading"
-      :data="list"
-      :stripe="true"
-      :show-overflow-tooltip="true"
-      v-if="refreshTable"
-      row-key="id"
-      :default-expand-all="isExpandAll"
-      :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+        v-loading="loading"
+        :data="list"
+        :stripe="true"
+        :show-overflow-tooltip="true"
+        v-if="refreshTable"
+        row-key="id"
+        :default-expand-all="isExpandAll"
+        :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
     >
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column label="名字" align="center" prop="name" />
@@ -64,7 +64,6 @@
         </template>
       </el-table-column>
     </el-table>
-
     <!-- 对话框(添加 / 修改) -->
     <Demo02CategoryForm ref="formRef" @success="getList" />
   </div>
@@ -86,7 +85,6 @@ export default {
       exportLoading: false,
       // 显示搜索条件
       showSearch: true,
-      // 总条数
       // 示例分类列表
       list: [],
       // 是否展开，默认全部展开
@@ -100,7 +98,7 @@ export default {
         name: null,
         parentId: null,
         createTime: [],
-      }
+      },
     };
   },
   created() {
@@ -108,12 +106,11 @@ export default {
   },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       try {
         this.loading = true;
-        Demo02CategoryApi.getDemo02CategoryList(this.queryParams).then(response => {
-          this.list = this.handleTree(response.data, 'id', 'parentId');
-        })
+        const res = await Demo02CategoryApi.getDemo02CategoryList(this.queryParams);
+        this.list = this.handleTree(res.data, 'id', 'parentId');
       } finally {
         this.loading = false;
       }
@@ -130,34 +127,28 @@ export default {
     },
     /** 添加/修改操作 */
     openForm(id) {
-      this.$refs["formRef"].open(id)
+      this.$refs["formRef"].open(id);
     },
     /** 删除按钮操作 */
-    handleDelete(row) {
-      const that = this;
+    async handleDelete(row) {
+      const id = row.id;
+      await this.$modal.confirm('是否确认删除示例分类编号为"' + id + '"的数据项?')
       try {
-        const id = row.id;
-        this.$modal.confirm('是否确认删除示例分类编号为"' + id + '"的数据项?').then(()=>{
-          return Demo02CategoryApi.deleteDemo02Category(id);
-        }).then(() => {
-          that.getList();
-          that.$modal.msgSuccess("删除成功");
-        }).catch(() => {});
+        await Demo02CategoryApi.deleteDemo02Category(id);
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
       } catch {}
     },
     /** 导出按钮操作 */
-    handleExport() {
-      const that = this;
+    async handleExport() {
+      await this.$modal.confirm('是否确认导出所有示例分类数据项?');
       try {
-        this.$modal.confirm('是否确认导出所有示例分类数据项?').then(() => {
-          that.exportLoading = true;
-          return Demo02CategoryApi.exportDemo02CategoryExcel(params);
-        }).then(response => {
-          that.$download.excel(response, '示例分类.xls');
-        });
+        this.exportLoading = true;
+        const res = await Demo02CategoryApi.exportDemo02CategoryExcel(this.queryParams);
+        this.$download.excel(res.data, '示例分类.xls');
       } catch {
       } finally {
-        that.exportLoading = false;
+        this.exportLoading = false;
       }
     },
     /** 展开/折叠操作 */

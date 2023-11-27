@@ -52,13 +52,11 @@ export default {
   },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       try {
         this.loading = true;
-        const that = this;
-        Demo03StudentApi.getDemo03CourseListByStudentId(this.studentId).then(response=>{
-          that.list = response.data;
-        })
+        const res = await Demo03StudentApi.getDemo03CourseListByStudentId(this.studentId);
+        this.list = res.data;
       } finally {
         this.loading = false;
       }

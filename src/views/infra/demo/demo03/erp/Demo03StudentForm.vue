@@ -63,18 +63,16 @@ export default {
   },
   methods: {
     /** 打开弹窗 */
-    open(id) {
+    async open(id) {
       this.dialogVisible = true;
       this.reset();
-      const that = this;
       // 修改时，设置数据
       if (id) {
         this.formLoading = true;
         try {
-          Demo03StudentApi.getDemo03Student(id).then(res=>{
-            that.formData = res.data;
-            that.title = "修改学生";
-          })
+          const res = await Demo03StudentApi.getDemo03Student(id);
+          this.formData = res.data;
+          this.title = "修改学生";
         } finally {
           this.formLoading = false;
         }
@@ -82,41 +80,28 @@ export default {
       this.title = "新增学生";
     },
     /** 提交按钮 */
-    submitForm() {
+    async submitForm() {
+      // 校验主表
+      await this.$refs["formRef"].validate();
       this.formLoading = true;
       try {
-        const that = this;
-        let data = this.formData;
-        let validate = false;
-        // 校验主表
-        this.getRef("formRef").validate(valid => {
-          validate = valid;
-        });
-        // 所有表单校验通过后方可提交
-        if (!validate) {
-          return;
-        }
+        const data = this.formData;
         // 修改的提交
         if (data.id) {
-          Demo03StudentApi.updateDemo03Student(data).then(response => {
-            that.$modal.msgSuccess("修改成功");
-            that.dialogVisible = false;
-            that.$emit('success');
-          });
+          await Demo03StudentApi.updateDemo03Student(data);
+          this.$modal.msgSuccess("修改成功");
+          this.dialogVisible = false;
+          this.$emit('success');
           return;
         }
         // 添加的提交
-        Demo03StudentApi.createDemo03Student(data).then(response => {
-          that.$modal.msgSuccess("新增成功");
-          that.dialogVisible = false;
-          that.$emit('success');
-        });
+        await Demo03StudentApi.createDemo03Student(data);
+        this.$modal.msgSuccess("新增成功");
+        this.dialogVisible = false;
+        this.$emit('success');
       }finally {
         this.formLoading = false;
       }
-    },
-    getRef(refName){ // TODO puhui999: 获得表单 ref，提取出来的目的呢是解决 $ 在 if 中 end闭合不了的问题，代码生成后可删除此方法
-      return this.$refs[refName]
     },
     /** 表单重置 */
     reset() {
@@ -128,7 +113,7 @@ export default {
         description: undefined,
       };
       this.resetForm("formRef");
-    },
+    }
   }
 };
 </script>

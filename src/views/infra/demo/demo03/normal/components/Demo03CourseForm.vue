@@ -1,26 +1,26 @@
 <template>
   <div class="app-container">
     <el-form
-      ref="formRef"
-      :model="formData"
-      :rules="formRules"
-      v-loading="formLoading"
-      label-width="0px"
-      :inline-message="true"
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        v-loading="formLoading"
+        label-width="0px"
+        :inline-message="true"
     >
       <el-table :data="formData" class="-mt-10px">
-        <el-table-column label="序号" type="index" width="100"/>
+        <el-table-column label="序号" type="index" width="100" />
         <el-table-column label="名字" min-width="150">
           <template v-slot="{ row, $index }">
             <el-form-item :prop="`${$index}.name`" :rules="formRules.name" class="mb-0px!">
-              <el-input v-model="row.name" placeholder="请输入名字"/>
+              <el-input v-model="row.name" placeholder="请输入名字" />
             </el-form-item>
           </template>
         </el-table-column>
         <el-table-column label="分数" min-width="150">
           <template v-slot="{ row, $index }">
             <el-form-item :prop="`${$index}.score`" :rules="formRules.score" class="mb-0px!">
-              <el-input v-model="row.score" placeholder="请输入分数"/>
+              <el-input v-model="row.score" placeholder="请输入分数" />
             </el-form-item>
           </template>
         </el-table-column>
@@ -31,7 +31,6 @@
         </el-table-column>
       </el-table>
     </el-form>
-    <!-- TODO @puhui999：居中没生效 -->
     <el-row justify="center" class="mt-3">
       <el-button @click="handleAdd" round>+ 添加学生课程</el-button>
     </el-row>
@@ -40,11 +39,11 @@
 
 <script>
 import * as Demo03StudentApi from '@/api/infra/demo03-normal'
-
 export default {
   name: "Demo03CourseForm",
-  components: {},
-  props: [
+  components: {
+  },
+  props:[
     'studentId'
   ],// 学生编号（主表的关联字段）
   data() {
@@ -55,15 +54,14 @@ export default {
       formData: [],
       // 表单校验
       formRules: {
-        studentId: [{required: true, message: "学生编号不能为空", trigger: "blur"}],
-        name: [{required: true, message: "名字不能为空", trigger: "blur"}],
-        score: [{required: true, message: "分数不能为空", trigger: "blur"}],
+        studentId: [{ required: true, message: "学生编号不能为空", trigger: "blur" }],
+        name: [{ required: true, message: "名字不能为空", trigger: "blur" }],
+        score: [{ required: true, message: "分数不能为空", trigger: "blur" }],
       },
     };
   },
-  watch: {
-    /** 监听主表的关联字段的变化，加载对应的子表数据 */
-    studentId: {
+  watch:{/** 监听主表的关联字段的变化，加载对应的子表数据 */
+    studentId:{
       handler(val) {
         // 1. 重置表单
         this.formData = []
@@ -73,9 +71,9 @@ export default {
         }
         try {
           this.formLoading = true;
-          // TODO @puhui999：涉及到 that 的地方，看看怎么都改成 this
+          // 这里还是需要获取一下 this 的不然取不到 formData
           const that = this;
-          Demo03StudentApi.getDemo03CourseListByStudentId(val).then(res => {
+          Demo03StudentApi.getDemo03CourseListByStudentId(val).then(function (res){
             that.formData = res.data;
           })
         } finally {
@@ -94,20 +92,20 @@ export default {
         name: undefined,
         score: undefined,
       }
-      row.studentId = this.studentId
-      this.formData.push(row)
+      row.studentId = this.studentId;
+      this.formData.push(row);
     },
     /** 删除按钮操作 */
     handleDelete(index) {
-      this.formData.splice(index, 1)
+      this.formData.splice(index, 1);
     },
     /** 表单校验 */
-    validate() {
-      return this.$refs["formRef"].validate()
+    validate(){
+      return this.$refs["formRef"].validate();
     },
     /** 表单值 */
-    getData() {
-      return this.formData
+    getData(){
+      return this.formData;
     }
   }
 };

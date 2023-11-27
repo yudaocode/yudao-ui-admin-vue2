@@ -18,9 +18,8 @@
         <el-form-item label="简介">
           <Editor v-model="formData.description" :min-height="192"/>
         </el-form-item>
-        <!-- TODO @puhui999：头像应该是 imageupload 组件 -->
-        <el-form-item label="头像" prop="avatar">
-          <el-input v-model="formData.avatar" placeholder="请输入头像" />
+        <el-form-item label="头像">
+          <ImageUpload v-model="formData.avatar"/>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -33,10 +32,12 @@
 
 <script>
 import * as Demo01ContactApi from '@/api/infra/demo01'
+import ImageUpload from '@/components/ImageUpload';
 import Editor from '@/components/Editor';
 export default {
   name: "Demo01ContactForm",
   components: {
+    ImageUpload,
     Editor,
   },
   data() {
@@ -67,59 +68,45 @@ export default {
   },
   methods: {
     /** 打开弹窗 */
-    open(id) {
+    async open(id) {
       this.dialogVisible = true;
       this.reset();
-      const that = this;
       // 修改时，设置数据
       if (id) {
         this.formLoading = true;
         try {
-          Demo01ContactApi.getDemo01Contact(id).then(res=>{
-            that.formData = res.data;
-            that.title = "修改示例联系人";
-          })
+          const res = await Demo01ContactApi.getDemo01Contact(id);
+          this.formData = res.data;
+          this.title = "修改示例联系人";
         } finally {
           this.formLoading = false;
         }
       }
       this.title = "新增示例联系人";
     },
-
     /** 提交按钮 */
-    submitForm() {
+    async submitForm() {
+      // 校验主表
+      await this.$refs["formRef"].validate();
       this.formLoading = true;
       try {
-        const that = this;
-        let data = this.formData; // TODO @puhui999：const data
-
-        this.getRef("formRef").validate(valid => { // TODO @puhui999：上面不用空行；
-          if (!valid) {
-            return;
-          }
-          // 修改的提交
-          if (data.id) {
-            Demo01ContactApi.updateDemo01Contact(data).then(response => {
-              that.$modal.msgSuccess("修改成功");
-              that.dialogVisible = false;
-              that.$emit('success');
-            });
-            return;
-          }
-          // 添加的提交
-          Demo01ContactApi.createDemo01Contact(data).then(response => {
-            that.$modal.msgSuccess("新增成功");
-            that.dialogVisible = false;
-            that.$emit('success');
-          });
-        });
+        const data = this.formData;
+        // 修改的提交
+        if (data.id) {
+          await Demo01ContactApi.updateDemo01Contact(data);
+          this.$modal.msgSuccess("修改成功");
+          this.dialogVisible = false;
+          this.$emit('success');
+          return;
+        }
+        // 添加的提交
+        await Demo01ContactApi.createDemo01Contact(data);
+        this.$modal.msgSuccess("新增成功");
+        this.dialogVisible = false;
+        this.$emit('success');
       }finally {
-        this.formLoading = false
+        this.formLoading = false;
       }
-    },
-    // TODO @puhui999：这个在研究下，看看有没办法回到 $refs
-    getRef(refName){ // TODO puhui999: 获得表单 ref，提取出来的目的呢是解决 $ 在 if 中 end闭合不了的问题，代码生成后可删除此方法
-      return this.$refs[refName]
     },
     /** 表单重置 */
     reset() {
@@ -132,7 +119,7 @@ export default {
         avatar: undefined,
       };
       this.resetForm("formRef");
-    },
+    }
   }
 };
 </script>
