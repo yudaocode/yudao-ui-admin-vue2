@@ -8,10 +8,10 @@
         </el-form-item>
         <el-form-item label="父级编号" prop="parentId">
           <TreeSelect
-            v-model="formData.parentId"
-            :options="demo02CategoryTree"
-            :normalizer="normalizer"
-            placeholder="请选择父级编号"
+              v-model="formData.parentId"
+              :options="demo02CategoryTree"
+              :normalizer="normalizer"
+              placeholder="请选择父级编号"
           />
         </el-form-item>
       </el-form>
@@ -56,69 +56,54 @@ export default {
   },
   methods: {
     /** 打开弹窗 */
-    open(id) {
+    async open(id) {
       this.dialogVisible = true;
       this.reset();
-      const that = this;
       // 修改时，设置数据
       if (id) {
         this.formLoading = true;
         try {
-          Demo02CategoryApi.getDemo02Category(id).then(res=>{
-            that.formData = res.data;
-            that.title = "修改示例分类";
-          })
+          const res = await Demo02CategoryApi.getDemo02Category(id);
+          this.formData = res.data;
+          this.title = "修改示例分类";
         } finally {
           this.formLoading = false;
         }
       }
       this.title = "新增示例分类";
-      this.getDemo02CategoryTree()
+      this.getDemo02CategoryTree();
     },
-
     /** 提交按钮 */
-    submitForm() {
+    async submitForm() {
+      // 校验主表
+      await this.$refs["formRef"].validate();
       this.formLoading = true;
       try {
-        const that = this;
-        let data = this.formData;
-
-        this.getRef("formRef").validate(valid => {
-          if (!valid) {
-            return;
-          }
-          // 修改的提交
-          if (data.id) {
-            Demo02CategoryApi.updateDemo02Category(data).then(response => {
-              that.$modal.msgSuccess("修改成功");
-              that.dialogVisible = false;
-              that.$emit('success');
-            });
-            return;
-          }
-          // 添加的提交
-          Demo02CategoryApi.createDemo02Category(data).then(response => {
-            that.$modal.msgSuccess("新增成功");
-            that.dialogVisible = false;
-            that.$emit('success');
-          });
-        });
+        const data = this.formData;
+        // 修改的提交
+        if (data.id) {
+          await Demo02CategoryApi.updateDemo02Category(data);
+          this.$modal.msgSuccess("修改成功");
+          this.dialogVisible = false;
+          this.$emit('success');
+          return;
+        }
+        // 添加的提交
+        await Demo02CategoryApi.createDemo02Category(data);
+        this.$modal.msgSuccess("新增成功");
+        this.dialogVisible = false;
+        this.$emit('success');
       }finally {
-        this.formLoading = false
+        this.formLoading = false;
       }
     },
-    getRef(refName){ // TODO puhui999: 获得表单 ref，提取出来的目的呢是解决 $ 在 if 中 end闭合不了的问题，代码生成后可删除此方法
-      return this.$refs[refName]
-    },
     /** 获得示例分类树 */
-    getDemo02CategoryTree() {
-      const that = this;
-      that.demo02CategoryTree = [];
-      Demo02CategoryApi.getDemo02CategoryList().then(res=>{
-        const root = { id: 0, name: '顶级示例分类', children: [] };
-        root.children = this.handleTree(res.data, 'id', 'parentId')
-        that.demo02CategoryTree.push(root)
-      });
+    async getDemo02CategoryTree() {
+      this.demo02CategoryTree = [];
+      const res = await Demo02CategoryApi.getDemo02CategoryList();
+      const root = { id: 0, name: '顶级示例分类', children: [] };
+      root.children = this.handleTree(res.data, 'id', 'parentId')
+      this.demo02CategoryTree.push(root)
     },
     /** 转换示例分类数据结构 */
     normalizer(node) {
@@ -139,7 +124,7 @@ export default {
         parentId: undefined,
       };
       this.resetForm("formRef");
-    },
+    }
   }
 };
 </script>

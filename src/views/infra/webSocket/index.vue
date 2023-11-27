@@ -83,35 +83,35 @@ export default {
       // 监听 message 事件
       this.ws.onmessage = (event) => {
         try {
-          const data = event.data
+          const data = event.data;
           // 1. 收到心跳
           if (data === 'pong') {
-            return
+            return;
           }
           // 2.1 解析 type 消息类型
           const jsonMessage = JSON.parse(data)
-          const type = jsonMessage.type
-          const content = JSON.parse(jsonMessage.content)
+          const type = jsonMessage.type;
+          const content = JSON.parse(jsonMessage.content);
           if (!type) {
-            this.$modal.msgError('未知的消息类型：' + data)
-            return
+            this.$modal.msgError('未知的消息类型：' + data);
+            return;
           }
           // 2.2 消息类型：demo-message-receive
           if (type === 'demo-message-receive') {
-            const single = content.single
+            const single = content.single;
             this.content = this.content + "接收时间：" + getNowDateTime() + "\n" +
                 `【${single ? '单发' : '群发'}】用户编号(${content.fromUserId})：${content.text}` + "\n";
-            return
+            return;
           }
           // 2.3 消息类型：notice-push
           if (type === 'notice-push') {
             this.content = this.content + "接收时间：" + getNowDateTime() + "\n" + `【系统通知】：${content.title}` + "\n";
-            return
+            return;
           }
-          this.$modal.msgError('未处理消息：' + data)
+          this.$modal.msgError('未处理消息：' + data);
         } catch (error) {
-          this.$modal.msgError('处理消息发生异常：' + event.data)
-          console.error(error)
+          this.$modal.msgError('处理消息发生异常：' + event.data);
+          console.error(error);
         }
       };
       // 监听 close 事件
@@ -145,15 +145,15 @@ export default {
       const messageContent = JSON.stringify({
         text: this.sendText,
         toUserId: this.sendUserId
-      })
+      });
       // 1.2 再 JSON 化整个消息
       const jsonMessage = JSON.stringify({
         type: 'demo-message-send',
         content: messageContent
-      })
+      });
       // 2. 最后发送消息
-      this.ws.send(jsonMessage)
-      this.sendText = ''
+      this.ws.send(jsonMessage);
+      this.sendText = '';
     }
   },
 };

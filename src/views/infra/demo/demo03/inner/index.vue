@@ -39,7 +39,6 @@
     </el-row>
 
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <!-- TODO @puhui999：居中没生效 -->
       <!-- 子表的列表 -->
       <el-table-column type="expand">
         <template #default="scope">
@@ -135,13 +134,12 @@ export default {
   },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       try {
         this.loading = true;
-        Demo03StudentApi.getDemo03StudentPage(this.queryParams).then(response => {
-          this.list = response.data.list;
-          this.total = response.data.total;
-        });
+        const res = await Demo03StudentApi.getDemo03StudentPage(this.queryParams);
+        this.list = res.data.list;
+        this.total = res.data.total;
       } finally {
         this.loading = false;
       }
@@ -158,35 +156,28 @@ export default {
     },
     /** 添加/修改操作 */
     openForm(id) {
-      // TODO @puhui999：$refs 在 vm 里面怎么写，可以看看这里噢。
       this.$refs["formRef"].open(id);
     },
     /** 删除按钮操作 */
-    handleDelete(row) {
-      const that = this;
+    async handleDelete(row) {
+      const id = row.id;
+      await this.$modal.confirm('是否确认删除学生编号为"' + id + '"的数据项?')
       try {
-        const id = row.id;
-        this.$modal.confirm('是否确认删除学生编号为"' + id + '"的数据项?').then(()=>{
-          return Demo03StudentApi.deleteDemo03Student(id);
-        }).then(() => {
-          that.getList();
-          that.$modal.msgSuccess("删除成功");
-        }).catch(() => {});
+        await Demo03StudentApi.deleteDemo03Student(id);
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
       } catch {}
     },
     /** 导出按钮操作 */
-    handleExport() {
-      const that = this;
+    async handleExport() {
+      await this.$modal.confirm('是否确认导出所有学生数据项?');
       try {
-        this.$modal.confirm('是否确认导出所有学生数据项?').then(() => {
-          that.exportLoading = true;
-          return Demo03StudentApi.exportDemo03StudentExcel(params);
-        }).then(response => {
-          that.$download.excel(response, '学生.xls');
-        });
+        this.exportLoading = true;
+        const res = await Demo03StudentApi.exportDemo03StudentExcel(this.queryParams);
+        this.$download.excel(res.data, '学生.xls');
       } catch {
       } finally {
-        that.exportLoading = false;
+        this.exportLoading = false;
       }
     },
   }

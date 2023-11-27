@@ -1,12 +1,12 @@
 <template>
   <div class="app-container">
     <el-form
-      ref="formRef"
-      :model="formData"
-      :rules="formRules"
-      v-loading="formLoading"
-      label-width="0px"
-      :inline-message="true"
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        v-loading="formLoading"
+        label-width="0px"
+        :inline-message="true"
     >
       <el-table :data="formData" class="-mt-10px">
         <el-table-column label="序号" type="index" width="100" />
@@ -72,7 +72,7 @@ export default {
         try {
           this.formLoading = true;
           const that = this;
-          Demo03StudentApi.getDemo03CourseListByStudentId(val).then(res=>{
+          Demo03StudentApi.getDemo03CourseListByStudentId(val).then(function (res){
             that.formData = res.data;
           })
         } finally {
@@ -91,20 +91,20 @@ export default {
         name: undefined,
         score: undefined,
       }
-      row.studentId = this.studentId
-      this.formData.push(row)
+      row.studentId = this.studentId;
+      this.formData.push(row);
     },
     /** 删除按钮操作 */
     handleDelete(index) {
-      this.formData.splice(index, 1)
+      this.formData.splice(index, 1);
     },
     /** 表单校验 */
     validate(){
-      return this.$refs["formRef"].validate()
+      return this.$refs["formRef"].validate();
     },
     /** 表单值 */
     getData(){
-      return this.formData
+      return this.formData;
     }
   }
 };

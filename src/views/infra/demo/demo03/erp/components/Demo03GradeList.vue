@@ -73,14 +73,12 @@ export default {
   },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       try {
         this.loading = true;
-        const that = this;
-        Demo03StudentApi.getDemo03GradePage(this.queryParams).then(response => {
-          that.list = response.data.list;
-          that.total = response.data.total;
-        });
+        const res = await Demo03StudentApi.getDemo03GradePage(this.queryParams);
+        this.list = res.data.list;
+        this.total = res.data.total;
       } finally {
         this.loading = false;
       }
@@ -93,22 +91,19 @@ export default {
     /** 添加/修改操作 */
     openForm(id) {
       if (!this.studentId) {
-        that.$modal.msgError('请选择一个学生');
+        this.$modal.msgError('请选择一个学生');
         return;
       }
       this.$refs["formRef"].open(id, this.studentId);
     },
     /** 删除按钮操作 */
-    handleDelete(row) {
-      const that = this;
+    async handleDelete(row) {
+      const id = row.id;
+      await this.$modal.confirm('是否确认删除学生编号为"' + id + '"的数据项?');
       try {
-        const id = row.id;
-        this.$modal.confirm('是否确认删除学生编号为"' + id + '"的数据项?').then(()=>{
-          return Demo03StudentApi.deleteDemo03Grade(id);
-        }).then(() => {
-          that.getList();
-          that.$modal.msgSuccess("删除成功");
-        }).catch(() => {});
+        await Demo03StudentApi.deleteDemo03Grade(id);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
       } catch {}
     },
   }

@@ -15,9 +15,6 @@
       <el-form-item label="出生年" prop="birthday">
         <el-date-picker clearable v-model="queryParams.birthday" type="date" value-format="yyyy-MM-dd" placeholder="选择出生年" />
       </el-form-item>
-      <el-form-item label="头像" prop="avatar">
-        <el-input v-model="queryParams.avatar" placeholder="请输入头像" clearable @keyup.enter.native="handleQuery"/>
-      </el-form-item>
       <el-form-item label="创建时间" prop="createTime">
         <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss" type="daterange"
                         range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" :default-time="['00:00:00', '23:59:59']" />
@@ -73,7 +70,6 @@
     <!-- 分页组件 -->
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
-
     <!-- 对话框(添加 / 修改) -->
     <Demo01ContactForm ref="formRef" @success="getList" />
   </div>
@@ -115,7 +111,7 @@ export default {
         description: null,
         avatar: null,
         createTime: [],
-      }
+      },
     };
   },
   created() {
@@ -123,13 +119,12 @@ export default {
   },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       try {
         this.loading = true;
-        Demo01ContactApi.getDemo01ContactPage(this.queryParams).then(response => {
-          this.list = response.data.list;
-          this.total = response.data.total;
-        });
+        const res = await Demo01ContactApi.getDemo01ContactPage(this.queryParams);
+        this.list = res.data.list;
+        this.total = res.data.total;
       } finally {
         this.loading = false;
       }
@@ -146,34 +141,28 @@ export default {
     },
     /** 添加/修改操作 */
     openForm(id) {
-      this.$refs["formRef"].open(id)
+      this.$refs["formRef"].open(id);
     },
     /** 删除按钮操作 */
-    handleDelete(row) {
-      const that = this;
+    async handleDelete(row) {
+      const id = row.id;
+      await this.$modal.confirm('是否确认删除示例联系人编号为"' + id + '"的数据项?')
       try {
-        const id = row.id;
-        this.$modal.confirm('是否确认删除示例联系人编号为"' + id + '"的数据项?').then(()=>{
-          return Demo01ContactApi.deleteDemo01Contact(id);
-        }).then(() => {
-          that.getList();
-          that.$modal.msgSuccess("删除成功");
-        }).catch(() => {});
+        await Demo01ContactApi.deleteDemo01Contact(id);
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
       } catch {}
     },
     /** 导出按钮操作 */
-    handleExport() {
-      const that = this;
+    async handleExport() {
+      await this.$modal.confirm('是否确认导出所有示例联系人数据项?');
       try {
-        this.$modal.confirm('是否确认导出所有示例联系人数据项?').then(() => {
-          that.exportLoading = true;
-          return Demo01ContactApi.exportDemo01ContactExcel(params);
-        }).then(response => {
-          that.$download.excel(response, '示例联系人.xls');
-        });
+        this.exportLoading = true;
+        const res = await Demo01ContactApi.exportDemo01ContactExcel(this.queryParams);
+        this.$download.excel(res.data, '示例联系人.xls');
       } catch {
       } finally {
-        that.exportLoading = false;
+        this.exportLoading = false;
       }
     },
   }
