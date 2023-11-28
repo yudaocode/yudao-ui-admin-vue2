@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-erp'
+import * as Demo03StudentApi from '@/api/infra/demo03-erp';
 export default {
   name: "Demo03CourseForm",
   components: {

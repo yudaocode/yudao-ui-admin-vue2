@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-erp'
+import * as Demo03StudentApi from '@/api/infra/demo03-erp';
 import Editor from '@/components/Editor';
 export default {
   name: "Demo03StudentForm",
@@ -99,7 +99,7 @@ export default {
         this.$modal.msgSuccess("新增成功");
         this.dialogVisible = false;
         this.$emit('success');
-      }finally {
+      } finally {
         this.formLoading = false;
       }
     },

@@ -1,12 +1,12 @@
 <template>
   <div class="app-container">
     <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        v-loading="formLoading"
-        label-width="0px"
-        :inline-message="true"
+      ref="formRef"
+      :model="formData"
+      :rules="formRules"
+      v-loading="formLoading"
+      label-width="0px"
+      :inline-message="true"
     >
       <el-table :data="formData" class="-mt-10px">
         <el-table-column label="序号" type="index" width="100" />
@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-inner'
+import * as Demo03StudentApi from '@/api/infra/demo03-inner';
 export default {
   name: "Demo03CourseForm",
   components: {
@@ -71,6 +71,7 @@ export default {
         }
         try {
           this.formLoading = true;
+          // 这里还是需要获取一下 this 的不然取不到 formData
           const that = this;
           Demo03StudentApi.getDemo03CourseListByStudentId(val).then(function (res){
             that.formData = res.data;

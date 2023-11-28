@@ -1,12 +1,12 @@
 <template>
   <div class="app-container">
     <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        v-loading="formLoading"
-        label-width="0px"
-        :inline-message="true"
+      ref="formRef"
+      :model="formData"
+      :rules="formRules"
+      v-loading="formLoading"
+      label-width="0px"
+      :inline-message="true"
     >
       <el-table :data="formData" class="-mt-10px">
         <el-table-column label="序号" type="index" width="100" />
@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-normal'
+import * as Demo03StudentApi from '@/api/infra/demo03-normal';
 export default {
   name: "Demo03CourseForm",
   components: {

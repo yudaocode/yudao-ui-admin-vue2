@@ -1,6 +1,5 @@
 <template>
   <div class="app-container">
-
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="名字" prop="name">
@@ -37,7 +36,6 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <!-- TODO puhui999：这里下面应该是 2 个空格 -->
     <el-table
         v-loading="loading"
         :data="list"
@@ -136,7 +134,7 @@ export default {
       await this.$modal.confirm('是否确认删除示例分类编号为"' + id + '"的数据项?')
       try {
         await Demo02CategoryApi.deleteDemo02Category(id);
-        this.getList();
+        await this.getList();
         this.$modal.msgSuccess("删除成功");
       } catch {}
     },
