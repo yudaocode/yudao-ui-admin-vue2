@@ -7,12 +7,11 @@
           <el-input v-model="formData.name" placeholder="请输入名字" />
         </el-form-item>
         <el-form-item label="父级编号" prop="parentId">
-          <!-- TODO puhui999：这里下面应该是 2 个空格 -->
           <TreeSelect
-              v-model="formData.parentId"
-              :options="demo02CategoryTree"
-              :normalizer="normalizer"
-              placeholder="请选择父级编号"
+            v-model="formData.parentId"
+            :options="demo02CategoryTree"
+            :normalizer="normalizer"
+            placeholder="请选择父级编号"
           />
         </el-form-item>
       </el-form>
@@ -25,7 +24,7 @@
 </template>
 
 <script>
-import * as Demo02CategoryApi from '@/api/infra/demo02'
+import * as Demo02CategoryApi from '@/api/infra/demo02';
 import TreeSelect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 export default {
@@ -72,8 +71,7 @@ export default {
         }
       }
       this.title = "新增示例分类";
-      // TODO @puhui999：这里少了一个 await
-      this.getDemo02CategoryTree();
+      await this.getDemo02CategoryTree();
     },
     /** 提交按钮 */
     async submitForm() {
@@ -95,7 +93,7 @@ export default {
         this.$modal.msgSuccess("新增成功");
         this.dialogVisible = false;
         this.$emit('success');
-      }finally {
+      } finally {
         this.formLoading = false;
       }
     },

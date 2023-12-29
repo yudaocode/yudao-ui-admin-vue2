@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import * as Demo01ContactApi from '@/api/infra/demo01'
+import * as Demo01ContactApi from '@/api/infra/demo01';
 import ImageUpload from '@/components/ImageUpload';
 import Editor from '@/components/Editor';
 export default {
@@ -104,8 +104,7 @@ export default {
         this.$modal.msgSuccess("新增成功");
         this.dialogVisible = false;
         this.$emit('success');
-      // TODO @puhui999：少了一个空格
-      }finally {
+      } finally {
         this.formLoading = false;
       }
     },

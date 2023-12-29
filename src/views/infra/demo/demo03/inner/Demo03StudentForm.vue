@@ -38,10 +38,10 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-inner'
+import * as Demo03StudentApi from '@/api/infra/demo03-inner';
 import Editor from '@/components/Editor';
-import Demo03CourseForm from './components/Demo03CourseForm.vue'
-import Demo03GradeForm from './components/Demo03GradeForm.vue'
+import Demo03CourseForm from './components/Demo03CourseForm.vue';
+import Demo03GradeForm from './components/Demo03GradeForm.vue';
 export default {
   name: "Demo03StudentForm",
   components: {
@@ -130,7 +130,7 @@ export default {
         this.$modal.msgSuccess("新增成功");
         this.dialogVisible = false;
         this.$emit('success');
-      }finally {
+      } finally {
         this.formLoading = false;
       }
     },
