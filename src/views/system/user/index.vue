@@ -490,7 +490,6 @@ export default {
         this.form = response.data;
         this.open = true;
         this.title = "修改用户";
-        this.form.password = "";
       });
     },
     /** 重置密码按钮操作 */
