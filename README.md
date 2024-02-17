@@ -56,6 +56,8 @@
 * 数据报表
 * 商城系统
 * 微信公众号
+* ERP 系统
+* CRM 系统
 
 ### 系统功能
 
@@ -159,6 +161,12 @@ ps：核心功能已经实现，正在对接微信小程序中...
 _前端基于 crmeb uniapp 经过授权重构，优化代码实现，接入芋道快速开发平台_
 
 演示地址：<https://doc.iocoder.cn/mall-preview/>
+
+### ERP 系统
+
+![功能图](/.image/common/erp-feature.png)
+
+演示地址：<https://doc.iocoder.cn/erp-preview/>
 
 ## 🐷 演示图
 
