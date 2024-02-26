@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <doc-alert title="功能开启" url="https://doc.iocoder.cn/mall/build/" />
+    <doc-alert title="【商品】商品 SPU 与 SKU" url="https://doc.iocoder.cn/mall/product-spu-sku/" />
 
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="商品名称" prop="name">

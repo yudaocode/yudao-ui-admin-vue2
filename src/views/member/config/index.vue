@@ -1,5 +1,7 @@
 <template>
   <div class="app-container">
+    <doc-alert title="会员手册（功能开启）" url="https://doc.iocoder.cn/member/build/" />
+
     <el-link type="danger" target="_blank" href="https://github.com/yudaocode/yudao-ui-admin-vue3">
       该功能支持 Vue3 + element-plus 版本！
     </el-link>

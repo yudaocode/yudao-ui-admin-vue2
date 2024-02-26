@@ -1,5 +1,7 @@
 <template>
   <div class="app-container">
+    <doc-alert title="WebSocket 实时通信" url="https://doc.iocoder.cn/websocket/" />
+
     <el-form label-width="120px">
       <el-row type="flex" :gutter="0">
         <el-col :sm="12">

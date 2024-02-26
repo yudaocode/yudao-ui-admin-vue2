@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <doc-alert title="功能开启" url="https://doc.iocoder.cn/mall/build/" />
+    <doc-alert title="【商品】商品分类" url="https://doc.iocoder.cn/mall/product-category/" />
 
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
