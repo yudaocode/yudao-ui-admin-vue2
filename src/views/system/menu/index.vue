@@ -109,6 +109,17 @@
               <el-input v-model="form.path" placeholder="请输入路由地址" />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item v-if="form.type == 2" label="路由参数" prop="query">
+              <span slot="label">
+                <el-tooltip content='访问路由的默认传递参数，如：`{"id": 1, "name": "ry"}`' placement="top">
+                <i class="el-icon-question" />
+                </el-tooltip>
+                路由参数
+              </span>
+              <el-input v-model="form.query" placeholder="请输入路由参数" />
+            </el-form-item>
+          </el-col>
 					<el-col :span="12">
 						<el-form-item v-if="form.type !== 1" label="权限标识">
               <span slot="label">
