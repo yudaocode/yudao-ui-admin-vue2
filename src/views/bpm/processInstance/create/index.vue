@@ -1,5 +1,7 @@
 <template>
   <div class="app-container">
+    <doc-alert title="流程发起、取消、重新发起" url="https://doc.iocoder.cn/bpm/process-instance/" />
+
     <!-- 第一步，通过流程定义的列表，选择对应的流程 -->
     <div v-if="!selectProcessInstance">
       <el-table v-loading="loading" :data="list">

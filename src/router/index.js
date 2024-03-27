@@ -167,7 +167,7 @@ export const constantRoutes = [
         meta: {title: '设计流程', activeMenu: '/bpm/manager/model'}
       }, {
         path: 'process-instance/create',
-        component: (resolve) => require(['@/views/bpm/processInstance/create'], resolve),
+        component: (resolve) => require(['@/views/bpm/processInstance/create/index'], resolve),
         name: 'BpmProcessInstanceCreate',
         meta: {title: '发起流程', activeMenu: '/bpm/task/my'}
       }, {

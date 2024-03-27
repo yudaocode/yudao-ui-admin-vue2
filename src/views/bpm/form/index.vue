@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <doc-alert title="工作流" url="https://doc.iocoder.cn/bpm" />
+    <doc-alert title="审批接入（流程表单）" url="https://doc.iocoder.cn/bpm/use-bpm-form/" />
 
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
