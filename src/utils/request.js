@@ -74,10 +74,23 @@ service.interceptors.request.use(config => {
 
 // 响应拦截器
 service.interceptors.response.use(async res => {
+  let { data } = res
   // 未设置状态码则默认成功状态
-  const code = res.data.code || 200;
+  // 二进制数据则直接返回，例如说 Excel 导出
+  if (
+    res.request.responseType === 'blob' ||
+    res.request.responseType === 'arraybuffer'
+  ) {
+    // 注意：如果导出的响应为 json，说明可能失败了，不直接返回进行下载
+    if (res.data.type !== 'application/json') {
+      return res.data
+    }
+    data = await new Response(res.data).json()
+  }
+  const code = data.code || 200;
   // 获取错误信息
-  const msg = res.data.msg || errorCode[code] || errorCode['default']
+  const msg = data.msg || errorCode[code] || errorCode['default']
+
   if (ignoreMsgs.indexOf(msg) !== -1) { // 如果是忽略的错误码，直接返回 msg 异常
     return Promise.reject(msg)
   } else if (code === 401) {
