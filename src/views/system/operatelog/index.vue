@@ -3,29 +3,30 @@
     <doc-alert title="系统日志" url="https://doc.iocoder.cn/system-log/" />
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="系统模块" prop="module">
-        <el-input v-model="queryParams.module" placeholder="请输入系统模块" clearable style="width: 240px;"
-                  @keyup.enter.native="handleQuery"/>
-      </el-form-item>
-      <el-form-item label="操作人员" prop="userNickname">
-        <el-input v-model="queryParams.userNickname" placeholder="请输入操作人员" clearable style="width: 240px;"
-                  @keyup.enter.native="handleQuery"/>
-      </el-form-item>
-      <el-form-item label="类型" prop="type">
-        <el-select v-model="queryParams.type" placeholder="操作类型" clearable style="width: 240px">
-          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_OPERATE_TYPE)" :key="parseInt(dict.value)"
-                     :label="dict.label" :value="parseInt(dict.value)"/>
+      <el-form-item label="操作人" prop="userId">
+        <el-select v-model="queryParams.userId" placeholder="请输入操作人员" clearable style="width: 240px">
+          <el-option v-for="user in this.userList" :key="user.id" :label="user.nickname" :value="user.id"/>
         </el-select>
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.success" placeholder="操作状态" clearable style="width: 240px">
-          <el-option :key="true" label="成功" :value="true"/>
-          <el-option :key="false" label="失败" :value="false"/>
-        </el-select>
+      <el-form-item label="操作模块" prop="type">
+        <el-input v-model="queryParams.type" placeholder="请输入操作模块" clearable style="width: 240px;"
+                  @keyup.enter.native="handleQuery"/>
       </el-form-item>
-      <el-form-item label="操作时间" prop="startTime">
-        <el-date-picker v-model="queryParams.startTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss" type="daterange"
+      <el-form-item label="操作名" prop="subType">
+        <el-input v-model="queryParams.subType" placeholder="请输入操作名" clearable style="width: 240px;"
+                  @keyup.enter.native="handleQuery"/>
+      </el-form-item>
+      <el-form-item label="操作内容" prop="action">
+        <el-input v-model="queryParams.action" placeholder="请输入操作内容" clearable style="width: 240px;"
+                  @keyup.enter.native="handleQuery"/>
+      </el-form-item>
+      <el-form-item label="操作时间" prop="createTime">
+        <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss" type="daterange"
                         range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" :default-time="['00:00:00', '23:59:59']" />
+      </el-form-item>
+      <el-form-item label="业务编号" prop="action">
+        <el-input v-model="queryParams.bizId" placeholder="请输入业务编号" clearable style="width: 240px;"
+                  @keyup.enter.native="handleQuery"/>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
@@ -42,31 +43,19 @@
     </el-row>
 
     <el-table v-loading="loading" :data="list">
-      <el-table-column label="日志编号" align="center" prop="id" />
-      <el-table-column label="操作模块" align="center" prop="module" />
-      <el-table-column label="操作名" align="center" prop="name" width="180" />
-      <el-table-column label="操作类型" align="center" prop="type">
+      <el-table-column label="日志编号" align="center" prop="id" width="100" />
+      <el-table-column label="操作人" align="center" prop="userName" width="120" />
+      <el-table-column label="操作模块" align="center" prop="type" width="120" />
+      <el-table-column label="操作名" align="center" prop="subType" width="160" />
+      <el-table-column label="操作内容" align="center" prop="action" />
+      <el-table-column label="操作日期" align="center" prop="createTime" width="180">
         <template v-slot="scope">
-          <dict-tag :type="DICT_TYPE.SYSTEM_OPERATE_TYPE" :value="scope.row.type"/>
+          <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作人" align="center" prop="userNickname" />
-      <el-table-column label="操作结果" align="center" prop="status">
-        <template v-slot="scope">
-          <span>{{ scope.row.resultCode === 0 ? '成功' : '失败' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作日期" align="center" prop="startTime" width="180">
-        <template v-slot="scope">
-          <span>{{ parseTime(scope.row.startTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="执行时长" align="center" prop="startTime">
-        <template v-slot="scope">
-          <span>{{ scope.row.duration }}  ms</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="业务编号" align="center" prop="bizId" width="120" />
+      <el-table-column label="操作 IP" align="center" prop="userIp" width="120" />
+      <el-table-column label="操作" align="center" width="60" class-name="small-padding fixed-width">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row,scope.index)"
                      v-hasPermi="['system:operate-log:query']">详细</el-button>
@@ -74,7 +63,7 @@
       </el-table-column>
     </el-table>
 
-    <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
+    <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList" />
 
     <!-- 操作日志详细 -->
@@ -88,35 +77,37 @@
             <el-form-item label="链路追踪：">{{ form.traceId }}</el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="用户信息：">{{ form.userId }} | {{ form.userNickname }} | {{ form.userIp }} | {{ form.userAgent}} </el-form-item>
+            <el-form-item label="操作人编号：">{{ form.userId }} </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="操作信息：">
-              {{ form.module }} | {{ form.name }}
-              <dict-tag :type="DICT_TYPE.SYSTEM_OPERATE_TYPE" :value="form.type"/>
-              <br /> {{ form.content }}
-              <br /> {{ form.exts }}
-            </el-form-item>
+            <el-form-item label="操作人名字：">{{ form.userName }} </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="请求信息：">{{ form.requestMethod }} | {{ form.requestUrl }} </el-form-item>
+            <el-form-item label="操作人 IP：">{{ form.userIp }} </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="方法名：">{{ form.javaMethod }}</el-form-item>
+            <el-form-item label="操作人 UA：">{{ form.userAgent }} </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="方法参数：">{{ form.javaMethodArgs }}</el-form-item>
+            <el-form-item label="操作模块：">{{ form.type }}</el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="开始时间：">
-              {{ parseTime(form.startTime) }} | {{ form.duration }} ms
-            </el-form-item>
+            <el-form-item label="操作名：">{{ form.subType }}</el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="操作结果：">
-              <div v-if="form.resultCode === 0">正常 | {{ form.resultData}} </div>
-              <div v-else-if="form.resultCode > 0">失败 | {{ form.resultCode }} || {{ form.resultMsg}}</div>
-            </el-form-item>
+          <el-col :span="24">
+            <el-form-item label="操作内容：">{{ form.action }}</el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="拓展参数：">{{ form.extra }}</el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="请求 URL：">{{ form.requestMethod }} | {{ form.requestUrl }} </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="操作时间：">{{ parseTime(form.createTime) }}</el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="业务编号：">{{ form.bizId }}</el-form-item>
           </el-col>
         </el-row>
       </el-form>
@@ -129,6 +120,7 @@
 
 <script>
 import { listOperateLog, exportOperateLog } from "@/api/system/operatelog";
+import { listSimpleUsers } from "@/api/system/user";
 
 export default {
   name: "SystemOperateLog",
@@ -154,16 +146,22 @@ export default {
       queryParams: {
         pageNo: 1,
         pageSize: 10,
-        module: undefined,
-        userNickname: undefined,
-        businessType: undefined,
-        status: undefined,
-        startTime: []
+        userId: undefined,
+        type: undefined,
+        subType: undefined,
+        action: undefined,
+        createTime: [],
+        bizId: undefined
       },
+      userList: [], // 用户列表
     };
   },
   created() {
     this.getList();
+    // 获取用户精简信息列表
+    listSimpleUsers().then(res => {
+      this.userList = res.data;
+    });
   },
   methods: {
     /** 查询登录日志 */
