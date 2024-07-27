@@ -70,6 +70,13 @@
           <span>{{ scope.row.resultCode === 0 ? '成功' : '失败(' + scope.row.resultMsg + ')' }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="操作模块" align="center" prop="operateModule" width="180" />
+      <el-table-column label="操作名" align="center" prop="operateName" width="180" />
+      <el-table-column label="操作类型" align="center" prop="operateType">
+        <template #default="scope">
+          <dict-tag :type="DICT_TYPE.INFRA_OPERATE_TYPE" :value="scope.row.operateType" />
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row,scope.index)"
@@ -100,6 +107,11 @@
             <el-form-item label="操作结果：">
               <div v-if="form.resultCode === 0">正常</div>
               <div v-else-if="form.resultCode > 0">失败 | {{ form.resultCode }} || {{ form.resultMsg}}</div>
+            </el-form-item>
+            <el-form-item label="操作模块：">{{ form.operateModule }}</el-form-item>
+            <el-form-item label="操作名：">{{ form.operateName }}</el-form-item>
+            <el-form-item label="操作类型：">
+              <dict-tag :type="DICT_TYPE.INFRA_OPERATE_TYPE" :value="form.operateType"/>
             </el-form-item>
           </el-col>
         </el-row>

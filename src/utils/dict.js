@@ -16,7 +16,6 @@ export const DICT_TYPE = {
   SYSTEM_ROLE_TYPE: 'system_role_type',
   SYSTEM_DATA_SCOPE: 'system_data_scope',
   SYSTEM_NOTICE_TYPE: 'system_notice_type',
-  SYSTEM_OPERATE_TYPE: 'system_operate_type',
   SYSTEM_LOGIN_TYPE: 'system_login_type',
   SYSTEM_LOGIN_RESULT: 'system_login_result',
   SYSTEM_SMS_CHANNEL_CODE: 'system_sms_channel_code',
@@ -39,6 +38,7 @@ export const DICT_TYPE = {
   INFRA_CODEGEN_FRONT_TYPE: 'infra_codegen_front_type',
   INFRA_CODEGEN_SCENE: 'infra_codegen_scene',
   INFRA_FILE_STORAGE: 'infra_file_storage',
+  INFRA_OPERATE_TYPE: 'infra_operate_type',
 
   // ========== BPM 模块 ==========
   BPM_MODEL_CATEGORY: 'bpm_model_category',
