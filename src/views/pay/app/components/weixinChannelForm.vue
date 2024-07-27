@@ -32,7 +32,7 @@
         <div v-if="formData.config.apiVersion === 'v2'">
           <el-form-item label-width="180px" label="商户密钥" prop="config.mchKey">
             <el-input v-model="formData.config.mchKey" placeholder="请输入商户密钥" clearable
-                      :style="{width: '100%'}" type="textarea" :autosize="{minRows: 8, maxRows: 8}"></el-input>
+                      :style="{width: '100%'}"></el-input>
           </el-form-item>
           <el-form-item label-width="180px" label="apiclient_cert.p12 证书" prop="config.keyContent">
             <el-input v-model="formData.config.keyContent" type="textarea"
@@ -50,7 +50,7 @@
         <div v-if="formData.config.apiVersion === 'v3'">
           <el-form-item label-width="180px" label="API V3 密钥" prop="config.apiV3Key">
             <el-input v-model="formData.config.apiV3Key" placeholder="请输入 API V3 密钥" clearable
-                      :style="{width: '100%'}" type="textarea" :autosize="{minRows: 8, maxRows: 8}"></el-input>
+                      :style="{width: '100%'}"></el-input>
           </el-form-item>
           <el-form-item label-width="180px" label="apiclient_key.pem 证书" prop="config.privateKeyContent">
             <el-input v-model="formData.config.privateKeyContent" type="textarea"
@@ -68,21 +68,9 @@
               <el-button size="small" type="primary" icon="el-icon-upload">点击上传</el-button>
             </el-upload>
           </el-form-item>
-          <el-form-item label-width="180px" label="apiclient_cert.perm证书" prop="config.privateCertContent">
-            <el-input v-model="formData.config.privateCertContent" type="textarea"
-                      placeholder="请上传apiclient_cert.perm证书"
-                      readonly :autosize="{minRows: 8, maxRows: 8}" :style="{width: '100%'}"></el-input>
-          </el-form-item>
-          <el-form-item label-width="180px" label="" prop="privateCertContentFile">
-            <el-upload ref="privateCertContentFile"
-                       :limit="1"
-                       accept=".pem"
-                       action=""
-                       :before-upload="pemFileBeforeUpload"
-                       :http-request="privateCertContentUpload"
-            >
-              <el-button size="small" type="primary" icon="el-icon-upload">点击上传</el-button>
-            </el-upload>
+          <el-form-item label-width="180px" label="证书序列号" prop="config.certSerialNo">
+            <el-input v-model="formData.config.certSerialNo"
+                      placeholder="请输入证书序列号" :style="{width: '100%'}"></el-input>
           </el-form-item>
         </div>
         <el-form-item label-width="180px" label="备注" prop="remark">
@@ -120,7 +108,7 @@ export default {
           mchKey: '',
           keyContent: '',
           privateKeyContent: '',
-          privateCertContent: '',
+          certSerialNo: '',
           apiV3Key:'',
         }
       },
@@ -133,7 +121,7 @@ export default {
         'config.mchKey': [{ required: true, message: '请输入商户密钥', trigger: 'blur' }],
         'config.keyContent': [{ required: true, message: '请上传 apiclient_cert.p12 证书', trigger: 'blur' }],
         'config.privateKeyContent': [{ required: true, message: '请上传 apiclient_key.pem 证书', trigger: 'blur' }],
-        'config.privateCertContent': [{ required: true, message: '请上传 apiclient_cert.perm证 书', trigger: 'blur' }],
+        'config.certSerialNo': [{ required: true, message: '证书序列号不能为空', trigger: 'blur' }],
         'config.apiV3Key': [{ required: true, message: '请上传 api V3 密钥值', trigger: 'blur' }],
       },
     }
@@ -194,14 +182,14 @@ export default {
           mchKey: '',
           keyContent: '',
           privateKeyContent: '',
-          privateCertContent: '',
+          certSerialNo: '',
           apiV3Key:'',
         }
       }
       this.resetForm('form')
     },
     /**
-     * apiclient_cert.p12、apiclient_cert.pem、apiclient_key.pem 上传前的校验
+     * apiclient_cert.p12、apiclient_key.pem 上传前的校验
      */
     fileBeforeUpload(file, fileAccept) {
       let format = '.' + file.name.split(".")[1];
@@ -229,16 +217,6 @@ export default {
       const readFile = new FileReader()
       readFile.onload = (e) => {
         this.formData.config.privateKeyContent = e.target.result
-      }
-      readFile.readAsText(event.file);
-    },
-    /**
-     * 读取 apiclient_cert.pem 到 privateCertContent 字段
-     */
-    privateCertContentUpload(event) {
-      const readFile = new FileReader()
-      readFile.onload = (e) => {
-        this.formData.config.privateCertContent = e.target.result
       }
       readFile.readAsText(event.file);
     },
