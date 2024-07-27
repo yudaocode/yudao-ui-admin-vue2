@@ -366,12 +366,13 @@ export default {
     handleExport() {
       const queryParams = this.queryParams;
       this.$modal.confirm("是否确认导出所有定时任务数据项?").then(() => {
-          this.exportLoading = true;
-          return exportJob(queryParams);
-        }).then(response => {
-          this.$download.excel(response, '定时任务.xls');
-          this.exportLoading = false;
-      }).catch(() => {});
+        this.exportLoading = true;
+        return exportJob(queryParams);
+      }).then(response => {
+        this.$download.excel(response, '定时任务.xls');
+      }).finally(() => {
+        this.exportLoading = false;
+      });
     }
   }
 };

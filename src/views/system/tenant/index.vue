@@ -293,12 +293,13 @@ export default {
       params.pageSize = undefined;
       // 执行导出
       this.$modal.confirm('是否确认导出所有租户数据项?').then(() => {
-          this.exportLoading = true;
-          return exportTenantExcel(params);
-        }).then(response => {
-          this.$download.excel(response, '租户.xls');
-          this.exportLoading = false;
-      }).catch(() => {});
+        this.exportLoading = true;
+        return exportTenantExcel(params);
+      }).then(response => {
+        this.$download.excel(response, '租户.xls');
+      }).catch(() => {
+        this.exportLoading = false;
+      });
     },
     /** 套餐名格式化 */
     getPackageName(packageId) {

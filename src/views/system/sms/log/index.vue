@@ -267,8 +267,9 @@ export default {
         return exportSmsLogExcel(params);
       }).then(response => {
         this.$download.excel(response, '短信日志.xls');
+      }).finally(() => {
         this.exportLoading = false;
-      }).catch(() => {});
+      });
     },
     /** 详细按钮操作 */
     handleView(row) {

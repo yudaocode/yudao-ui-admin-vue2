@@ -482,13 +482,14 @@ export default {
     /** 导出按钮操作 */
     handleExport() {
       const queryParams = this.queryParams;
-      this.$modal.confirm('是否确认导出所有角色数据项?').then(function() {
-          this.exportLoading = true;
-          return exportRole(queryParams);
-        }).then(response => {
-          this.$download.excel(response, '角色数据.xls');
-          this.exportLoading = false;
-      }).catch(() => {});
+      this.$modal.confirm('是否确认导出所有角色数据项?').then(() => {
+        this.exportLoading = true;
+        return exportRole(queryParams);
+      }).then(response => {
+        this.$download.excel(response, '角色数据.xls');
+      }).finally(() => {
+        this.exportLoading = false;
+      });
     }
   }
 };

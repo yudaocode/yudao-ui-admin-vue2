@@ -243,8 +243,9 @@ export default {
         return exportType(params);
       }).then(response => {
         this.$download.excel(response, '字典类型.xls');
+      }).finally(() => {
         this.exportLoading = false;
-      }).catch(() => {});
+      });
     }
   }
 };

@@ -202,8 +202,9 @@ export default {
         return exportApiAccessLogExcel(params);
       }).then(response => {
         this.$download.excel(response, 'API 访问日志.xls');
+      }).finally(() => {
         this.exportLoading = false;
-      }).catch(() => {});
+      });
     }
   }
 };

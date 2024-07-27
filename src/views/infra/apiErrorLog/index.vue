@@ -220,8 +220,9 @@ export default {
         return exportApiErrorLogExcel(params);
       }).then(response => {
         this.$download.excel(response, 'API 错误日志.xls');
+      }).finally(() => {
         this.exportLoading = false;
-      }).catch(() => {});
+      });
     }
   }
 };

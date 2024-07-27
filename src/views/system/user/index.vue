@@ -571,16 +571,17 @@ export default {
     /** 导出按钮操作 */
     handleExport() {
       this.$modal.confirm('是否确认导出所有用户数据项?').then(() => {
-          // 处理查询参数
-          let params = {...this.queryParams};
-          params.pageNo = undefined;
-          params.pageSize = undefined;
-          this.exportLoading = true;
-          return exportUser(params);
-        }).then(response => {
-          this.$download.excel(response, '用户数据.xls');
-          this.exportLoading = false;
-      }).catch(() => {});
+        // 处理查询参数
+        let params = {...this.queryParams};
+        params.pageNo = undefined;
+        params.pageSize = undefined;
+        this.exportLoading = true;
+        return exportUser(params);
+      }).then(response => {
+        this.$download.excel(response, '用户数据.xls');
+      }).finally(() => {
+        this.exportLoading = false;
+      });
     },
     /** 导入按钮操作 */
     handleImport() {

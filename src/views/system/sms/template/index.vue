@@ -330,8 +330,9 @@ export default {
         return exportSmsTemplateExcel(params);
       }).then(response => {
         this.$download.excel(response, '短信模板.xls');
+      }).finally(() => {
         this.exportLoading = false;
-      }).catch(() => {});
+      });
     },
     /** 发送短息按钮 */
     handleSendSms(row) {

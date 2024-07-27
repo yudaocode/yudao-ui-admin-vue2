@@ -292,12 +292,13 @@ export default {
     handleExport() {
       const queryParams = this.queryParams;
       this.$modal.confirm('是否确认导出所有数据项?').then(() => {
-          this.exportLoading = true;
-          return exportData(queryParams);
-        }).then(response => {
-          this.$download.excel(response, '字典数据.xls');
-          this.exportLoading = false;
-      }).catch(() => {});
+        this.exportLoading = true;
+        return exportData(queryParams);
+      }).then(response => {
+        this.$download.excel(response, '字典数据.xls');
+      }).finally(() => {
+        this.exportLoading = false;
+      });
     }
   }
 };
