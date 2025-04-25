@@ -69,7 +69,7 @@
 
     <!-- 对话框(添加 / 修改) -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="130px">
         <el-form-item label="配置名" prop="name">
           <el-input v-model="form.name" placeholder="请输入配置名" />
         </el-form-item>
@@ -117,6 +117,12 @@
         </el-form-item>
         <el-form-item v-if="form.storage === 20" label="accessSecret" prop="config.accessSecret">
           <el-input v-model="form.config.accessSecret" placeholder="请输入 accessSecret" />
+        </el-form-item>
+        <el-form-item v-if="form.storage === 20" label="是否 Path Style" prop="config.enablePathStyleAccess">
+          <el-radio-group v-model="form.config.enablePathStyleAccess">
+            <el-radio key="true" :label="true">启用</el-radio>
+            <el-radio key="false" :label="false">禁用</el-radio>
+          </el-radio-group>
         </el-form-item>
         <!-- 通用 -->
         <el-form-item v-if="form.storage === 20" label="自定义域名"> <!-- 无需参数校验，所以去掉 prop -->
@@ -190,6 +196,7 @@ export default {
           bucket: [{ required: true, message: "存储 bucket 不能为空", trigger: "blur" }],
           accessKey: [{ required: true, message: "accessKey 不能为空", trigger: "blur" }],
           accessSecret: [{ required: true, message: "accessSecret 不能为空", trigger: "blur" }],
+          enablePathStyleAccess: [{ required: true, message: "是否 Path Style 不能为空", trigger: "change" }],
           domain: [{ required: true, message: "自定义域名不能为空", trigger: "blur" }],
         },
       }
