@@ -6,12 +6,13 @@
 </template>
 <script>
 import iFrame from "@/components/iFrame/index";
+import { getAccessToken, getRefreshToken } from "@/utils/auth";
 export default {
   name: "GoView",
   components: { iFrame },
   data() {
     return {
-      url: 'http://127.0.0.1:3000',
+      url: `http://127.0.0.1:3000?accessToken=${getAccessToken()}&refreshToken=${getRefreshToken()}`,
     };
   },
 };
