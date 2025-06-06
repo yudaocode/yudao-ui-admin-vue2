@@ -8,8 +8,11 @@
         </el-form-item>
         <el-form-item label="性别" prop="sex">
           <el-radio-group v-model="formData.sex">
-            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.INFRA_BOOLEAN_STRING)"
-                      :key="dict.value" :label="dict.value">{{dict.label}}</el-radio>
+            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_USER_SEX)"
+                      :key="dict.value" :label="parseInt(dict.value)"
+            >
+              {{dict.label}}
+            </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="出生年" prop="birthday">

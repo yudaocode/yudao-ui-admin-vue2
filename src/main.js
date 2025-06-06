@@ -16,14 +16,15 @@ import './permission' // permission control
 import './tongji' // 百度统计
 import { getDicts } from "@/api/system/dict/data";
 import { getConfigKey } from "@/api/infra/config";
-import { parseTime, resetForm, handleTree, addBeginAndEndTime, divide} from "@/utils/ruoyi";
+import { parseTime, resetForm, handleTree, addBeginAndEndTime, divide } from "@/utils/ruoyi";
+import { isEmpty } from "@/utils";
 import Pagination from "@/components/Pagination";
 // 自定义表格工具扩展
 import RightToolbar from "@/components/RightToolbar"
 // 代码高亮插件
 // import hljs from 'highlight.js'
 // import 'highlight.js/styles/github-gist.css'
-import {DICT_TYPE, getDictDataLabel, getDictDatas, getDictDatas2} from "@/utils/dict";
+import { DICT_TYPE, getDictDataLabel, getDictDatas, getDictDatas2 } from "@/utils/dict";
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts
@@ -37,6 +38,7 @@ Vue.prototype.DICT_TYPE = DICT_TYPE
 Vue.prototype.handleTree = handleTree
 Vue.prototype.addBeginAndEndTime = addBeginAndEndTime
 Vue.prototype.divide = divide
+Vue.prototype.isEmpty = isEmpty
 
 // 全局组件挂载
 Vue.component('DictTag', DictTag)
@@ -56,6 +58,7 @@ Vue.use(VueMeta)
 
 // bpmnProcessDesigner 需要引入
 import MyPD from "@/components/bpmnProcessDesigner/package/index.js";
+
 Vue.use(MyPD);
 import "@/components/bpmnProcessDesigner/package/theme/index.scss";
 import "bpmn-js/dist/assets/diagram-js.css";
@@ -65,6 +68,7 @@ import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
 
 // Form Generator 组件需要使用到 tinymce
 import Tinymce from '@/components/tinymce/index.vue'
+
 Vue.component('tinymce', Tinymce)
 import '@/assets/icons'
 import request from "@/utils/request" // 实现 form generator 使用自己定义的 axios request 对象
@@ -74,6 +78,7 @@ import '@/styles/index.scss'
 
 // 默认点击背景不关闭弹窗
 import ElementUI from 'element-ui'
+
 ElementUI.Dialog.props.closeOnClickModal.default = false
 
 /**
