@@ -1,17 +1,17 @@
 <template>
   <div class="app-container">
     <el-form
-      ref="formRef"
-      :model="formData"
-      :rules="formRules"
-      label-width="100px"
-      v-loading="formLoading"
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        label-width="100px"
+        v-loading="formLoading"
     >
       <el-form-item label="名字" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入名字" />
+        <el-input v-model="formData.name" placeholder="请输入名字"/>
       </el-form-item>
       <el-form-item label="班主任" prop="teacher">
-        <el-input v-model="formData.teacher" placeholder="请输入班主任" />
+        <el-input v-model="formData.teacher" placeholder="请输入班主任"/>
       </el-form-item>
     </el-form>
   </div>
@@ -19,11 +19,11 @@
 
 <script>
 import * as Demo03StudentApi from '@/api/infra/demo03-inner';
+
 export default {
   name: "Demo03GradeForm",
-  components: {
-  },
-  props:[
+  components: {},
+  props: [
     'studentId'
   ],// 学生编号（主表的关联字段）
   data() {
@@ -40,8 +40,9 @@ export default {
       },
     };
   },
-  watch:{/** 监听主表的关联字段的变化，加载对应的子表数据 */
-    studentId:{
+  watch: {
+    /** 监听主表的关联字段的变化，加载对应的子表数据 */
+    studentId: {
       handler(val) {
         // 1. 重置表单
         this.formData = {
@@ -58,7 +59,7 @@ export default {
           this.formLoading = true;
           // 这里还是需要获取一下 this 的不然取不到 formData
           const that = this;
-          Demo03StudentApi.getDemo03GradeByStudentId(val).then(function (res){
+          Demo03StudentApi.getDemo03GradeByStudentId(val).then(function (res) {
             const data = res.data;
             if (!data) {
               return
@@ -74,11 +75,11 @@ export default {
   },
   methods: {
     /** 表单校验 */
-    validate(){
+    validate() {
       return this.$refs["formRef"].validate();
     },
     /** 表单值 */
-    getData(){
+    getData() {
       return this.formData;
     }
   }
