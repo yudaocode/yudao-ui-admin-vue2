@@ -43,6 +43,14 @@ export function delJob(jobId) {
   })
 }
 
+// 批量删除定时任务调度
+export function delJobList(ids) {
+  return request({
+    url: `/infra/job/delete-list?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 导出定时任务调度
 export function exportJob(query) {
   return request({

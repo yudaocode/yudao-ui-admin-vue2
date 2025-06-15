@@ -28,11 +28,25 @@
         <el-button type="info" plain icon="el-icon-upload" size="mini" @click="openImportTable"
                    v-hasPermi="['infra:codegen:create']">导入</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['infra:codegen:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="tableList">
+    <el-table v-loading="loading" :data="tableList" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="数据源" align="center" :formatter="dataSourceConfigNameFormat"/>
       <el-table-column label="表名称" align="center" prop="tableName" width="200"/>
       <el-table-column label="表描述" align="center" prop="tableComment" :show-overflow-tooltip="true" width="120"/>
@@ -85,7 +99,7 @@
 
 <script>
 import { getCodegenTablePage, previewCodegen, downloadCodegen, deleteCodegen,
-  syncCodegenFromDB } from "@/api/infra/codegen";
+  syncCodegenFromDB, deleteCodegenList } from "@/api/infra/codegen";
 
 import importTable from "./importTable";
 // 代码高亮插件
@@ -136,6 +150,8 @@ export default {
       },
       // 数据源列表
       dataSourceConfigs: [],
+      // 选中项
+      checkedIds: [],
     };
   },
   created() {
@@ -312,6 +328,19 @@ export default {
       }
       return '未知【' + row.leaderUserId + '】';
     },
+    /** 选中行变化 */
+    handleRowCheckboxChange(selection) {
+      this.checkedIds = selection.map(item => item.id);
+    },
+    /** 批量删除 */
+    handleDeleteBatch() {
+      this.$modal.confirm('是否确认删除选中的数据项?').then(function() {
+          return deleteCodegenList(this.checkedIds);
+      }).then(() => {
+          this.getList();
+          this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    }
   }
 };
 </script>

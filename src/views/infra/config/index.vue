@@ -36,10 +36,24 @@
         <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
                    v-hasPermi="['infra:config:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['infra:config:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="configList">
+    <el-table v-loading="loading" :data="configList" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="参数主键" align="center" prop="id" />
       <el-table-column label="参数分类" align="center" prop="category" />
       <el-table-column label="参数名称" align="center" prop="name" :show-overflow-tooltip="true" />
@@ -107,7 +121,7 @@
 </template>
 
 <script>
-import { listConfig, getConfig, delConfig, addConfig, updateConfig, exportConfig } from "@/api/infra/config";
+import { listConfig, getConfig, delConfig, addConfig, updateConfig, exportConfig, delConfigList } from "@/api/infra/config";
 
 export default {
   name: "InfraConfig",
@@ -154,7 +168,8 @@ export default {
         value: [
           { required: true, message: "参数键值不能为空", trigger: "blur" }
         ]
-      }
+      },
+      checkedIds: []
     };
   },
   created() {
@@ -258,6 +273,18 @@ export default {
         this.exportLoading = false;
       });
     },
+    handleRowCheckboxChange(selection) {
+      this.checkedIds = selection.map(item => item.id);
+    },
+    handleDeleteBatch() {
+      const ids = this.checkedIds;
+      this.$modal.confirm('是否确认删除选中的' + this.checkedIds.length + '项数据?').then(function() {
+          return delConfigList(ids);
+        }).then(() => {
+          this.getList();
+          this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    }
   }
 };
 </script>

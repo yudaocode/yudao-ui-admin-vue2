@@ -96,3 +96,11 @@ export function deleteCodegen(tableId) {
     method: 'delete'
   })
 }
+
+// 批量删除数据库的表和字段定义
+export function deleteCodegenList(tableIds) {
+  return request({
+    url: `/infra/codegen/delete-list?tableIds=${tableIds.join(',')}`,
+    method: 'delete'
+  })
+}

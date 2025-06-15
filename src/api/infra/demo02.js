@@ -26,6 +26,14 @@ export function deleteDemo02Category(id) {
   })
 }
 
+// 批量删除示例分类
+export function deleteDemo02CategoryList(ids) {
+  return request({
+    url: `/infra/demo02-category/delete-list?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得示例分类
 export function getDemo02Category(id) {
   return request({

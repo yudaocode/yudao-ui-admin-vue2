@@ -6,10 +6,24 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
                    v-hasPermi="['infra:data-source-config:create']">新增</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['infra:data-source-config:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="主键编号" align="center" prop="id" />
       <el-table-column label="数据源名称" align="center" prop="name" />
       <el-table-column label="数据源连接" align="center" prop="url" />
@@ -54,7 +68,7 @@
 </template>
 
 <script>
-import { createDataSourceConfig, updateDataSourceConfig, deleteDataSourceConfig, getDataSourceConfig, getDataSourceConfigList } from "@/api/infra/dataSourceConfig";
+import { createDataSourceConfig, updateDataSourceConfig, deleteDataSourceConfig, getDataSourceConfig, getDataSourceConfigList, deleteDataSourceConfigList } from "@/api/infra/dataSourceConfig";
 
 export default {
   name: "InfraDataSourceConfig",
@@ -80,7 +94,8 @@ export default {
         url: [{ required: true, message: "数据源连接不能为空", trigger: "blur" }],
         username: [{ required: true, message: "用户名不能为空", trigger: "blur" }],
         password: [{ required: true, message: "密码不能为空", trigger: "blur" }],
-      }
+      },
+      checkedIds: []
     };
   },
   created() {
@@ -156,6 +171,18 @@ export default {
       const id = row.id;
       this.$modal.confirm('是否确认删除数据源配置编号为"' + id + '"的数据项?').then(function() {
           return deleteDataSourceConfig(id);
+        }).then(() => {
+          this.getList();
+          this.$modal.msgSuccess("删除成功");
+        }).catch(() => {});
+    },
+    handleRowCheckboxChange(val) {
+      this.checkedIds = val.map(item => item.id);
+    },
+    handleDeleteBatch() {
+      const ids = this.checkedIds;
+      this.$modal.confirm('是否确认删除选中的数据源配置?').then(function() {
+          return deleteDataSourceConfigList(ids);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");

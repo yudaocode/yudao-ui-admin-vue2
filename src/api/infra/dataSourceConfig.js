@@ -26,6 +26,14 @@ export function deleteDataSourceConfig(id) {
   })
 }
 
+// 批量删除数据源配置
+export function deleteDataSourceConfigList(ids) {
+  return request({
+    url: `/infra/data-source-config/delete-list?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得数据源配置
 export function getDataSourceConfig(id) {
   return request({

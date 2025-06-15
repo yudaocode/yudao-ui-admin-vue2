@@ -23,11 +23,25 @@
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">上传文件</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['infra:file:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="文件名" :show-overflow-tooltip="true" align="center" min-width="200px" prop="name"/>
       <el-table-column label="文件路径" :show-overflow-tooltip="true" align="center" min-width="250px" prop="path"/>
       <el-table-column label="文件 URL" :show-overflow-tooltip="true" align="center" min-width="300px" prop="url"/>
@@ -87,7 +101,7 @@
 </template>
 
 <script>
-import {deleteFile, getFilePage} from "@/api/infra/file";
+import {deleteFile, getFilePage, deleteFileList} from "@/api/infra/file";
 import {getAccessToken} from "@/utils/auth";
 import ImagePreview from "@/components/ImagePreview";
 
@@ -126,6 +140,7 @@ export default {
         headers: {Authorization: "Bearer " + getAccessToken()}, // 设置上传的请求头部
         data: {} // 上传的额外数据，用于文件名
       },
+      checkedIds: []
     };
   },
   created() {
@@ -199,8 +214,24 @@ export default {
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
-      }).catch(() => {
-      });
+      }).catch(() => {});
+    },
+    /** 批量删除按钮操作 */
+    handleDeleteBatch() {
+      if (this.checkedIds.length === 0) {
+        this.$message.warning('请选择要删除的数据项');
+        return;
+      }
+      this.$modal.confirm('是否确认删除选中的' + this.checkedIds.length + '项数据?').then(function() {
+        return deleteFileList(this.checkedIds);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
+    /** 处理行选择变化 */
+    handleRowCheckboxChange(selection) {
+      this.checkedIds = selection.map(item => item.id);
     },
     // 用户昵称展示
     sizeFormat(row, column) {

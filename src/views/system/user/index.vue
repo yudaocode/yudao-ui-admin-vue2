@@ -666,10 +666,6 @@ export default {
       // 过滤掉 id 为 1 的用户（系统管理员）
       this.checkedIds = records.filter(item => item.id !== 1).map((item) => item.id);
     },
-    /** 判断数组是否为空 */
-    isEmpty(ids) {
-      return ids.length === 0;
-    },
   }
 };
 </script>

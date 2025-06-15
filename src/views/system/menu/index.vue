@@ -429,9 +429,6 @@ export default {
     /** 选择行数据 */
     handleRowCheckboxChange(records) {
       this.checkedIds = records.map((item) => item.id);
-    },
-    isEmpty(ids) {
-      return ids.length === 0;
     }
   }
 };

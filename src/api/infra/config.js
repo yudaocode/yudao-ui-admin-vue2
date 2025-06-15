@@ -51,6 +51,14 @@ export function delConfig(configId) {
   })
 }
 
+// 批量删除参数配置
+export function delConfigList(ids) {
+  return request({
+    url: `/infra/config/delete-list?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 导出参数
 export function exportConfig(query) {
   return request({

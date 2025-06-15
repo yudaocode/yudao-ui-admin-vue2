@@ -338,10 +338,6 @@ export default {
     /** 选择行数据 */
     handleRowCheckboxChange(records) {
       this.checkedIds = records.map((item) => item.id);
-    },
-    /** 判断数组是否为空 */
-    isEmpty(ids) {
-      return ids.length === 0;
     }
   }
 };
