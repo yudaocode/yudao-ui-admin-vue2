@@ -35,10 +35,24 @@
         <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
                    v-hasPermi="['system:role:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:role:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="roleList">
+    <el-table v-loading="loading" :data="roleList" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="角色编号" prop="id" width="120" />
       <el-table-column label="角色名称" prop="name" :show-overflow-tooltip="true" width="150" />
       <el-table-column label="角色标识" prop="code" :show-overflow-tooltip="true" width="150" />
@@ -171,7 +185,8 @@ import {
   exportRole,
   getRole,
   listRole,
-  updateRole
+  updateRole,
+  delRoleList
 } from "@/api/system/role";
 import {listSimpleMenus} from "@/api/system/menu";
 import {assignRoleMenu, listRoleMenus, assignRoleDataScope} from "@/api/system/permission";
@@ -205,6 +220,8 @@ export default {
       menuNodeAll: false,
       deptExpand: true,
       deptNodeAll: false,
+      // 选中行
+      checkedIds: [],
       // 菜单列表
       menuOptions: [],
       // 部门列表
@@ -478,6 +495,19 @@ export default {
           this.getList();
           this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的角色数据?')
+      try {
+        await delRoleList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
     },
     /** 导出按钮操作 */
     handleExport() {

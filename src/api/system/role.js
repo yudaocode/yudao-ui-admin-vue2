@@ -64,6 +64,14 @@ export function delRole(roleId) {
   })
 }
 
+// 批量删除角色
+export function delRoleList(ids) {
+  return request({
+    url: `/system/role/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 导出角色
 export function exportRole(query) {
   return request({

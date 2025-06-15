@@ -26,6 +26,14 @@ export function deleteSmsTemplate(id) {
   })
 }
 
+// 批量删除短信模板
+export function deleteSmsTemplateList(ids) {
+  return request({
+    url: `/system/sms-template/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得短信模板
 export function getSmsTemplate(id) {
   return request({

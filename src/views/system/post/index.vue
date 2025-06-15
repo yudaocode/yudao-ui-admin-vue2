@@ -27,10 +27,24 @@
         <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
                    v-hasPermi="['system:post:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:post:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="postList">
+    <el-table v-loading="loading" :data="postList" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="岗位编号" align="center" prop="id" />
       <el-table-column label="岗位编码" align="center" prop="code" />
       <el-table-column label="岗位名称" align="center" prop="name" />
@@ -89,7 +103,7 @@
 </template>
 
 <script>
-import { listPost, getPost, delPost, addPost, updatePost, exportPost } from "@/api/system/post";
+import { listPost, getPost, delPost, addPost, updatePost, exportPost, delPostList } from "@/api/system/post";
 
 import {CommonStatusEnum} from '@/utils/constants'
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
@@ -112,6 +126,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -226,6 +242,19 @@ export default {
           this.getList();
           this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的岗位数据?')
+      try {
+        await delPostList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
     },
     /** 导出按钮操作 */
     handleExport() {

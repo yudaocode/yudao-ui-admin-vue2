@@ -26,11 +26,25 @@
       <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">展开/折叠</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:menu:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-if="refreshTable" v-loading="loading" :data="menuList" row-key="id" :default-expand-all="isExpandAll"
-              :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+              :tree-props="{children: 'children', hasChildren: 'hasChildren'}" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column prop="name" label="菜单名称" :show-overflow-tooltip="true" width="250"></el-table-column>
       <el-table-column prop="icon" label="图标" align="center" width="100">
         <template v-slot="scope">
@@ -197,7 +211,7 @@
 </template>
 
 <script>
-import { listMenu, getMenu, delMenu, addMenu, updateMenu } from "@/api/system/menu";
+import { listMenu, getMenu, delMenu, addMenu, updateMenu, delMenuList } from "@/api/system/menu";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 import IconSelect from "@/components/IconSelect";
@@ -227,6 +241,8 @@ export default {
       isExpandAll: false,
       // 重新渲染表格状态
       refreshTable: true,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         name: undefined,
@@ -400,6 +416,22 @@ export default {
           this.getList();
           this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的菜单数据?')
+      try {
+        await delMenuList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
+    },
+    isEmpty(ids) {
+      return ids.length === 0;
     }
   }
 };

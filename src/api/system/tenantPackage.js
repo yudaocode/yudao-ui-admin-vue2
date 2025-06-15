@@ -26,6 +26,14 @@ export function deleteTenantPackage(id) {
   })
 }
 
+// 批量删除租户套餐
+export function deleteTenantPackageList(ids) {
+  return request({
+    url: `/system/tenant-package/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得租户套餐
 export function getTenantPackage(id) {
   return request({

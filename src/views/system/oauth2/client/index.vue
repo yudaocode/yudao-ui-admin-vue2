@@ -25,11 +25,25 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
                    v-hasPermi="['system:oauth2-client:create']">新增</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:oauth2-client:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="客户端编号" align="center" prop="clientId" />
       <el-table-column label="客户端密钥" align="center" prop="secret" />
       <el-table-column label="应用名" align="center" prop="name" />
@@ -148,7 +162,7 @@
 </template>
 
 <script>
-import { createOAuth2Client, updateOAuth2Client, deleteOAuth2Client, getOAuth2Client, getOAuth2ClientPage } from "@/api/system/oauth2/oauth2Client";
+import { createOAuth2Client, updateOAuth2Client, deleteOAuth2Client, getOAuth2Client, getOAuth2ClientPage, deleteOAuth2ClientList } from "@/api/system/oauth2/oauth2Client";
 import ImageUpload from '@/components/ImageUpload';
 import Editor from '@/components/Editor';
 import {CommonStatusEnum} from "@/utils/constants";
@@ -175,6 +189,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -290,14 +306,30 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const id = row.id;
       this.$modal.confirm('是否确认删除客户端编号为"' + row.clientId + '"的数据项?').then(function() {
-          return deleteOAuth2Client(id);
+          return deleteOAuth2Client(row.id);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
-        }).catch(() => {});
-    }
+      }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的 OAuth2 客户端数据?')
+      try {
+        await deleteOAuth2ClientList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("批量删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
+    },
+    /** 判断数组是否为空 */
+    isEmpty(ids) {
+      return ids.length === 0;
+    },
   }
 };
 </script>

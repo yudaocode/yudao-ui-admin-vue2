@@ -23,11 +23,25 @@
       <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">展开/折叠</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:dept:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-if="refreshTable" v-loading="loading" :data="deptList" row-key="id" :default-expand-all="isExpandAll"
-              :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+              :tree-props="{children: 'children', hasChildren: 'hasChildren'}" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column prop="name" label="部门名称" width="260"></el-table-column>
       <el-table-column prop="leader" label="负责人" :formatter="userNicknameFormat" width="120"/>
       <el-table-column prop="sort" label="排序" width="200"></el-table-column>
@@ -108,7 +122,7 @@
 </template>
 
 <script>
-import { listDept, getDept, delDept, addDept, updateDept } from "@/api/system/dept";
+import { listDept, getDept, delDept, addDept, updateDept, delDeptList } from "@/api/system/dept";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
@@ -141,6 +155,8 @@ export default {
       refreshTable: true,
       // 是否展开
       expand: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         name: undefined,
@@ -311,6 +327,23 @@ export default {
           this.getList();
           this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的部门数据?')
+      try {
+        await delDeptList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
+    },
+    /** 判断数组是否为空 */
+    isEmpty(ids) {
+      return ids.length === 0;
     }
   }
 };

@@ -38,11 +38,25 @@
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
                    v-hasPermi="['system:tenant:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:tenant:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="租户编号" align="center" prop="id" />
       <el-table-column label="租户名" align="center" prop="name" />
       <el-table-column label="租户套餐" align="center" prop="packageId">
@@ -136,7 +150,7 @@
 </template>
 
 <script>
-import { createTenant, updateTenant, deleteTenant, getTenant, getTenantPage, exportTenantExcel } from "@/api/system/tenant";
+import { createTenant, updateTenant, deleteTenant, getTenant, getTenantPage, exportTenantExcel, deleteTenantList } from "@/api/system/tenant";
 import { CommonStatusEnum } from '@/utils/constants'
 import {getTenantPackageList} from "@/api/system/tenantPackage";
 
@@ -162,6 +176,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -309,6 +325,23 @@ export default {
         }
       }
       return '未知套餐';
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的租户数据?')
+      try {
+        await deleteTenantList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
+    },
+    /** 判断数组是否为空 */
+    isEmpty(ids) {
+      return ids.length === 0;
     }
   }
 };

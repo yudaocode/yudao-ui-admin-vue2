@@ -58,3 +58,11 @@ export function delDept(id) {
     method: 'delete'
   })
 }
+
+// 批量删除部门
+export function delDeptList(ids) {
+  return request({
+    url: `/system/dept/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
