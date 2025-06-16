@@ -1,4 +1,4 @@
-import { parseTime } from './ruoyi'
+import {parseTime} from './ruoyi'
 
 /**
  * 表格时间格式化
@@ -217,7 +217,7 @@ export function getTime(type) {
 export function debounce(func, wait, immediate) {
   let timeout, args, context, timestamp, result
 
-  const later = function() {
+  const later = function () {
     // 据上一次触发时间间隔
     const last = +new Date() - timestamp
 
@@ -234,7 +234,7 @@ export function debounce(func, wait, immediate) {
     }
   }
 
-  return function(...args) {
+  return function (...args) {
     context = this
     timestamp = +new Date()
     const callNow = immediate && !timeout
@@ -294,9 +294,15 @@ export function deepClone(obj) {
   // RegExp
   if (_toString.call(obj) === '[object RegExp]') {
     const flags = []
-    if (obj.global) { flags.push('g') }
-    if (obj.multiline) { flags.push('m') }
-    if (obj.ignoreCase) { flags.push('i') }
+    if (obj.global) {
+      flags.push('g')
+    }
+    if (obj.multiline) {
+      flags.push('m')
+    }
+    if (obj.ignoreCase) {
+      flags.push('i')
+    }
 
     return new RegExp(obj.source, flags.join(''))
   }
@@ -437,4 +443,39 @@ export function toCamelCase(str, upperCaseFirst) {
   }
 
   return str;
+}
+
+export const is = (val, type) => {
+  return toString.call(val) === `[object ${type}]`
+}
+
+export function isString(val) {
+  return is(val, 'String')
+}
+
+export function isArray(val) {
+  return val && Array.isArray(val)
+}
+
+export function isObject(val) {
+  return val !== null && is(val, 'Object')
+}
+
+export function isEmpty(val) {
+  if (val === null || val === undefined || typeof val === 'undefined') {
+    return true
+  }
+  if (isArray(val) || isString(val)) {
+    return val.length === 0
+  }
+
+  if (val instanceof Map || val instanceof Set) {
+    return val.size === 0
+  }
+
+  if (isObject(val)) {
+    return Object.keys(val).length === 0
+  }
+
+  return false
 }

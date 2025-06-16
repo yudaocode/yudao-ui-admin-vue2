@@ -36,10 +36,24 @@
         <el-button type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog"
                    v-hasPermi="['infra:job:query']">执行日志</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['infra:job:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="jobList">
+    <el-table v-loading="loading" :data="jobList" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="任务编号" align="center" prop="id" />
       <el-table-column label="任务名称" align="center" prop="name" />
       <el-table-column label="任务状态" align="center" prop="status">
@@ -149,7 +163,7 @@
 </template>
 
 <script>
-import { listJob, getJob, delJob, addJob, updateJob, exportJob, runJob, updateJobStatus, getJobNextTimes } from "@/api/infra/job";
+import { listJob, getJob, delJob, addJob, updateJob, exportJob, runJob, updateJobStatus, getJobNextTimes, delJobList } from "@/api/infra/job";
 import { InfraJobStatusEnum } from "@/utils/constants";
 import Crontab from '@/components/Crontab'
 
@@ -199,6 +213,7 @@ export default {
         retryInterval: [{ required: true, message: "重试间隔不能为空", trigger: "blur" }],
       },
       nextTimes: [], // 后续执行时间
+      checkedIds: [], // 批量删除时使用的变量
 
       // 枚举
       InfJobStatusEnum: InfraJobStatusEnum
@@ -373,6 +388,21 @@ export default {
       }).finally(() => {
         this.exportLoading = false;
       });
+    },
+    // 批量删除操作
+    handleDeleteBatch() {
+      const ids = this.checkedIds.join(',');
+      this.$modal.confirm('是否确认删除定时任务编号为"' + ids + '"的数据项?').then(function() {
+        return delJobList(ids);
+      }).then(() => {
+        this.checkedIds = [];
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
+    // 处理行选择变化
+    handleRowCheckboxChange(selection) {
+      this.checkedIds = selection.map(item => item.id);
     }
   }
 };

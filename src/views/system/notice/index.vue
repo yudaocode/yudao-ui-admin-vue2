@@ -22,10 +22,24 @@
                    v-hasPermi="['system:notice:create']" s>新增
         </el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:notice:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="noticeList">
+    <el-table v-loading="loading" :data="noticeList" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="序号" align="center" prop="id" width="100"/>
       <el-table-column label="公告标题" align="center" prop="title" :show-overflow-tooltip="true"/>
       <el-table-column label="公告类型" align="center" prop="type" width="100">
@@ -111,7 +125,7 @@
 </template>
 
 <script>
-import {addNotice, delNotice, getNotice, listNotice, pushNotice, updateNotice} from "@/api/system/notice";
+import {addNotice, delNotice, getNotice, listNotice, pushNotice, updateNotice, delNoticeList} from "@/api/system/notice";
 import Editor from '@/components/Editor';
 
 import {CommonStatusEnum} from '@/utils/constants'
@@ -136,6 +150,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -247,6 +263,19 @@ export default {
         this.$modal.msgSuccess("删除成功");
       }).catch(() => {
       });
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的公告数据?')
+      try {
+        await delNoticeList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
     },
     /** 推送按钮操作 */
     handlePush(id) {

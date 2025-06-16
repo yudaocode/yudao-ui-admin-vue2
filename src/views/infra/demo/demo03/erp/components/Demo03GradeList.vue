@@ -4,13 +4,34 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="openForm(undefined)"
-                   v-hasPermi="['infra:demo03-student:create']">新增</el-button>
+                   v-hasPermi="['infra:demo03-student:create']">新增
+        </el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['infra:demo03-student:delete']"
+        >
+          批量删除
+        </el-button>
       </el-col>
     </el-row>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="编号" align="center" prop="id" />
-      <el-table-column label="名字" align="center" prop="name" />
-      <el-table-column label="班主任" align="center" prop="teacher" />
+    <el-table
+      v-loading="loading"
+      :data="list"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      @selection-change="handleRowCheckboxChange"
+    >
+      <el-table-column type="selection" width="55"/>
+      <el-table-column label="编号" align="center" prop="id"/>
+      <el-table-column label="名字" align="center" prop="name"/>
+      <el-table-column label="班主任" align="center" prop="teacher"/>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template v-slot="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -19,9 +40,11 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="openForm(scope.row.id)"
-                     v-hasPermi="['infra:demo03-student:update']">修改</el-button>
+                     v-hasPermi="['infra:demo03-student:update']">修改
+          </el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
-                     v-hasPermi="['infra:demo03-student:delete']">删除</el-button>
+                     v-hasPermi="['infra:demo03-student:delete']">删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -29,19 +52,20 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
     <!-- 对话框(添加 / 修改) -->
-    <Demo03GradeForm ref="formRef" @success="getList" />
+    <Demo03GradeForm ref="formRef" @success="getList"/>
   </div>
 </template>
 
 <script>
 import * as Demo03StudentApi from '@/api/infra/demo03-erp';
 import Demo03GradeForm from './Demo03GradeForm.vue';
+
 export default {
   name: "Demo03GradeList",
   components: {
     Demo03GradeForm
   },
-  props:[
+  props: [
     'studentId'
   ],// 学生编号（主表的关联字段）
   data() {
@@ -50,6 +74,7 @@ export default {
       loading: true,
       // 列表的数据
       list: [],
+      checkedIds: [],
       // 列表的总页数
       total: 0,
       // 查询参数
@@ -60,11 +85,12 @@ export default {
       }
     };
   },
-  watch:{/** 监听主表的关联字段的变化，加载对应的子表数据 */
-    studentId:{
+  watch: {
+    /** 监听主表的关联字段的变化，加载对应的子表数据 */
+    studentId: {
       handler(val) {
         this.queryParams.studentId = val;
-        if (val){
+        if (val) {
           this.handleQuery();
         }
       },
@@ -83,6 +109,20 @@ export default {
         this.loading = false;
       }
     },
+    /** 批量删除学生 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认删除?')
+      try {
+        await Demo03StudentApi.deleteDemo03GradeList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {
+      }
+    },
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
+    },
+
     /** 搜索按钮操作 */
     handleQuery() {
       this.queryParams.pageNo = 1;
@@ -104,7 +144,8 @@ export default {
         await Demo03StudentApi.deleteDemo03Grade(id);
         await this.getList();
         this.$modal.msgSuccess("删除成功");
-      } catch {}
+      } catch {
+      }
     },
   }
 };

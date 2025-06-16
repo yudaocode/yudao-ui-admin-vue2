@@ -48,11 +48,25 @@
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
                    v-hasPermi="['system:sms-template:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:sms-template:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="模板编码" align="center" prop="code" />
       <el-table-column label="模板名称" align="center" prop="name" />
       <el-table-column label="模板内容" align="center" prop="content" width="300" />
@@ -162,7 +176,7 @@
 
 <script>
 import { createSmsTemplate, updateSmsTemplate, deleteSmsTemplate, getSmsTemplate, getSmsTemplatePage,
-  exportSmsTemplateExcel, sendSms } from "@/api/system/sms/smsTemplate";
+  exportSmsTemplateExcel, sendSms, deleteSmsTemplateList } from "@/api/system/sms/smsTemplate";
 import {  getSimpleSmsChannels } from "@/api/system/sms/smsChannel";
 
 export default {
@@ -183,6 +197,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -317,6 +333,19 @@ export default {
         this.getList();
         this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的短信模板数据?')
+      try {
+        await deleteSmsTemplateList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("批量删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
     },
     /** 导出按钮操作 */
     handleExport() {

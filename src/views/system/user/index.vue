@@ -54,10 +54,24 @@
             <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
                        v-hasPermi="['system:user:export']">导出</el-button>
           </el-col>
+          <el-col :span="1.5">
+            <el-button
+              type="danger"
+              plain
+              icon="el-icon-delete"
+              size="mini"
+              :disabled="isEmpty(checkedIds)"
+              @click="handleDeleteBatch"
+              v-hasPermi="['system:user:delete']"
+            >
+              批量删除
+            </el-button>
+          </el-col>
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
         </el-row>
 
-        <el-table v-loading="loading" :data="userList">
+        <el-table v-loading="loading" :data="userList" @selection-change="handleRowCheckboxChange">
+          <el-table-column type="selection" width="55"/>
           <el-table-column label="用户编号" align="center" key="id" prop="id" v-if="columns[0].visible" />
           <el-table-column label="用户名称" align="center" key="username" prop="username" v-if="columns[1].visible" :show-overflow-tooltip="true" />
           <el-table-column label="用户昵称" align="center" key="nickname" prop="nickname" v-if="columns[2].visible" :show-overflow-tooltip="true" />
@@ -233,7 +247,8 @@ import {
   importTemplate,
   listUser,
   resetUserPwd,
-  updateUser
+  updateUser,
+  delUserList
 } from "@/api/system/user";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
@@ -353,6 +368,8 @@ export default {
       // 数据字典
       statusDictDatas: getDictDatas(DICT_TYPE.COMMON_STATUS),
       sexDictDatas: getDictDatas(DICT_TYPE.SYSTEM_USER_SEX),
+      // 选中行
+      checkedIds: [],
     };
   },
   watch: {
@@ -560,12 +577,11 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除用户编号为"' + ids + '"的数据项?').then(function() {
-          return delUser(ids);
-        }).then(() => {
-          this.getList();
-          this.$modal.msgSuccess("删除成功");
+      this.$modal.confirm('是否确认删除用户编号为"' + row.id + '"的数据项?').then(() => {//红号变更
+        return delUser(row.id);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
     },
     /** 导出按钮操作 */
@@ -635,7 +651,21 @@ export default {
         label: node.name,
         children: node.children
       }
-    }
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的用户数据?')
+      try {
+        await delUserList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("批量删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      // 过滤掉 id 为 1 的用户（系统管理员）
+      this.checkedIds = records.filter(item => item.id !== 1).map((item) => item.id);
+    },
   }
 };
 </script>

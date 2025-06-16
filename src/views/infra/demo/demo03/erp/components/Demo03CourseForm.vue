@@ -4,10 +4,10 @@
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="45%" v-dialogDrag append-to-body>
       <el-form ref="formRef" :model="formData" :rules="formRules" v-loading="formLoading" label-width="100px">
         <el-form-item label="名字" prop="name">
-          <el-input v-model="formData.name" placeholder="请输入名字" />
+          <el-input v-model="formData.name" placeholder="请输入名字"/>
         </el-form-item>
         <el-form-item label="分数" prop="score">
-          <el-input v-model="formData.score" placeholder="请输入分数" />
+          <el-input v-model="formData.score" placeholder="请输入分数"/>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -20,10 +20,10 @@
 
 <script>
 import * as Demo03StudentApi from '@/api/infra/demo03-erp';
+
 export default {
   name: "Demo03CourseForm",
-  components: {
-  },
+  components: {},
   data() {
     return {
       // 弹出层标题
@@ -74,7 +74,7 @@ export default {
         const data = this.formData;
         // 修改的提交
         if (data.id) {
-          await  Demo03StudentApi.updateDemo03Course(data);
+          await Demo03StudentApi.updateDemo03Course(data);
           this.$modal.msgSuccess("修改成功");
           this.dialogVisible = false;
           this.$emit('success');
@@ -85,7 +85,7 @@ export default {
         this.$modal.msgSuccess("新增成功");
         this.dialogVisible = false;
         this.$emit('success');
-      }finally {
+      } finally {
         this.formLoading = false;
       }
     },

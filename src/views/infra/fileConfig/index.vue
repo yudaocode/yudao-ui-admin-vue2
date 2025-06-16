@@ -28,11 +28,25 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
                    v-hasPermi="['infra:file-config:create']">新增</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['infra:file-config:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column label="配置名" align="center" prop="name" />
       <el-table-column label="存储器" align="center" prop="storage">
@@ -147,7 +161,9 @@ import {
   deleteFileConfig,
   getFileConfig,
   getFileConfigPage,
-  testFileConfig, updateFileConfigMaster
+  testFileConfig,
+  updateFileConfigMaster,
+  deleteFileConfigList
 } from "@/api/infra/fileConfig";
 
 export default {
@@ -199,7 +215,8 @@ export default {
           enablePathStyleAccess: [{ required: true, message: "是否 Path Style 不能为空", trigger: "change" }],
           domain: [{ required: true, message: "自定义域名不能为空", trigger: "blur" }],
         },
-      }
+      },
+      checkedIds: []
     };
   },
   created() {
@@ -307,6 +324,21 @@ export default {
         this.$modal.alert("测试通过，上传文件成功！访问地址：" + response.data);
       }).catch(() => {});
     },
+    handleRowCheckboxChange(selection) {
+      this.checkedIds = selection.map(item => item.id);
+    },
+    handleDeleteBatch() {
+      if (this.checkedIds.length === 0) {
+        this.$message.warning('请选择要删除的数据项');
+        return;
+      }
+      this.$modal.confirm('是否确认删除选中的' + this.checkedIds.length + '项数据?').then(function() {
+        return deleteFileConfigList(this.checkedIds);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    }
   }
 };
 </script>

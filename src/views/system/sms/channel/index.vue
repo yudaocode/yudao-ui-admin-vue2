@@ -28,11 +28,25 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
                    v-hasPermi="['system:sms-channel:create']">新增</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:sms-channel:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column label="短信签名" align="center" prop="signature" />
       <el-table-column label="渠道编码" align="center" prop="code">
@@ -107,7 +121,7 @@
 </template>
 
 <script>
-import { createSmsChannel, updateSmsChannel, deleteSmsChannel, getSmsChannel, getSmsChannelPage } from "@/api/system/sms/smsChannel";
+import { createSmsChannel, updateSmsChannel, deleteSmsChannel, getSmsChannel, getSmsChannelPage, deleteSmsChannelList } from "@/api/system/sms/smsChannel";
 
 export default {
   name: "SystemSmsChannel",
@@ -127,6 +141,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -236,6 +252,19 @@ export default {
         this.getList();
         this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的短信渠道数据?')
+      try {
+        await deleteSmsChannelList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("批量删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
     }
   }
 };

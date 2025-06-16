@@ -4,17 +4,19 @@
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="45%" v-dialogDrag append-to-body>
       <el-form ref="formRef" :model="formData" :rules="formRules" v-loading="formLoading" label-width="100px">
         <el-form-item label="名字" prop="name">
-          <el-input v-model="formData.name" placeholder="请输入名字" />
+          <el-input v-model="formData.name" placeholder="请输入名字"/>
         </el-form-item>
         <el-form-item label="性别" prop="sex">
           <el-radio-group v-model="formData.sex">
             <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_USER_SEX)"
                       :key="dict.value" :label="parseInt(dict.value)"
-            >{{dict.label}}</el-radio>
+            >{{ dict.label }}
+            </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="出生日期" prop="birthday">
-          <el-date-picker clearable v-model="formData.birthday" type="date" value-format="timestamp" placeholder="选择出生日期" />
+          <el-date-picker clearable v-model="formData.birthday" type="date" value-format="timestamp"
+                          placeholder="选择出生日期"/>
         </el-form-item>
         <el-form-item label="简介">
           <Editor v-model="formData.description" :min-height="192"/>
@@ -23,10 +25,10 @@
       <!-- 子表的表单 -->
       <el-tabs v-model="subTabsName">
         <el-tab-pane label="学生课程" name="demo03Course">
-          <Demo03CourseForm ref="demo03CourseFormRef" :student-id="formData.id" />
+          <Demo03CourseForm ref="demo03CourseFormRef" :student-id="formData.id"/>
         </el-tab-pane>
         <el-tab-pane label="学生班级" name="demo03Grade">
-          <Demo03GradeForm ref="demo03GradeFormRef" :student-id="formData.id" />
+          <Demo03GradeForm ref="demo03GradeFormRef" :student-id="formData.id"/>
         </el-tab-pane>
       </el-tabs>
       <div slot="footer" class="dialog-footer">
@@ -40,8 +42,9 @@
 <script>
 import * as Demo03StudentApi from '@/api/infra/demo03-inner';
 import Editor from '@/components/Editor';
-import Demo03CourseForm from './components/Demo03CourseForm.vue';
-import Demo03GradeForm from './components/Demo03GradeForm.vue';
+import Demo03CourseForm from './components/Demo03CourseForm.vue'
+import Demo03GradeForm from './components/Demo03GradeForm.vue'
+
 export default {
   name: "Demo03StudentForm",
   components: {

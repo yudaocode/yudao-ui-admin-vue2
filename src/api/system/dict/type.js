@@ -43,6 +43,14 @@ export function delType(dictId) {
   })
 }
 
+// 批量删除字典类型
+export function delTypeList(ids) {
+  return request({
+    url: `/system/dict-type/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 导出字典类型
 export function exportType(query) {
   return request({

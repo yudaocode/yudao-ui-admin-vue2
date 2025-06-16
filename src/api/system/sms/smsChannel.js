@@ -26,6 +26,14 @@ export function deleteSmsChannel(id) {
   })
 }
 
+// 批量删除短信渠道
+export function deleteSmsChannelList(ids) {
+  return request({
+    url: `/system/sms-channel/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得短信渠道
 export function getSmsChannel(id) {
   return request({

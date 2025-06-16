@@ -28,11 +28,25 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
                    v-hasPermi="['system:tenant-package:create']">新增</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:tenant-package:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="套餐编号" align="center" prop="id" width="120" />
       <el-table-column label="套餐名" align="center" prop="name" />
       <el-table-column label="状态" align="center" prop="status" width="100">
@@ -90,7 +104,7 @@
 </template>
 
 <script>
-import { createTenantPackage, updateTenantPackage, deleteTenantPackage, getTenantPackage, getTenantPackagePage} from "@/api/system/tenantPackage";
+import { createTenantPackage, updateTenantPackage, deleteTenantPackage, getTenantPackage, getTenantPackagePage, deleteTenantPackageList} from "@/api/system/tenantPackage";
 import {CommonStatusEnum} from "@/utils/constants";
 import {listSimpleMenus} from "@/api/system/menu";
 
@@ -112,6 +126,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -262,6 +278,19 @@ export default {
           this.getList();
           this.$modal.msgSuccess("删除成功");
         }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的租户套餐数据?')
+      try {
+        await deleteTenantPackageList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
     },
     // 树权限（展开/折叠）
     handleCheckedTreeExpand(value, type) {

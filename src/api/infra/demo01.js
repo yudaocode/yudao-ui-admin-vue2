@@ -26,6 +26,14 @@ export function deleteDemo01Contact(id) {
   })
 }
 
+/** 批量删除示例联系人 */
+export function deleteDemo01ContactList(ids) {
+  return request({
+    url: `/infra/demo01-contact/delete-list?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得示例联系人
 export function getDemo01Contact(id) {
   return request({

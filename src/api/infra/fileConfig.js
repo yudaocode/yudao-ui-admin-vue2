@@ -34,6 +34,14 @@ export function deleteFileConfig(id) {
   })
 }
 
+// 批量删除文件配置
+export function deleteFileConfigList(ids) {
+  return request({
+    url: `/infra/file-config/delete-list?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得文件配置
 export function getFileConfig(id) {
   return request({

@@ -31,10 +31,24 @@
         <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
                    v-hasPermi="['system:dict:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['system:dict:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="typeList">
+    <el-table v-loading="loading" :data="typeList" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="字典编号" align="center" prop="id" />
       <el-table-column label="字典名称" align="center" prop="name" :show-overflow-tooltip="true" />
       <el-table-column label="字典类型" align="center" :show-overflow-tooltip="true">
@@ -95,7 +109,7 @@
 </template>
 
 <script>
-import { listType, getType, delType, addType, updateType, exportType } from "@/api/system/dict/type";
+import { listType, getType, delType, addType, updateType, exportType, delTypeList } from "@/api/system/dict/type";
 
 import { CommonStatusEnum } from '@/utils/constants'
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
@@ -118,6 +132,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 选中行
+      checkedIds: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -230,6 +246,19 @@ export default {
           this.getList();
           this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的字典类型数据?')
+      try {
+        await delTypeList(this.checkedIds);
+        await this.getList();
+        this.$modal.msgSuccess("删除成功");
+      } catch {}
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
     },
     /** 导出按钮操作 */
     handleExport() {

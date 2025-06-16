@@ -33,6 +33,19 @@
           展开/折叠
         </el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="isEmpty(checkedIds)"
+          @click="handleDeleteBatch"
+          v-hasPermi="['infra:demo02-category:delete']"
+        >
+          批量删除
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -45,7 +58,9 @@
         row-key="id"
         :default-expand-all="isExpandAll"
         :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+        @selection-change="handleRowCheckboxChange"
     >
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column label="名字" align="center" prop="name" />
       <el-table-column label="父级编号" align="center" prop="parentId" />
@@ -98,6 +113,7 @@ export default {
         parentId: null,
         createTime: [],
       },
+      checkedIds: [],
     };
   },
   created() {
@@ -157,6 +173,18 @@ export default {
       this.$nextTick(function () {
         this.refreshTable = true
       })
+    },
+    handleRowCheckboxChange(val) {
+      this.checkedIds = val.map(item => item.id);
+    },
+    handleDeleteBatch() {
+      this.$modal.confirm('是否确认删除选中的示例分类数据项?').then(async () => {
+        try {
+          await Demo02CategoryApi.deleteDemo02CategoryList(this.checkedIds);
+          await this.getList();
+          this.$modal.msgSuccess("删除成功");
+        } catch {}
+      });
     }
   }
 };

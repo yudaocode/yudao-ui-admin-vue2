@@ -52,6 +52,14 @@ export function delUser(userId) {
   })
 }
 
+// 批量删除用户
+export function delUserList(ids) {
+  return request({
+    url: `/system/user/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 导出用户
 export function exportUser(query) {
   return request({

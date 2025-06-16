@@ -50,3 +50,11 @@ export function delMenu(id) {
     method: 'delete'
   })
 }
+
+// 批量删除菜单
+export function delMenuList(ids) {
+  return request({
+    url: `/system/menu/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}

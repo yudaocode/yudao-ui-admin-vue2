@@ -8,6 +8,14 @@ export function deleteFile(id) {
   })
 }
 
+// 批量删除文件
+export function deleteFileList(ids) {
+  return request({
+    url: `/infra/file/delete-list?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得文件分页
 export function getFilePage(query) {
   return request({

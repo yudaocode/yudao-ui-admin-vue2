@@ -9,18 +9,18 @@
       :inline-message="true"
     >
       <el-table :data="formData" class="-mt-10px">
-        <el-table-column label="序号" type="index" width="100" />
+        <el-table-column label="序号" type="index" width="100"/>
         <el-table-column label="名字" min-width="150">
           <template v-slot="{ row, $index }">
             <el-form-item :prop="`${$index}.name`" :rules="formRules.name" class="mb-0px!">
-              <el-input v-model="row.name" placeholder="请输入名字" />
+              <el-input v-model="row.name" placeholder="请输入名字"/>
             </el-form-item>
           </template>
         </el-table-column>
         <el-table-column label="分数" min-width="150">
           <template v-slot="{ row, $index }">
             <el-form-item :prop="`${$index}.score`" :rules="formRules.score" class="mb-0px!">
-              <el-input v-model="row.score" placeholder="请输入分数" />
+              <el-input v-model="row.score" placeholder="请输入分数"/>
             </el-form-item>
           </template>
         </el-table-column>
@@ -39,11 +39,11 @@
 
 <script>
 import * as Demo03StudentApi from '@/api/infra/demo03-normal';
+
 export default {
   name: "Demo03CourseForm",
-  components: {
-  },
-  props:[
+  components: {},
+  props: [
     'studentId'
   ],// 学生编号（主表的关联字段）
   data() {
@@ -60,8 +60,9 @@ export default {
       },
     };
   },
-  watch:{/** 监听主表的关联字段的变化，加载对应的子表数据 */
-    studentId:{
+  watch: {
+    /** 监听主表的关联字段的变化，加载对应的子表数据 */
+    studentId: {
       handler(val) {
         // 1. 重置表单
         this.formData = []
@@ -73,7 +74,7 @@ export default {
           this.formLoading = true;
           // 这里还是需要获取一下 this 的不然取不到 formData
           const that = this;
-          Demo03StudentApi.getDemo03CourseListByStudentId(val).then(function (res){
+          Demo03StudentApi.getDemo03CourseListByStudentId(val).then(function (res) {
             that.formData = res.data;
           })
         } finally {
@@ -100,11 +101,11 @@ export default {
       this.formData.splice(index, 1);
     },
     /** 表单校验 */
-    validate(){
+    validate() {
       return this.$refs["formRef"].validate();
     },
     /** 表单值 */
-    getData(){
+    getData() {
       return this.formData;
     }
   }

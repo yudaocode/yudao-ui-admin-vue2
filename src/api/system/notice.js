@@ -43,6 +43,14 @@ export function delNotice(noticeId) {
   })
 }
 
+// 批量删除公告
+export function delNoticeList(ids) {
+  return request({
+    url: `/system/notice/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 推送公告
 export function pushNotice(noticeId) {
   return request({

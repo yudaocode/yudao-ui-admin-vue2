@@ -37,6 +37,14 @@ export function deleteTenant(id) {
   })
 }
 
+// 批量删除租户
+export function deleteTenantList(ids) {
+  return request({
+    url: `/system/tenant/delete-batch?ids=${ids.join(',')}`,
+    method: 'delete'
+  })
+}
+
 // 获得租户
 export function getTenant(id) {
   return request({
