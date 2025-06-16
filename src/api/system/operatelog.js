@@ -12,7 +12,7 @@ export function listOperateLog(query) {
 // 导出操作日志
 export function exportOperateLog(query) {
   return request({
-    url: '/system/operate-log/export',
+    url: '/system/operate-log/export-excel',
     method: 'get',
     params: query,
     responseType: 'blob'

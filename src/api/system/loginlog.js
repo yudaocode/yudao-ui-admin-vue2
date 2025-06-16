@@ -12,7 +12,7 @@ export function list(query) {
 // 导出登录日志
 export function exportLoginLog(query) {
   return request({
-    url: '/system/login-log/export',
+    url: '/system/login-log/export-excel',
     method: 'get',
     params: query,
     responseType: 'blob'

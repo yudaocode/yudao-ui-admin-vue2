@@ -62,7 +62,7 @@ export function delConfigList(ids) {
 // 导出参数
 export function exportConfig(query) {
   return request({
-    url: '/infra/config/export',
+    url: '/infra/config/export-excel',
     method: 'get',
     params: query,
     responseType: 'blob'

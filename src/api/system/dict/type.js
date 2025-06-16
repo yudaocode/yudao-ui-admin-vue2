@@ -54,7 +54,7 @@ export function delTypeList(ids) {
 // 导出字典类型
 export function exportType(query) {
   return request({
-    url: '/system/dict-type/export',
+    url: '/system/dict-type/export-excel',
     method: 'get',
     params: query,
     responseType: 'blob'

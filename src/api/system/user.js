@@ -63,7 +63,7 @@ export function delUserList(ids) {
 // 导出用户
 export function exportUser(query) {
   return request({
-    url: '/system/user/export',
+    url: '/system/user/export-excel',
     method: 'get',
     params: query,
     responseType: 'blob'

@@ -62,7 +62,7 @@ export function delPostList(ids) {
 // 导出岗位
 export function exportPost(query) {
   return request({
-    url: '/system/post/export',
+    url: '/system/post/export-excel',
     method: 'get',
     params: query,
     responseType: 'blob'
