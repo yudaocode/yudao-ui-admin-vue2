@@ -8,6 +8,8 @@ const state = {
   },
   device: "desktop",
   size: localStorage.getItem("size") || "medium",
+  // 当前租户信息
+  currentTenant: JSON.parse(localStorage.getItem("currentTenant") || '{"id": 0, "name": "系统租户"}'),
 };
 
 const mutations = {
@@ -38,6 +40,10 @@ const mutations = {
   SET_SIDEBAR_HIDE: (state, status) => {
     state.sidebar.hide = status;
   },
+  SET_CURRENT_TENANT: (state, tenant) => {
+    state.currentTenant = tenant;
+    localStorage.setItem("currentTenant", JSON.stringify(tenant));
+  },
 };
 
 const actions = {
@@ -55,6 +61,9 @@ const actions = {
   },
   toggleSideBarHide({ commit }, status) {
     commit("SET_SIDEBAR_HIDE", status);
+  },
+  setCurrentTenant({ commit }, tenant) {
+    commit("SET_CURRENT_TENANT", tenant);
   },
 };
 

@@ -18,6 +18,8 @@ const getters = {
   defaultRoutes:state => state.permission.defaultRoutes,
   sidebarRouters:state => state.permission.sidebarRouters,
   // 数据字典
-  dict_datas: state => state.dict.dictDatas
+  dict_datas: state => state.dict.dictDatas,
+  // 当前租户
+  currentTenant: state => state.app.currentTenant
 }
 export default getters

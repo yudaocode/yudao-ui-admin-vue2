@@ -7,6 +7,9 @@
 
     <div class="right-menu">
       <template v-if="device!=='mobile'">
+        <!-- 租户选择 -->
+        <tenant-visit class="right-menu-item" @tenant-change="handleTenantChange" />
+
         <search id="header-search" class="right-menu-item" />
 
         <!-- 站内信 -->
@@ -61,6 +64,7 @@ import Search from '@/components/HeaderSearch'
 import RuoYiGit from '@/components/RuoYi/Git'
 import RuoYiDoc from '@/components/RuoYi/Doc'
 import NotifyMessage from '@/layout/components/Message'
+import TenantVisit from '@/components/TenantVisit'
 import {getPath} from "@/utils/ruoyi";
 
 export default {
@@ -73,7 +77,8 @@ export default {
     Search,
     RuoYiGit,
     RuoYiDoc,
-    NotifyMessage
+    NotifyMessage,
+    TenantVisit
   },
   computed: {
     ...mapGetters([
@@ -109,6 +114,15 @@ export default {
           location.href = getPath('/index');
         })
       }).catch(() => {});
+    },
+    
+    /**
+     * 处理租户切换事件
+     */
+    handleTenantChange(tenant) {
+      console.log('租户切换:', tenant)
+      // 这里可以添加更多的租户切换逻辑
+      // 比如刷新用户权限、更新菜单等
     }
   }
 }
