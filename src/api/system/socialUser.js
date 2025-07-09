@@ -1,5 +1,13 @@
 import request from "@/utils/request";
 
+// 获取用户绑定的社交用户列表
+export function getBindSocialUserList() {
+  return request({
+    url: '/system/social-user/get-bind-list',
+    method: 'get'
+  })
+}
+
 // 社交绑定，使用 code 授权码
 export function socialBind(type, code, state) {
   return request({

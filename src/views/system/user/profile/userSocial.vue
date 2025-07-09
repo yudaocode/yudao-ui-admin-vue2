@@ -24,7 +24,7 @@
 
 import {SystemUserSocialTypeEnum} from "@/utils/constants";
 import {socialAuthRedirect} from "@/api/login";
-import {socialBind, socialUnbind} from "@/api/system/socialUser";
+import {socialBind, socialUnbind, getBindSocialUserList} from "@/api/system/socialUser";
 
 export default {
   props: {
@@ -40,27 +40,15 @@ export default {
   },
   data() {
     return {
+      socialUsers: []
     };
   },
   computed: {
-    socialUsers (){
-      const socialUsers = [];
-      for (const i in SystemUserSocialTypeEnum) {
-        const socialUser = {...SystemUserSocialTypeEnum[i]};
-        socialUsers.push(socialUser);
-        if (this.user.socialUsers) {
-          for (const j in this.user.socialUsers) {
-            if (socialUser.type === this.user.socialUsers[j].type) {
-              socialUser.openid = this.user.socialUsers[j].openid;
-              break;
-            }
-          }
-        }
-      }
-      return socialUsers;
-    }
   },
-  created() {
+  async created() {
+    // 初始化社交用户列表
+    await this.initSocial();
+    
     // 社交绑定
     const type = this.$route.query.type;
     const code = this.$route.query.code;
@@ -72,17 +60,35 @@ export default {
       this.$modal.msgSuccess("绑定成功");
       this.$router.replace('/user/profile');
       // 调用父组件, 刷新
-      this.getUser();
       this.setActiveTab('userSocial');
+      // 重新初始化社交用户列表
+      this.initSocial();
     });
   },
   methods: {
+    async initSocial() {
+      this.socialUsers = []; // 重置避免无限增长
+      // 获取已绑定的社交用户列表
+      const bindSocialUserList = await getBindSocialUserList();
+      // 检查该社交平台是否已绑定
+      for (const i in SystemUserSocialTypeEnum) {
+        const socialUser = { ...SystemUserSocialTypeEnum[i] };
+        this.socialUsers.push(socialUser);
+        if (bindSocialUserList && bindSocialUserList.data && bindSocialUserList.data.length > 0) {
+          for (const bindUser of bindSocialUserList.data) {
+            if (socialUser.type === bindUser.type) {
+              socialUser.openid = bindUser.openid;
+              break;
+            }
+          }
+        }
+      }
+    },
     bind(socialUser) {
       // 计算 redirectUri
       const redirectUri = location.origin + '/user/profile?type=' + socialUser.type;
       // 进行跳转
       socialAuthRedirect(socialUser.type, encodeURIComponent(redirectUri)).then((res) => {
-        // console.log(res.url);
         window.location.href = res.data;
       });
     },
