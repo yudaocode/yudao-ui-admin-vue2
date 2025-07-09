@@ -71,3 +71,11 @@ export function exportTenantExcel(query) {
     responseType: 'blob'
   })
 }
+
+// 获取租户精简信息列表
+export function getTenantList() {
+  return request({
+    url: '/system/tenant/simple-list',
+    method: 'get'
+  })
+}

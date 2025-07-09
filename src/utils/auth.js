@@ -70,6 +70,7 @@ export function removeRememberMe() {
 
 const TenantIdKey = 'TENANT_ID'
 const TenantNameKey = 'TENANT_NAME'
+const VisitTenantIdKey = 'VISIT_TENANT_ID'
 
 export function getTenantName() {
   return localStorage.getItem(TenantNameKey)
@@ -95,5 +96,14 @@ export function removeTenantId() {
   localStorage.removeItem(TenantIdKey)
 }
 
-export class getToken {
+export function getVisitTenantId() {
+  return localStorage.getItem(VisitTenantIdKey)
+}
+
+export function setVisitTenantId(tenantId) {
+  localStorage.setItem(VisitTenantIdKey, tenantId)
+}
+
+export function removeVisitTenantId() {
+  localStorage.removeItem(VisitTenantIdKey)
 }

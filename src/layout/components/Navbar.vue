@@ -7,6 +7,10 @@
 
     <div class="right-menu">
       <template v-if="device!=='mobile'">
+        <!-- 租户下拉框 -->
+        <tenant-visit v-if="tenantEnable" v-hasPermi="['system:tenant:visit']" class="right-menu-item" />
+
+        <!-- 菜单搜索 -->
         <search id="header-search" class="right-menu-item" />
 
         <!-- 站内信 -->
@@ -61,7 +65,8 @@ import Search from '@/components/HeaderSearch'
 import RuoYiGit from '@/components/RuoYi/Git'
 import RuoYiDoc from '@/components/RuoYi/Doc'
 import NotifyMessage from '@/layout/components/Message'
-import {getPath} from "@/utils/ruoyi";
+import TenantVisit from '@/components/TenantVisit'
+import {getPath, getTenantEnable} from "@/utils/ruoyi";
 
 export default {
   components: {
@@ -73,7 +78,8 @@ export default {
     Search,
     RuoYiGit,
     RuoYiDoc,
-    NotifyMessage
+    NotifyMessage,
+    TenantVisit
   },
   computed: {
     ...mapGetters([
@@ -97,6 +103,9 @@ export default {
       get() {
         return this.$store.state.settings.topNav
       }
+    },
+    tenantEnable() {
+      return getTenantEnable()
     }
   },
   methods: {
@@ -109,6 +118,10 @@ export default {
           location.href = getPath('/index');
         })
       }).catch(() => {});
+    },
+    checkPermi(permissions) {
+      return this.$auth.hasPermi(permissions)
+      return true;
     }
   }
 }

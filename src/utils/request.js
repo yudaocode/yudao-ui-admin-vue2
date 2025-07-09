@@ -1,7 +1,7 @@
 import axios from 'axios'
 import {Message, MessageBox, Notification} from 'element-ui'
 import store from '@/store'
-import {getAccessToken, getRefreshToken, getTenantId, setToken} from '@/utils/auth'
+import {getAccessToken, getRefreshToken, getTenantId, setToken, getVisitTenantId} from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
 import {getPath, getTenantEnable} from "@/utils/ruoyi";
 import {refreshToken} from "@/api/login";
@@ -42,6 +42,11 @@ service.interceptors.request.use(config => {
     const tenantId = getTenantId();
     if (tenantId) {
       config.headers['tenant-id'] = tenantId;
+    }
+    // 只有登录时，才设置 visit-tenant-id 访问租户
+    const visitTenantId = getVisitTenantId()
+    if (config.headers.Authorization && visitTenantId) {
+      config.headers['visit-tenant-id'] = visitTenantId
     }
   }
   // get请求映射params参数
@@ -183,10 +188,17 @@ service.interceptors.response.use(async res => {
 )
 
 export function getBaseHeader() {
-  return {
+  const headers = {
     'Authorization': "Bearer " + getAccessToken(),
     'tenant-id': getTenantId(),
   }
+  // 如果已登录且存在访问租户ID，添加 visit-tenant-id 请求头
+  const visitTenantId = getVisitTenantId()
+  if (getAccessToken() && visitTenantId) {
+    headers['visit-tenant-id'] = visitTenantId
+  }
+  
+  return headers
 }
 
 function handleAuthorized() {
