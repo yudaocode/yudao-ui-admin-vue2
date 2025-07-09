@@ -55,7 +55,8 @@
 <script>
 import store from "@/store";
 import { VueCropper } from "vue-cropper";
-import { uploadAvatar } from "@/api/system/user";
+import { updateUserProfile } from "@/api/system/user";
+import { uploadFile } from "@/api/infra/file";
 
 export default {
   components: { VueCropper },
@@ -120,18 +121,25 @@ export default {
       }
     },
     // 上传图片
-    uploadImg() {
-      this.$refs.cropper.getCropBlob(data => {
-        let formData = new FormData();
-        formData.append("avatarFile", data);
-        uploadAvatar(formData).then(resp => {
+    async uploadImg() {
+      try {
+        this.$refs.cropper.getCropBlob(async (data) => {
+          // 先上传文件
+          const response = await uploadFile(data, 'user/avatar');
+          const avatar = response.data;
+          
+          // 然后更新用户信息
+          await updateUserProfile({ avatar });
+          
           this.open = false;
-          // this.options.img = process.env.VUE_APP_BASE_API + response.imgUrl;
-          store.commit('SET_AVATAR', resp.data);
+          store.commit('SET_AVATAR', avatar);
           this.$modal.msgSuccess("修改成功");
           this.visible = false;
         });
-      });
+      } catch (error) {
+        console.error('头像上传失败:', error);
+        this.$modal.msgError("头像上传失败，请重试");
+      }
     },
     // 实时预览
     realTime(data) {
