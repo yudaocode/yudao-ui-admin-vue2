@@ -53,11 +53,36 @@
           <span>{{ parseTime(scope.row.sendTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="接收邮箱" align="center" prop="toMail" width="200">
+      <el-table-column label="接收用户" align="center" width="150">
         <template v-slot="scope">
-          <div>{{ scope.row.toMail }}</div>
           <div v-if="scope.row.userType && scope.row.userId">
-            <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType"/>{{ '(' + scope.row.userId + ')' }}
+            <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType" />
+            <div>{{ '(' + scope.row.userId + ')' }}</div>
+          </div>
+          <div v-else>-</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="接收信息" align="center" width="300">
+        <template v-slot="scope">
+          <div class="text-left">
+            <div v-if="scope.row.toMails && scope.row.toMails.length > 0">
+              收件：
+              <span v-for="(mail, index) in scope.row.toMails" :key="mail">
+                {{ mail }}<span v-if="index < scope.row.toMails.length - 1">、</span>
+              </span>
+            </div>
+            <div v-if="scope.row.ccMails && scope.row.ccMails.length > 0">
+              抄送：
+              <span v-for="(mail, index) in scope.row.ccMails" :key="mail">
+                {{ mail }}<span v-if="index < scope.row.ccMails.length - 1">、</span>
+              </span>
+            </div>
+            <div v-if="scope.row.bccMails && scope.row.bccMails.length > 0">
+              密送：
+              <span v-for="(mail, index) in scope.row.bccMails" :key="mail">
+                {{ mail }}<span v-if="index < scope.row.bccMails.length - 1">、</span>
+              </span>
+            </div>
           </div>
         </template>
       </el-table-column>
@@ -81,35 +106,78 @@
                 @pagination="getList"/>
 
     <!-- 邮件日志详细-->
-    <el-dialog :title="title" :visible.sync="open" width="700px" v-dialogDrag append-to-body>
-      <el-form ref="form" :model="form" label-width="160px">
-        <el-row>
-          <el-col :span="24">
-            <el-form-item label="日志主键：">{{ form.id }}</el-form-item>
-            <el-form-item label="用户编号：">{{ form.userId }}</el-form-item>
-            <el-form-item label="用户类型：">
-              <dict-tag :type="DICT_TYPE.USER_TYPE" :value="form.userType"/>
-            </el-form-item>
-            <el-form-item label="接收邮箱地址：">{{ form.toMail }}</el-form-item>
-            <el-form-item label="邮箱账号编号：">{{ form.accountId }}</el-form-item>
-            <el-form-item label="发送邮箱地址：">{{ form.fromMail }}</el-form-item>
-            <el-form-item label="模板编号：">{{ form.templateId }}</el-form-item>
-            <el-form-item label="模板编码：">{{ form.templateCode }}</el-form-item>
-            <el-form-item label="模版发送人名称：">{{ form.templateNickname }}</el-form-item>
-            <el-form-item label="邮件标题：">{{ form.templateTitle }}</el-form-item>
-            <el-form-item label="邮件内容：">
-              <editor v-model="form.templateContent" :min-height="192" read-only />
-            </el-form-item>
-            <el-form-item label="邮件参数：">{{ form.templateParams }}</el-form-item>
-            <el-form-item label="发送状态：">
-              <dict-tag :type="DICT_TYPE.SYSTEM_MAIL_SEND_STATUS" :value="form.sendStatus" />
-            </el-form-item>
-            <el-form-item label="发送时间：">{{ parseTime(form.sendTime) }}</el-form-item>
-            <el-form-item label="发送返回的消息编号：">{{ form.sendMessageId }}</el-form-item>
-            <el-form-item label="发送异常：">{{ form.sendException }}</el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+    <el-dialog :title="title" :visible.sync="open" width="800px" v-dialogDrag append-to-body>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="日志主键">
+          {{ form.id }}
+        </el-descriptions-item>
+        <el-descriptions-item label="邮箱账号编号">
+          {{ form.accountId }}
+        </el-descriptions-item>
+        <el-descriptions-item label="发送邮箱地址">
+          {{ form.fromMail }}
+        </el-descriptions-item>
+        <el-descriptions-item label="模板编号">
+          {{ form.templateId }}
+        </el-descriptions-item>
+        <el-descriptions-item label="模板编码">
+          {{ form.templateCode }}
+        </el-descriptions-item>
+        <el-descriptions-item label="模版发送人名称">
+          {{ form.templateNickname }}
+        </el-descriptions-item>
+        <el-descriptions-item label="接收用户">
+          <span v-if="form.userType && form.userId">
+            <dict-tag :type="DICT_TYPE.USER_TYPE" :value="form.userType" />
+            ({{ form.userId }})
+          </span>
+          <span v-else>无</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="接收信息">
+          <div>
+            <div v-if="form.toMails && form.toMails.length > 0">
+              收件：
+              <span v-for="(mail, index) in form.toMails" :key="mail">
+                {{ mail }}<span v-if="index < form.toMails.length - 1">、</span>
+              </span>
+            </div>
+            <div v-if="form.ccMails && form.ccMails.length > 0">
+              抄送：
+              <span v-for="(mail, index) in form.ccMails" :key="mail">
+                {{ mail }}<span v-if="index < form.ccMails.length - 1">、</span>
+              </span>
+            </div>
+            <div v-if="form.bccMails && form.bccMails.length > 0">
+              密送：
+              <span v-for="(mail, index) in form.bccMails" :key="mail">
+                {{ mail }}<span v-if="index < form.bccMails.length - 1">、</span>
+              </span>
+            </div>
+          </div>
+        </el-descriptions-item>
+        <el-descriptions-item label="邮件标题">
+          {{ form.templateTitle }}
+        </el-descriptions-item>
+        <el-descriptions-item label="邮件内容" :span="2">
+          <editor v-model="form.templateContent" :min-height="192" readonly />
+        </el-descriptions-item>
+        <el-descriptions-item label="邮件参数">
+          {{ form.templateParams }}
+        </el-descriptions-item>
+        <el-descriptions-item label="发送状态">
+          <dict-tag :type="DICT_TYPE.SYSTEM_MAIL_SEND_STATUS" :value="form.sendStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="发送时间">
+          {{ parseTime(form.sendTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="发送返回的消息编号">
+          {{ form.sendMessageId }}
+        </el-descriptions-item>
+        <el-descriptions-item label="发送异常" :span="2">
+          <span style="color: red;" v-if="form.sendException">{{ form.sendException }}</span>
+          <span v-else>无</span>
+        </el-descriptions-item>
+      </el-descriptions>
       <div slot="footer" class="dialog-footer">
         <el-button @click="open = false">关 闭</el-button>
       </div>
@@ -118,9 +186,9 @@
 </template>
 
 <script>
-import { getMailLog, getMailLogPage } from "@/api/system/mail/log";
-import Editor from '@/components/Editor';
+import { getMailLogPage } from "@/api/system/mail/log";
 import { getSimpleMailAccountList } from "@/api/system/mail/account";
+import Editor from '@/components/Editor';
 
 export default {
   name: "SystemMailLog",
@@ -147,13 +215,13 @@ export default {
       queryParams: {
         pageNo: 1,
         pageSize: 10,
-        userId: null,
-        userType: null,
-        toMail: null,
-        accountId: null,
-        templateId: null,
-        sendStatus: null,
-        sendTime: [],
+        toMail: '',
+        accountId: undefined,
+        templateId: undefined,
+        sendStatus: undefined,
+        userId: undefined,
+        userType: undefined,
+        sendTime: []
       },
       // 表单参数
       form: {},
@@ -190,7 +258,9 @@ export default {
         id: undefined,
         userId: undefined,
         userType: undefined,
-        toMail: undefined,
+        toMails: undefined,
+        ccMails: undefined,
+        bccMails: undefined,
         accountId: undefined,
         fromMail: undefined,
         templateId: undefined,
@@ -220,7 +290,7 @@ export default {
     handleView(row) {
       this.open = true;
       this.form = row;
-    }
+    },
   }
 };
 </script>

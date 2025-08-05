@@ -122,8 +122,14 @@
         <el-form-item label="模板内容" prop="content">
           <editor v-model="sendForm.content" :min-height="192" readonly />
         </el-form-item>
-        <el-form-item label="收件邮箱" prop="mail">
-          <el-input v-model="sendForm.mail" placeholder="请输入收件邮箱" />
+        <el-form-item label="收件邮箱" prop="toMails">
+          <el-input v-model="sendForm.toMails" type="textarea" rows="2" placeholder="请输入收件邮箱，多个邮箱请换行分隔" />
+        </el-form-item>
+        <el-form-item label="抄送邮箱" prop="ccMails">
+          <el-input v-model="sendForm.ccMails" type="textarea" rows="2" placeholder="请输入抄送邮箱，多个邮箱请换行分隔" />
+        </el-form-item>
+        <el-form-item label="密送邮箱" prop="bccMails">
+          <el-input v-model="sendForm.bccMails" type="textarea" rows="2" placeholder="请输入密送邮箱，多个邮箱请换行分隔" />
         </el-form-item>
         <el-form-item v-for="param in sendForm.params" :key="param" :label="'参数 {' + param + '}'" :prop="'templateParams.' + param">
           <el-input v-model="sendForm.templateParams[param]" :placeholder="'请输入 ' + param + ' 参数'" />
@@ -192,7 +198,6 @@ export default {
         params: [], // 模板的参数列表
       },
       sendRules: {
-        mail: [{ required: true, message: "收件邮箱不能为空", trigger: "blur" }],
         templateCode: [{ required: true, message: "模版编码不能为空", trigger: "blur" }],
         templateParams: { }
       }
@@ -320,7 +325,9 @@ export default {
       this.sendForm = {
         content: undefined,
         params: undefined,
-        mail: undefined,
+        toMails: undefined,
+        ccMails: undefined,
+        bccMails: undefined,
         templateCode: undefined,
         templateParams: {}
       };
@@ -337,8 +344,19 @@ export default {
         if (!valid) {
           return;
         }
+        // 处理邮箱字段，将换行分隔的字符串转换为数组
+        const submitData = { ...this.sendForm };
+        if (submitData.toMails) {
+          submitData.toMails = submitData.toMails.split('\n').filter(email => email.trim() !== '').map(email => email.trim());
+        }
+        if (submitData.ccMails) {
+          submitData.ccMails = submitData.ccMails.split('\n').filter(email => email.trim() !== '').map(email => email.trim());
+        }
+        if (submitData.bccMails) {
+          submitData.bccMails = submitData.bccMails.split('\n').filter(email => email.trim() !== '').map(email => email.trim());
+        }
         // 添加的提交
-        sendMail(this.sendForm).then(response => {
+        sendMail(submitData).then(response => {
           this.$modal.msgSuccess("提交发送成功！发送结果，见发送日志编号：" + response.data);
           this.sendOpen = false;
         });
