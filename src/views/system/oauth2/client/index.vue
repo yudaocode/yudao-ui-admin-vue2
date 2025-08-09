@@ -318,6 +318,7 @@ export default {
       await this.$modal.confirm('是否确认批量删除选中的 OAuth2 客户端数据?')
       try {
         await deleteOAuth2ClientList(this.checkedIds);
+        this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("批量删除成功");
       } catch {}

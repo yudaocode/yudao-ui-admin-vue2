@@ -284,6 +284,7 @@ export default {
       await this.$modal.confirm('是否确认批量删除选中的租户套餐数据?')
       try {
         await deleteTenantPackageList(this.checkedIds);
+        this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("删除成功");
       } catch {}

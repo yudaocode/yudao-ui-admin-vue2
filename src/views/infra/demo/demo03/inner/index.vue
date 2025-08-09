@@ -198,6 +198,7 @@ export default {
       await this.$modal.confirm('是否确认删除?')
       try {
         await Demo03StudentApi.deleteDemo03StudentList(this.checkedIds);
+        this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("删除成功");
       } catch {

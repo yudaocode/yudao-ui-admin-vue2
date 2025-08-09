@@ -335,6 +335,7 @@ export default {
       this.$modal.confirm('是否确认删除选中的' + this.checkedIds.length + '项数据?').then(function() {
         return deleteFileConfigList(this.checkedIds);
       }).then(() => {
+        this.checkedIds = [];
         this.getList();
         this.$modal.msgSuccess("删除成功");
       }).catch(() => {});

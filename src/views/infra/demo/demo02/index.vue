@@ -181,6 +181,7 @@ export default {
       this.$modal.confirm('是否确认删除选中的示例分类数据项?').then(async () => {
         try {
           await Demo02CategoryApi.deleteDemo02CategoryList(this.checkedIds);
+          this.checkedIds = [];
           await this.getList();
           this.$modal.msgSuccess("删除成功");
         } catch {}

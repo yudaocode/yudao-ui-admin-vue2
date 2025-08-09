@@ -258,6 +258,7 @@ export default {
       await this.$modal.confirm('是否确认批量删除选中的短信渠道数据?')
       try {
         await deleteSmsChannelList(this.checkedIds);
+        this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("批量删除成功");
       } catch {}

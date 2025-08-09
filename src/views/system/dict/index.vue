@@ -252,6 +252,7 @@ export default {
       await this.$modal.confirm('是否确认批量删除选中的字典类型数据?')
       try {
         await delTypeList(this.checkedIds);
+        this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("删除成功");
       } catch {}
