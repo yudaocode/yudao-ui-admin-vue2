@@ -337,6 +337,7 @@ export default {
       this.$modal.confirm('是否确认删除选中的数据项?').then(function() {
           return deleteCodegenList(this.checkedIds);
       }).then(() => {
+          this.checkedIds = [];
           this.getList();
           this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
