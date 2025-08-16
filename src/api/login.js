@@ -16,7 +16,10 @@ export function login(username, password, captchaVerification, socialType, socia
   return request({
     url: '/system/auth/login',
     method: 'post',
-    data: data
+    data: data,
+    headers: {
+      isEncrypt: true
+    }
   })
 }
 

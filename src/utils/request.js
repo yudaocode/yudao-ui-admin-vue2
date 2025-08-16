@@ -5,6 +5,7 @@ import {getAccessToken, getRefreshToken, getTenantId, setToken, getVisitTenantId
 import errorCode from '@/utils/errorCode'
 import {getPath, getTenantEnable} from "@/utils/ruoyi";
 import {refreshToken} from "@/api/login";
+import { ApiEncrypt } from '@/utils/encrypt'
 
 // 需要忽略的提示。忽略后，自动 Promise.reject('error')
 const ignoreMsgs = [
@@ -71,6 +72,20 @@ service.interceptors.request.use(config => {
     config.params = {};
     config.url = url;
   }
+  // 是否 API 加密
+  if ((config.headers || {}).isEncrypt) {
+    try {
+      // 加密请求数据
+      if (config.data) {
+        config.data = ApiEncrypt.encryptRequest(config.data)
+        // 设置加密标识头
+        config.headers[ApiEncrypt.getEncryptHeader()] = 'true'
+      }
+    } catch (error) {
+      console.error('请求数据加密失败:', error)
+      throw error
+    }
+  }
   return config
 }, error => {
     console.log(error)
@@ -92,6 +107,23 @@ service.interceptors.response.use(async res => {
     }
     data = await new Response(res.data).json()
   }
+
+  // 检查是否需要解密响应数据
+  const encryptHeader = ApiEncrypt.getEncryptHeader()
+  const isEncryptResponse =
+    res.headers[encryptHeader] === 'true' ||
+    res.headers[encryptHeader.toLowerCase()] === 'true'
+  if (isEncryptResponse && typeof data === 'string') {
+    try {
+      // 解密响应数据
+      data = ApiEncrypt.decryptResponse(data)
+      res.data = data;
+    } catch (error) {
+      console.error('响应数据解密失败:', error)
+      throw new Error('响应数据解密失败: ' + error.message)
+    }
+  }
+
   const code = data.code || 200;
   // 获取错误信息
   const msg = data.msg || errorCode[code] || errorCode['default']
@@ -197,7 +229,7 @@ export function getBaseHeader() {
   if (getAccessToken() && visitTenantId) {
     headers['visit-tenant-id'] = visitTenantId
   }
-  
+
   return headers
 }
 
