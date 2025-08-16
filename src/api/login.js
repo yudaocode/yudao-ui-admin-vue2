@@ -18,7 +18,7 @@ export function login(username, password, captchaVerification, socialType, socia
     method: 'post',
     data: data,
     headers: {
-      isEncrypt: true
+      isEncrypt: false
     }
   })
 }
