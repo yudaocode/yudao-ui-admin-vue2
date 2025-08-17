@@ -138,6 +138,16 @@
             <el-radio key="false" :label="false">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item
+          v-if="form.storage === 20"
+          label="公开访问"
+          prop="config.enablePublicAccess"
+        >
+          <el-radio-group v-model="form.config.enablePublicAccess">
+            <el-radio key="true" :label="true">公开</el-radio>
+            <el-radio key="false" :label="false">私有</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <!-- 通用 -->
         <el-form-item v-if="form.storage === 20" label="自定义域名"> <!-- 无需参数校验，所以去掉 prop -->
           <el-input v-model="form.config.domain" placeholder="请输入自定义域名" />
@@ -213,6 +223,7 @@ export default {
           accessKey: [{ required: true, message: "accessKey 不能为空", trigger: "blur" }],
           accessSecret: [{ required: true, message: "accessSecret 不能为空", trigger: "blur" }],
           enablePathStyleAccess: [{ required: true, message: "是否 Path Style 不能为空", trigger: "change" }],
+          enablePublicAccess: [{ required: true, message: "公开访问设置不能为空", trigger: "change" }],
           domain: [{ required: true, message: "自定义域名不能为空", trigger: "blur" }],
         },
       },
