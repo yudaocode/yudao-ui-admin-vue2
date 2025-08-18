@@ -77,7 +77,14 @@
           <span>{{ parseTime(scope.row.expireTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="绑定域名" align="center" prop="domain" width="180" />
+      <el-table-column label="绑定域名" align="center" prop="websites" width="180">
+        <template v-slot="scope">
+          <el-tag v-for="website in scope.row.websites || []" :key="website" style="margin-right: 2px; margin-bottom: 2px;">
+            {{ website }}
+          </el-tag>
+          <span v-if="!scope.row.websites || scope.row.websites.length === 0">-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="租户状态" align="center" prop="status">
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status"/>
@@ -131,8 +138,8 @@
           <el-date-picker clearable size="small" v-model="form.expireTime" type="date"
                           value-format="timestamp" placeholder="请选择过期时间" />
         </el-form-item>
-        <el-form-item label="绑定域名" prop="domain">
-          <el-input v-model="form.domain" placeholder="请输入绑定域名" />
+        <el-form-item label="绑定域名" prop="websites">
+          <el-input v-model="form.websites" type="textarea" rows="2" placeholder="请输入网站，多个网站请换行分隔" />
         </el-form-item>
         <el-form-item label="租户状态" prop="status">
           <el-radio-group v-model="form.status">
@@ -198,7 +205,6 @@ export default {
         status: [{ required: true, message: "租户状态不能为空", trigger: "blur" }],
         accountCount: [{ required: true, message: "账号额度不能为空", trigger: "blur" }],
         expireTime: [{ required: true, message: "过期时间不能为空", trigger: "blur" }],
-        domain: [{ required: true, message: "绑定域名不能为空", trigger: "blur" }],
         username: [{ required: true, message: "用户名称不能为空", trigger: "blur" }],
         password: [{ required: true, message: "用户密码不能为空", trigger: "blur" }],
       }
@@ -237,7 +243,7 @@ export default {
         contactMobile: undefined,
         accountCount: undefined,
         expireTime: undefined,
-        domain: undefined,
+        websites: undefined,
         status: CommonStatusEnum.ENABLE,
       };
       this.resetForm("form");
@@ -264,6 +270,10 @@ export default {
       const id = row.id;
       getTenant(id).then(response => {
         this.form = response.data;
+        // websites 数组转为换行分隔字符串，便于文本域展示
+        if (Array.isArray(this.form.websites)) {
+          this.form.websites = this.form.websites.join('\n');
+        }
         this.open = true;
         this.title = "修改租户";
       });
@@ -274,9 +284,17 @@ export default {
         if (!valid) {
           return;
         }
+        // 处理 websites，将换行分隔的字符串转换为数组
+        const submitData = { ...this.form };
+        if (submitData.websites) {
+          submitData.websites = submitData.websites
+            .split('\n')
+            .filter(item => item.trim() !== '')
+            .map(item => item.trim());
+        }
         // 修改的提交
         if (this.form.id != null) {
-          updateTenant(this.form).then(response => {
+          updateTenant(submitData).then(response => {
             this.$modal.msgSuccess("修改成功");
             this.open = false;
             this.getList();
@@ -284,7 +302,7 @@ export default {
           return;
         }
         // 添加的提交
-        createTenant(this.form).then(response => {
+        createTenant(submitData).then(response => {
           this.$modal.msgSuccess("新增成功");
           this.open = false;
           this.getList();
