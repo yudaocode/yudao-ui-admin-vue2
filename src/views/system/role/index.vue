@@ -322,6 +322,7 @@ export default {
         name: undefined,
         code: undefined,
         sort: 0,
+        status: CommonStatusEnum.ENABLE,
         deptIds: [],
         menuIds: [],
         dataScope: undefined,
