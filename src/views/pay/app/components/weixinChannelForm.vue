@@ -72,6 +72,26 @@
             <el-input v-model="formData.config.certSerialNo"
                       placeholder="请输入证书序列号" :style="{width: '100%'}"></el-input>
           </el-form-item>
+          <el-form-item label-width="180px" label="public_key.pem 证书" prop="config.publicKeyContent">
+            <el-input v-model="formData.config.publicKeyContent" type="textarea"
+                      placeholder="请上传 public_key.pem 证书"
+                      readonly :autosize="{minRows: 8, maxRows: 8}" :style="{width: '100%'}"></el-input>
+          </el-form-item>
+          <el-form-item label-width="180px" label="" prop="publicKeyContentFile">
+            <el-upload ref="publicKeyContentFile"
+                       :limit="1"
+                       accept=".pem"
+                       action=""
+                       :before-upload="pemFileBeforeUpload"
+                       :http-request="publicKeyContentUpload"
+            >
+              <el-button size="small" type="primary" icon="el-icon-upload">点击上传</el-button>
+            </el-upload>
+          </el-form-item>
+          <el-form-item label-width="180px" label="公钥 ID" prop="config.publicKeyId">
+            <el-input v-model="formData.config.publicKeyId"
+                      placeholder="请输入公钥 ID" :style="{width: '100%'}"></el-input>
+          </el-form-item>
         </div>
         <el-form-item label-width="180px" label="备注" prop="remark">
           <el-input v-model="formData.remark" :style="{width: '100%'}" />
@@ -110,6 +130,8 @@ export default {
           privateKeyContent: '',
           certSerialNo: '',
           apiV3Key:'',
+          publicKeyContent: '',
+          publicKeyId: ''
         }
       },
       rules: {
@@ -123,6 +145,7 @@ export default {
         'config.privateKeyContent': [{ required: true, message: '请上传 apiclient_key.pem 证书', trigger: 'blur' }],
         'config.certSerialNo': [{ required: true, message: '证书序列号不能为空', trigger: 'blur' }],
         'config.apiV3Key': [{ required: true, message: '请上传 api V3 密钥值', trigger: 'blur' }],
+        'config.publicKeyId': [{ required: true, message: '请输入公钥 ID', trigger: 'blur' }],
       },
     }
   },
@@ -184,6 +207,8 @@ export default {
           privateKeyContent: '',
           certSerialNo: '',
           apiV3Key:'',
+          publicKeyContent: '',
+          publicKeyId: ''
         }
       }
       this.resetForm('form')
@@ -229,6 +254,16 @@ export default {
         this.formData.config.keyContent = e.target.result.split(',')[1]
       }
       readFile.readAsDataURL(event.file); // 读成 base64
+    },
+    /**
+     * 读取 public_key.pem 到 publicKeyContent 字段
+     */
+    publicKeyContentUpload(event) {
+      const readFile = new FileReader()
+      readFile.onload = (e) => {
+        this.formData.config.publicKeyContent = e.target.result
+      }
+      readFile.readAsText(event.file);
     }
   }
 }
