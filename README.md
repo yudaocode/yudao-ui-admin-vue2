@@ -203,9 +203,9 @@
 
 演示地址：<https://doc.iocoder.cn/mes-preview/>
 
-![功能图](/.gitee/common/mes-feature.png)
+![功能图](/.image/common/mes-feature.png)
 
-![功能图](/.gitee/common/mes-preview.png)
+![功能图](/.image/common/mes-preview.png)
 
 ### AI 大模型
 
