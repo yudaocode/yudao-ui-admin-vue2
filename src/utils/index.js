@@ -234,8 +234,11 @@ export function debounce(func, wait, immediate) {
     }
   }
 
-  return function (...args) {
+  return function (...innerArgs) {
     context = this
+    // 把当前调用参数存到外层 args，later 触发时才能拿到正确入参；不能用 ...args 形参，会遮蔽外层闭包变量
+    // 对应 https://gitee.com/yudaocode/yudao-ui-admin-vue2/issues/IDKUIB 反馈
+    args = innerArgs
     timestamp = +new Date()
     const callNow = immediate && !timeout
     // 如果延时不存在，重新设定延时
