@@ -57,7 +57,10 @@ module.exports = {
     name: name,
     resolve: {
       alias: {
-        '@': resolve('src')
+        '@': resolve('src'),
+        // 强制所有依赖使用同一份 vue，避免 @form-create/designer 自带的 vue 2.7.16
+        // 与项目的 vue 2.7.14 产生两份实例，导致 Composition API（getCurrentInstance）失效
+        'vue$': resolve('node_modules/vue/dist/vue.runtime.esm.js')
       }
     },
     plugins: [

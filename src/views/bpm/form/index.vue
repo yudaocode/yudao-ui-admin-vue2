@@ -53,24 +53,18 @@
                 @pagination="getList"/>
 
     <!--表单配置详情-->
-    <el-dialog title="表单详情" :visible.sync="detailOpen" width="50%" append-to-body>
-      <div class="test-form">
-        <parser :key="new Date().getTime()" :form-conf="detailForm" />
-      </div>
+    <el-dialog title="表单详情" :visible.sync="detailOpen" width="800px" append-to-body>
+      <form-create v-if="detailOpen" :rule="detailData.rule" :option="detailData.option" />
     </el-dialog>
   </div>
 </template>
 
 <script>
 import {deleteForm, getForm, getFormPage} from "@/api/bpm/form";
-import Parser from '@/components/parser/Parser'
-import {decodeFields} from "@/utils/formGenerator";
+import {setConfAndFields2} from "@/utils/formCreate";
 
 export default {
   name: "BpmForm",
-  components: {
-    Parser
-  },
   data() {
     return {
       // 遮罩层
@@ -89,8 +83,9 @@ export default {
       },
       // 表单详情
       detailOpen: false,
-      detailForm: {
-        fields: []
+      detailData: {
+        rule: [],
+        option: {}
       }
     };
   },
@@ -121,12 +116,9 @@ export default {
     /** 详情按钮操作 */
     handleDetail(row) {
       getForm(row.id).then(response => {
-        // 设置值
         const data = response.data
-        this.detailForm = {
-          ...JSON.parse(data.conf),
-          fields: decodeFields(data.fields)
-        }
+        // 使用 form-create 渲染表单详情
+        setConfAndFields2(this.detailData, data.conf, data.fields)
         // 弹窗打开
         this.detailOpen = true
       })

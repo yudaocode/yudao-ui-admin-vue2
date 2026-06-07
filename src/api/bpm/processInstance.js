@@ -103,3 +103,26 @@ export function getProcessInstancePrintData(id) {
     method: 'get'
   })
 }
+
+// ========== 兼容旧版页面的别名（迁移完成后可移除）==========
+
+// 旧版 processInstance/index.vue 使用
+export function getMyProcessInstancePage(query) {
+  return request({
+    url: '/bpm/process-instance/my-page',
+    method: 'get',
+    params: query
+  })
+}
+
+// 旧版 processInstance/index.vue 使用（取消流程，旧接口）
+export function cancelProcessInstance(id, reason) {
+  return request({
+    url: '/bpm/process-instance/cancel',
+    method: 'delete',
+    data: {
+      id,
+      reason
+    }
+  })
+}

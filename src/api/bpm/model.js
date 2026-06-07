@@ -85,3 +85,14 @@ export function cleanModel(id) {
     method: 'delete'
   })
 }
+
+// ========== 兼容旧版页面的别名（迁移完成后可移除）==========
+
+// 旧版 model/index.vue 使用，等价于新版 getModelList（旧接口为分页）
+export function getModelPage(query) {
+  return request({
+    url: '/bpm/model/page',
+    method: 'get',
+    params: query
+  })
+}

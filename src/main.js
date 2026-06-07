@@ -66,6 +66,8 @@ import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
 
+// TODO【BPM 迁移清理】Form Generator 组件需要使用到 tinymce；待 bpm/model、processInstance 等页面
+//   全部迁移到 form-create 后，可连同 components/tinymce 一起删除（详见 BPM_MIGRATION_PLAN.md 阶段3备注）
 // Form Generator 组件需要使用到 tinymce
 import Tinymce from '@/components/tinymce/index.vue'
 
@@ -95,6 +97,12 @@ Vue.use(Element, {
 });
 
 Vue.config.productionTip = false
+
+// form-create 表单设计器（Vue2 + Element UI 版本）
+import formCreate from '@form-create/element-ui'
+import FcDesigner from '@form-create/designer'
+Vue.use(formCreate)
+Vue.use(FcDesigner)
 
 new Vue({
   el: '#app',
