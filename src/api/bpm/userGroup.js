@@ -50,3 +50,11 @@ export function listSimpleUserGroups() {
     method: 'get'
   })
 }
+
+// 获取用户组精简信息列表（新版接口，与 vue3 对齐）
+export function getUserGroupSimpleList() {
+  return request({
+    url: '/bpm/user-group/simple-list',
+    method: 'get'
+  })
+}
