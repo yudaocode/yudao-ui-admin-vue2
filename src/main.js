@@ -101,6 +101,45 @@ Vue.config.productionTip = false
 // form-create 表单设计器（Vue2 + Element UI 版本）
 import formCreate from '@form-create/element-ui'
 import FcDesigner from '@form-create/designer'
+import ImageUpload from '@/components/ImageUpload'
+import FileUpload from '@/components/FileUpload'
+import Editor from '@/components/Editor'
+import {
+  registerFormCreateComponent,
+  registerFormCreateCustomComponents
+} from '@/components/FormCreate'
+
+const formCreateComponents = [
+  ['ImageUpload', ImageUpload],
+  ['imageUpload', ImageUpload],
+  ['UploadImg', ImageUpload],
+  ['uploadImg', ImageUpload],
+  ['ImagesUpload', ImageUpload],
+  ['imagesUpload', ImageUpload],
+  ['UploadImgs', ImageUpload],
+  ['uploadImgs', ImageUpload],
+  ['FileUpload', FileUpload],
+  ['fileUpload', FileUpload],
+  ['UploadFile', FileUpload],
+  ['uploadFile', FileUpload],
+  ['Editor', Editor],
+  ['editor', Editor]
+]
+registerFormCreateCustomComponents(Vue)
+formCreateComponents.forEach(([name, component]) => {
+  registerFormCreateComponent(Vue, name, component)
+})
+const formCreateComponentAliases = [
+  ['dictSelect', Vue.options.components.DictSelect],
+  ['userSelect', Vue.options.components.UserSelect],
+  ['deptSelect', Vue.options.components.DeptSelect],
+  ['apiSelect', Vue.options.components.ApiSelect],
+  ['iframeComponent', Vue.options.components.IframeComponent],
+  ['areaSelect', Vue.options.components.AreaSelect]
+]
+formCreateComponentAliases.forEach(([name, component]) => {
+  registerFormCreateComponent(Vue, name, component)
+})
 Vue.use(formCreate)
 Vue.use(FcDesigner)
 

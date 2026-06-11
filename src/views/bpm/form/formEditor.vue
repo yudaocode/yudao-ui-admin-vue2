@@ -39,6 +39,7 @@
 import { createForm, updateForm, getForm } from "@/api/bpm/form";
 import { CommonStatusEnum } from "@/utils/constants";
 import { encodeConf, encodeFields, setConfAndFields } from "@/utils/formCreate";
+import { useFormCreateDesigner } from "@/components/FormCreate/src/useFormCreateDesigner";
 
 export default {
   name: "BpmFormEditor",
@@ -106,6 +107,11 @@ export default {
         });
       });
     }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      useFormCreateDesigner(this.$refs.designer);
+    });
   },
   methods: {
     /** 点击保存，打开弹窗 */
