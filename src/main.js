@@ -66,16 +66,6 @@ import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
 
-// TODO【BPM 迁移清理】Form Generator 组件需要使用到 tinymce；待 bpm/model、processInstance 等页面
-//   全部迁移到 form-create 后，可连同 components/tinymce 一起删除（详见 BPM_MIGRATION_PLAN.md 阶段3备注）
-// Form Generator 组件需要使用到 tinymce
-import Tinymce from '@/components/tinymce/index.vue'
-
-Vue.component('tinymce', Tinymce)
-import '@/assets/icons'
-import request from "@/utils/request" // 实现 form generator 使用自己定义的 axios request 对象
-console.log(request)
-Vue.prototype.$axios = request
 import '@/styles/index.scss'
 
 // 默认点击背景不关闭弹窗

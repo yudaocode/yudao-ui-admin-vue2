@@ -84,6 +84,9 @@ export default {
     },
     /* 创建新的流程图 */
     async createNewDiagram(xml) {
+      if (!this.bpmnModeler) {
+        return;
+      }
       // 将字符串转换成图显示出来
       let newId = `Process_${new Date().getTime()}`;
       let newName = `业务流程_${new Date().getTime()}`;
@@ -96,11 +99,37 @@ export default {
         }
         // 高亮流程图
         await this.highlightDiagram();
-        const canvas = this.bpmnModeler.get('canvas');
-        canvas.zoom("fit-viewport", "auto");
+        await this.fitViewport();
       } catch (e) {
         console.error(e);
         // console.error(`[Process Designer Warn]: ${e?.message || e}`);
+      }
+    },
+    async fitViewport() {
+      await this.$nextTick();
+      const canvasEl = this.$refs["bpmn-canvas"];
+      if (!canvasEl) {
+        return;
+      }
+      const { width, height } = canvasEl.getBoundingClientRect();
+      if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+        setTimeout(() => this.fitViewport(), 100);
+        return;
+      }
+      try {
+        const canvas = this.bpmnModeler.get('canvas');
+        canvas.zoom("fit-viewport", "auto");
+      } catch (e) {
+        // diagram-js can throw while a hidden tab is still measuring. Keep the
+        // viewer usable and retry once after layout settles.
+        setTimeout(() => {
+          try {
+            const canvas = this.bpmnModeler && this.bpmnModeler.get('canvas');
+            if (canvas) {
+              canvas.zoom("fit-viewport", "auto");
+            }
+          } catch (ignore) {}
+        }, 100);
       }
     },
     /* 高亮流程图 */

@@ -1,554 +1,787 @@
 <template>
-  <div class="app-container">
-    <doc-alert title="流程设计器（BPMN）" url="https://doc.iocoder.cn/bpm/model-designer-dingding/" />
-    <doc-alert
-      title="流程设计器（钉钉、飞书）"
-      url="https://doc.iocoder.cn/bpm/model-designer-bpmn/"
-    />
-    <doc-alert title="选择审批人、发起人自选" url="https://doc.iocoder.cn/bpm/assignee/" />
-    <doc-alert title="会签、或签、依次审批" url="https://doc.iocoder.cn/bpm/multi-instance/" />
+  <div class="app-container bpm-model-page">
+    <doc-alert title="流程设计器" url="https://doc.iocoder.cn/bpm/model-designer-dingding/" />
 
-    <!-- 搜索工作栏 -->
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="流程标识" prop="key">
-        <el-input v-model="queryParams.key" placeholder="请输入流程标识" clearable style="width: 240px;"
-                  @keyup.enter.native="handleQuery"/>
-      </el-form-item>
-      <el-form-item label="流程名称" prop="name">
-        <el-input v-model="queryParams.name" placeholder="请输入流程名称" clearable style="width: 240px;"
-                  @keyup.enter.native="handleQuery"/>
-      </el-form-item>
-      <el-form-item label="流程分类" prop="category">
-        <el-select v-model="queryParams.category" placeholder="流程分类" clearable style="width: 240px">
-          <el-option v-for="dict in categoryDictDatas" :key="parseInt(dict.value)" :label="dict.label" :value="parseInt(dict.value)"/>
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
-
-    <!-- 操作工具栏 -->
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
-                   v-hasPermi="['bpm:model:create']">新建流程</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="info" icon="el-icon-upload2" size="mini" @click="handleImport"
-                   v-hasPermi="['bpm:model:import']">导入流程</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
-
-    <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="流程标识" align="center" prop="key" />
-      <el-table-column label="流程名称" align="center" prop="name" width="200">
-        <template v-slot="scope">
-          <el-button type="text" @click="handleBpmnDetail(scope.row)">
-            <span>{{ scope.row.name }}</span>
-          </el-button>
-        </template>
-      </el-table-column>
-      <el-table-column label="流程分类" align="center" prop="category" width="100">
-        <template v-slot="scope">
-          <dict-tag :type="DICT_TYPE.BPM_MODEL_CATEGORY" :value="scope.row.category" />
-        </template>
-      </el-table-column>
-      <el-table-column label="表单信息" align="center" prop="formType" width="200">
-        <template v-slot="scope">
-          <el-button v-if="scope.row.formId" type="text" @click="handleFormDetail(scope.row)">
-            <span>{{ scope.row.formName }}</span>
-          </el-button>
-          <el-button v-else-if="scope.row.formCustomCreatePath" type="text" @click="handleFormDetail(scope.row)">
-            <span>{{ scope.row.formCustomCreatePath }}</span>
-          </el-button>
-          <label v-else>暂无表单</label>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-        <template v-slot="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="最新部署的流程定义" align="center">
-        <el-table-column label="流程版本" align="center" prop="processDefinition.version" width="80">
-          <template v-slot="scope">
-            <el-tag size="medium" v-if="scope.row.processDefinition">v{{ scope.row.processDefinition.version }}</el-tag>
-            <el-tag size="medium" type="warning" v-else>未部署</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="激活状态" align="center" prop="processDefinition.version" width="80">
-          <template v-slot="scope">
-            <el-switch v-if="scope.row.processDefinition" v-model="scope.row.processDefinition.suspensionState"
-                       :active-value="1" :inactive-value="2" @change="handleChangeState(scope.row)" />
-          </template>
-        </el-table-column>
-        <el-table-column label="部署时间" align="center" prop="deploymentTime" width="180">
-          <template v-slot="scope">
-            <span v-if="scope.row.processDefinition">{{ parseTime(scope.row.processDefinition.deploymentTime) }}</span>
-          </template>
-        </el-table-column>
-      </el-table-column>
-      <el-table-column label="操作" align="center" width="450" fixed="right">
-        <template v-slot="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
-                     v-hasPermi="['bpm:model:update']">修改流程</el-button>
-          <el-button size="mini" type="text" icon="el-icon-setting" @click="handleDesign(scope.row)"
-                     v-hasPermi="['bpm:model:update']">设计流程</el-button>
-          <el-button size="mini" type="text" icon="el-icon-s-custom" @click="handleAssignRule(scope.row)"
-                     v-hasPermi="['bpm:task-assign-rule:query']">分配规则</el-button>
-          <el-button size="mini" type="text" icon="el-icon-thumb" @click="handleDeploy(scope.row)"
-                     v-hasPermi="['bpm:model:deploy']">发布流程</el-button>
-          <el-button size="mini" type="text" icon="el-icon-ice-cream-round" @click="handleDefinitionList(scope.row)"
-                     v-hasPermi="['bpm:process-definition:query']">流程定义</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
-                     v-hasPermi="['bpm:model:delete']">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页组件 -->
-    <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
-                @pagination="getList"/>
-
-    <!-- 流程表单配置详情 -->
-    <el-dialog title="表单详情" :visible.sync="detailOpen" width="50%" append-to-body>
-      <parser :key="new Date().getTime()" :form-conf="detailForm" />
-    </el-dialog>
-
-    <!-- 流程模型图的预览 -->
-    <el-dialog title="流程图" :visible.sync="showBpmnOpen" width="80%" append-to-body>
-      <my-process-viewer key="designer" v-model="bpmnXML" v-bind="bpmnControlForm" />
-    </el-dialog>
-
-    <!-- 对话框(添加 / 修改) -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="流程标识" prop="key">
-          <el-input v-model="form.key" placeholder="请输入流标标识" style="width: 330px;" :disabled="!!form.id" />
-          <el-tooltip v-if="!form.id" class="item" effect="light" content="新建后，流程标识不可修改！" placement="top">
-            <i style="padding-left: 5px;" class="el-icon-question" />
-          </el-tooltip>
-          <el-tooltip v-else class="item" effect="light" content="流程标识不可修改！" placement="top">
-            <i style="padding-left: 5px;" class="el-icon-question" />
-          </el-tooltip>
-        </el-form-item>
-        <el-form-item label="流程名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入流程名称" :disabled="!!form.id" clearable />
-        </el-form-item>
-        <el-form-item v-if="form.id" label="流程分类" prop="category">
-          <el-select v-model="form.category" placeholder="请选择流程分类" clearable style="width: 100%">
-            <el-option v-for="dict in categoryDictDatas" :key="dict.value" :label="dict.label" :value="dict.value"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="流程描述" prop="description">
-          <el-input type="textarea" v-model="form.description" clearable />
-        </el-form-item>
-        <div v-if="form.id">
-          <el-form-item label="表单类型" prop="formType">
-            <el-radio-group v-model="form.formType">
-              <el-radio v-for="dict in modelFormTypeDictDatas" :key="parseInt(dict.value)" :label="parseInt(dict.value)">
-                {{dict.label}}
-              </el-radio>
-            </el-radio-group>
+    <div class="model-page-card">
+      <div class="model-page-header">
+        <h3>流程模型</h3>
+        <el-form
+          v-if="!isCategorySorting"
+          ref="queryForm"
+          :model="queryParams"
+          size="small"
+          :inline="true"
+          class="model-search-form"
+          @submit.native.prevent
+        >
+          <el-form-item prop="name">
+            <el-input
+              v-model="queryParams.name"
+              placeholder="搜索流程"
+              clearable
+              class="model-search-input"
+              prefix-icon="el-icon-search"
+              @keyup.enter.native="handleQuery"
+            />
           </el-form-item>
-          <el-form-item v-if="form.formType === 10" label="流程表单" prop="formId">
-            <el-select v-model="form.formId" clearable style="width: 100%">
-              <el-option v-for="form in forms" :key="form.id" :label="form.name" :value="form.id"/>
-            </el-select>
+          <el-form-item>
+            <el-button type="primary" icon="el-icon-plus" @click="openModelForm('create')">
+              新建模型
+            </el-button>
           </el-form-item>
-          <el-form-item v-if="form.formType === 20" label="表单提交路由" prop="formCustomCreatePath" >
-            <el-input v-model="form.formCustomCreatePath" placeholder="请输入表单提交路由" style="width: 330px;" />
-            <el-tooltip class="item" effect="light" content="自定义表单的提交路径，使用 Vue 的路由地址，例如说：bpm/oa/leave/create" placement="top">
-              <i style="padding-left: 5px;" class="el-icon-question" />
-            </el-tooltip>
+          <el-form-item>
+            <el-dropdown trigger="click" placement="bottom-end" @command="handleHeaderCommand">
+              <el-button plain class="model-setting-button" icon="el-icon-setting" />
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="categoryAdd">
+                  <i class="el-icon-circle-plus-outline" /> 新建分类
+                </el-dropdown-item>
+                <el-dropdown-item command="categorySort">
+                  <i class="el-icon-sort" /> 分类排序
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </el-form-item>
-          <el-form-item v-if="form.formType === 20" label="表单查看路由" prop="formCustomViewPath">
-            <el-input v-model="form.formCustomViewPath" placeholder="请输入表单查看路由" style="width: 330px;" />
-            <el-tooltip class="item" effect="light" content="自定义表单的查看路径，使用 Vue 的路由地址，例如说：bpm/oa/leave/view" placement="top">
-              <i style="padding-left: 5px;" class="el-icon-question" />
-            </el-tooltip>
-          </el-form-item>
+        </el-form>
+        <div v-else class="model-sort-actions">
+          <el-button @click="cancelCategorySort">取 消</el-button>
+          <el-button type="primary" @click="saveCategorySort">保存排序</el-button>
         </div>
+      </div>
+
+      <el-divider />
+
+      <div v-loading="loading" class="model-category-list">
+        <el-empty v-if="!loading && categoryGroup.length === 0" description="暂无流程模型" />
+        <draggable
+          v-model="categoryGroup"
+          :disabled="!isCategorySorting"
+          handle=".category-drag-icon"
+          :animation="300"
+        >
+          <div
+            v-for="category in categoryGroup"
+            :key="category.id || category.code"
+            class="model-category-card"
+            :data-category-code="category.code"
+          >
+            <div class="model-category-header">
+              <div class="model-category-title">
+                <el-tooltip v-if="isCategorySorting" content="拖动排序" placement="top">
+                  <i class="el-icon-rank category-drag-icon" />
+                </el-tooltip>
+                <h3>{{ category.name }}</h3>
+                <span>({{ category.modelList.length }})</span>
+                <i
+                  v-if="!isCategorySorting && category.modelList.length > 0"
+                  :class="category.expanded ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"
+                  class="category-expand-icon"
+                  @click="category.expanded = !category.expanded"
+                />
+              </div>
+              <div v-if="!isCategorySorting" class="model-category-actions">
+                <template v-if="!category.isModelSorting">
+                  <el-button
+                    v-if="category.modelList.length > 0"
+                    type="text"
+                    class="model-muted-action"
+                    icon="el-icon-sort"
+                    @click.stop="startModelSort(category)"
+                  >
+                    排序
+                  </el-button>
+                  <el-button
+                    v-else
+                    type="text"
+                    class="model-muted-action"
+                    icon="el-icon-plus"
+                    @click.stop="openModelForm('create')"
+                  >
+                    新建
+                  </el-button>
+                  <el-dropdown trigger="click" @command="(command) => handleCategoryCommand(command, category)">
+                    <el-button type="text" class="model-muted-action" icon="el-icon-setting">
+                      分类
+                    </el-button>
+                    <el-dropdown-menu slot="dropdown">
+                      <el-dropdown-item command="rename">重命名</el-dropdown-item>
+                      <el-dropdown-item command="delete">删除该类</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </el-dropdown>
+                </template>
+                <template v-else>
+                  <el-button @click.stop="cancelModelSort(category)">取 消</el-button>
+                  <el-button type="primary" @click.stop="saveModelSort(category)">保存排序</el-button>
+                </template>
+              </div>
+            </div>
+
+            <el-collapse-transition>
+              <div v-show="category.expanded">
+                <el-table
+                  v-if="category.modelList.length > 0"
+                  :ref="'modelTable-' + category.code"
+                  :data="category.modelList"
+                  row-key="id"
+                  :header-cell-style="tableHeaderStyle()"
+                  :cell-style="tableCellStyle()"
+                  :row-style="{ height: '68px' }"
+                >
+                  <el-table-column label="流程名" prop="name" min-width="150">
+                    <template v-slot="scope">
+                      <div class="model-name-cell">
+                        <el-tooltip v-if="category.isModelSorting" content="拖动排序" placement="top">
+                          <i class="el-icon-rank model-drag-icon" />
+                        </el-tooltip>
+                        <el-image v-if="scope.row.icon" :src="scope.row.icon" class="model-flow-image" />
+                        <div v-else class="flow-icon">
+                          <span>{{ subString(scope.row.name, 0, 2) }}</span>
+                        </div>
+                        <span>{{ scope.row.name }}</span>
+                      </div>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="可见范围" prop="startUserIds" min-width="150">
+                    <template v-slot="scope">
+                      {{ visibleScopeText(scope.row) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="流程类型" prop="type" min-width="120">
+                    <template v-slot="scope">
+                      <dict-tag :value="scope.row.type" :type="DICT_TYPE.BPM_MODEL_TYPE" />
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="表单信息" prop="formType" min-width="150">
+                    <template v-slot="scope">
+                      <el-button
+                        v-if="scope.row.formType === BpmModelFormType.NORMAL"
+                        type="text"
+                        @click="handleFormDetail(scope.row)"
+                      >
+                        {{ scope.row.formName }}
+                      </el-button>
+                      <el-button
+                        v-else-if="scope.row.formType === BpmModelFormType.CUSTOM"
+                        type="text"
+                        @click="handleFormDetail(scope.row)"
+                      >
+                        {{ scope.row.formCustomCreatePath }}
+                      </el-button>
+                      <span v-else>暂无表单</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="最后发布" prop="deploymentTime" min-width="250">
+                    <template v-slot="scope">
+                      <div class="model-deployment-cell">
+                        <span v-if="scope.row.processDefinition" class="model-deployment-time">
+                          {{ formatDate(scope.row.processDefinition.deploymentTime) }}
+                        </span>
+                        <el-tag v-if="scope.row.processDefinition">
+                          v{{ scope.row.processDefinition.version }}
+                        </el-tag>
+                        <el-tag v-else type="warning">未部署</el-tag>
+                        <el-tag
+                          v-if="scope.row.processDefinition && scope.row.processDefinition.suspensionState === 2"
+                          type="warning"
+                        >
+                          已停用
+                        </el-tag>
+                      </div>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="200" fixed="right">
+                    <template v-slot="scope">
+                      <el-button type="text" @click="openModelForm('update', scope.row.id)">修改</el-button>
+                      <el-button type="text" @click="openModelForm('copy', scope.row.id)">复制</el-button>
+                      <el-button type="text" @click="handleDeploy(scope.row)">发布</el-button>
+                      <el-dropdown trigger="click" @command="(command) => handleModelCommand(command, scope.row)">
+                        <el-button type="text">更多</el-button>
+                        <el-dropdown-menu slot="dropdown">
+                          <el-dropdown-item command="definition">历史</el-dropdown-item>
+                          <el-dropdown-item command="report" :disabled="!scope.row.processDefinition">
+                            报表
+                          </el-dropdown-item>
+                          <el-dropdown-item command="state" :disabled="!scope.row.processDefinition">
+                            {{ scope.row.processDefinition && scope.row.processDefinition.suspensionState === 1 ? '停用' : '启用' }}
+                          </el-dropdown-item>
+                          <el-dropdown-item command="clean">清理</el-dropdown-item>
+                          <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </el-dropdown>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-collapse-transition>
+          </div>
+        </draggable>
+      </div>
+    </div>
+
+    <el-dialog :title="categoryDialogTitle" :visible.sync="categoryDialogVisible" width="500px" append-to-body>
+      <el-form ref="categoryForm" :model="categoryForm" :rules="categoryRules" label-width="100px">
+        <el-form-item label="分类名" prop="name">
+          <el-input v-model="categoryForm.name" placeholder="请输入分类名" />
+        </el-form-item>
+        <el-form-item v-if="categoryFormMode === 'create'" label="分类标志" prop="code">
+          <el-input v-model="categoryForm.code" placeholder="请输入分类标志" />
+        </el-form-item>
+        <el-form-item v-if="categoryFormMode === 'create'" label="分类描述" prop="description">
+          <el-input v-model="categoryForm.description" type="textarea" placeholder="请输入分类描述" />
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="categoryDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitCategoryForm">确 定</el-button>
       </div>
     </el-dialog>
 
-    <!-- 用户导入对话框 -->
-    <el-dialog title="导入流程" :visible.sync="upload.open" width="400px" append-to-body>
-      <el-upload ref="upload" :limit="1" accept=".bpmn, .xml" :headers="upload.headers" :action="upload.url"
-        :disabled="upload.isUploading" :on-progress="handleFileUploadProgress" :on-success="handleFileSuccess"
-        :auto-upload="false" name="bpmnFile" :data="upload.form" drag>
-        <i class="el-icon-upload"></i>
-        <div class="el-upload__text">
-          将文件拖到此处，或
-          <em>点击上传</em>
-        </div>
-        <div class="el-upload__tip" style="color:red" slot="tip">提示：仅允许导入“bpm”或“xml”格式文件！</div>
-        <div class="el-upload__tip" slot="tip">
-          <el-form ref="uploadForm" size="mini" label-width="90px" :model="upload.form" :rules="upload.rules" @submit.native.prevent>
-            <el-form-item label="流程标识" prop="key">
-              <el-input v-model="upload.form.key" placeholder="请输入流标标识" style="width: 250px;" />
-              <el-tooltip class="item" effect="light" content="新建后，流程标识不可修改！" placement="top">
-                <i style="padding-left: 5px;" class="el-icon-question" />
-              </el-tooltip>
-            </el-form-item>
-            <el-form-item label="流程名称" prop="name">
-              <el-input v-model="upload.form.name" placeholder="请输入流程名称" clearable />
-            </el-form-item>
-            <el-form-item label="流程描述" prop="description">
-              <el-input type="textarea" v-model="upload.form.description" clearable />
-            </el-form-item>
-          </el-form>
-        </div>
-      </el-upload>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitFileForm">确 定</el-button>
-        <el-button @click="uploadClose">取 消</el-button>
-      </div>
+    <el-dialog title="表单详情" :visible.sync="formDetailVisible" width="800px" append-to-body>
+      <form-create v-if="formDetailVisible" :rule="formDetail.rule" :option="formDetail.option" />
     </el-dialog>
 
-    <!-- ========== 流程任务分配规则 ========== -->
-    <taskAssignRuleDialog ref="taskAssignRuleDialog" />
+    <el-dialog title="流程图" :visible.sync="bpmnVisible" width="80%" append-to-body>
+      <my-process-viewer v-if="bpmnXML" key="viewer" v-model="bpmnXML" :prefix="'flowable'" />
+      <SimpleProcessViewer
+        v-else-if="simpleModel"
+        :flow-node="simpleModel"
+        :tasks="[]"
+      />
+      <el-empty v-else description="暂无流程图" />
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import draggable from 'vuedraggable'
+import Sortable from 'sortablejs'
 import {
+  cleanModel,
   deleteModel,
   deployModel,
-  getModelPage,
-  getModel,
-  updateModelState,
-  createModel,
-  updateModel
-} from "@/api/bpm/model";
-import {DICT_TYPE, getDictDatas} from "@/utils/dict";
-import {getForm, getSimpleForms} from "@/api/bpm/form";
-import {decodeFields} from "@/utils/formGenerator";
-import Parser from '@/components/parser/Parser'
-import {getBaseHeader} from "@/utils/request";
-import taskAssignRuleDialog from "../taskAssignRule/taskAssignRuleDialog";
-
-import Treeselect from "@riophae/vue-treeselect";
-import "@riophae/vue-treeselect/dist/vue-treeselect.css";
+  getModelList,
+  updateModelSortBatch,
+  updateModelState
+} from '@/api/bpm/model'
+import {
+  createCategory,
+  deleteCategory,
+  getCategory,
+  getCategorySimpleList,
+  updateCategory,
+  updateCategorySortBatch
+} from '@/api/bpm/category'
+import { getForm } from '@/api/bpm/form'
+import { getProcessDefinitionBpmnXML } from '@/api/bpm/definition'
+import { setConfAndFields2 } from '@/utils/formCreate'
+import { BpmModelFormType, BpmModelType, CommonStatusEnum } from '@/utils/constants'
+import { deepClone, formatDate } from '@/utils'
+import { SimpleProcessViewer } from '@/components/SimpleProcessDesignerV2/src'
 
 export default {
-  name: "BpmModel",
+  name: 'BpmModel',
   components: {
-    Parser,
-    Treeselect,
-    taskAssignRuleDialog
+    draggable,
+    SimpleProcessViewer
   },
   data() {
     return {
-      // 遮罩层
-      loading: true,
-      // 显示搜索条件
-      showSearch: true,
-      // 总条数
-      total: 0,
-      // 表格数据
-      list: [],
-      // 查询参数
+      BpmModelFormType,
+      BpmModelType,
+      loading: false,
       queryParams: {
-        pageNo: 1,
-        pageSize: 10
+        name: ''
       },
-
-      // BPMN 数据
-      showBpmnOpen: false,
-      bpmnXML: null,
-      bpmnControlForm: {
-        prefix: "flowable"
+      categoryGroup: [],
+      originalCategoryGroup: [],
+      isCategorySorting: false,
+      categoryDialogVisible: false,
+      categoryDialogTitle: '',
+      categoryFormMode: 'create',
+      categoryForm: {},
+      categoryRules: {
+        name: [{ required: true, message: '分类名不能为空', trigger: 'blur' }],
+        code: [{ required: true, message: '分类标志不能为空', trigger: 'blur' }]
       },
-
-      // 流程表单详情
-      detailOpen: false,
-      detailForm: {
-        fields: []
+      formDetailVisible: false,
+      formDetail: {
+        rule: [],
+        option: {}
       },
-
-      // 流程表单
-      title: "",
-      open: false,
-      form: {},
-      // 表单校验
-      rules: {
-        key: [{ required: true, message: "流程标识不能为空", trigger: "blur" }],
-        name: [{ required: true, message: "流程名称不能为空", trigger: "blur" }],
-        formType: [{ required: true, message: "流程名称不能为空", trigger: "blur" }],
-        formId: [{ required: true, message: "业务表单不能为空", trigger: "blur" }],
-        category: [{ required: true, message: "流程分类不能为空", trigger: "blur" }],
-        formCustomCreatePath: [{ required: true, message: "表单提交路由不能为空", trigger: "blur" }],
-        formCustomViewPath: [{ required: true, message: "表单查看路由不能为空", trigger: "blur" }],
-      },
-
-      // 流程导入参数
-      upload: {
-        // 是否显示弹出层（用户导入）
-        open: false,
-        // 是否禁用上传
-        isUploading: false,
-        // 设置上传的请求头部
-        headers: getBaseHeader(),
-        // 上传的地址
-        url: process.env.VUE_APP_BASE_API + '/admin-api' + "/bpm/model/import",
-        // 表单
-        form: {},
-        // 校验规则
-        rules: {
-          key: [{ required: true, message: "流程标识不能为空", trigger: "blur" }],
-          name: [{ required: true, message: "流程名称不能为空", trigger: "blur" }],
-        },
-      },
-      // 流程表单的下拉框的数据
-      forms: [],
-
-      // 数据字典
-      categoryDictDatas: getDictDatas(DICT_TYPE.BPM_MODEL_CATEGORY),
-      modelFormTypeDictDatas: getDictDatas(DICT_TYPE.BPM_MODEL_FORM_TYPE),
-      taskAssignRuleDictDatas: getDictDatas(DICT_TYPE.BPM_TASK_ASSIGN_RULE_TYPE),
-    };
+      bpmnVisible: false,
+      bpmnXML: '',
+      simpleModel: null
+    }
   },
   created() {
-    this.getList();
-    // 获得流程表单的下拉框的数据
-    getSimpleForms().then(response => {
-      this.forms = response.data
-    })
+    this.getList()
   },
   methods: {
-    /** 查询流程模型列表 */
-    getList() {
-      this.loading = true;
-      getModelPage(this.queryParams).then(response => {
-          this.list = response.data.list;
-          this.total = response.data.total;
-          this.loading = false;
-        }
-      );
+    formatDate,
+    subString(str, start, end) {
+      if (!str) {
+        return ''
+      }
+      return str.length > end ? str.slice(start, end) : str
     },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    // 表单重置
-    reset() {
-      this.form = {
-        id: undefined,
-        key: undefined,
-        name: undefined,
-        description: undefined,
-        category: undefined,
-        formType: undefined,
-        formId: undefined,
-        formCustomCreatePath: undefined,
-        formCustomViewPath: undefined
-      };
-      this.resetForm("form");
-    },
-    /** 搜索按钮操作 */
-    handleQuery() {
-      this.queryParams.pageNo = 1;
-      this.getList();
-    },
-    /** 重置按钮操作 */
-    resetQuery() {
-      this.dateRange = [];
-      this.resetForm("queryForm");
-      this.handleQuery();
-    },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset();
-      this.title = "新建模型";
-      this.open = true;
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
-      this.title = "修改模型";
-      this.open = true;
-      // 设置 form
-      this.form = {
-        ...row
-      };
-      // 触发一次校验
-      // this.$refs["form"].validate();
-    },
-    /** 设计按钮操作 */
-    handleDesign(row) {
-      this.$router.push({
-        name: "BpmModelEditor",
-        query:{
-          modelId: row.id
-        }
-      });
-    },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (!valid) {
-          return;
-        }
-        // 更新
-        if (this.form.id) {
-          updateModel({
-            ...this.form,
-            formId: this.form.formType === 10 ? this.form.formId : undefined,
-            formCustomCreatePath: this.form.formType === 20 ? this.form.formCustomCreatePath : undefined,
-            formCustomViewPath: this.form.formType === 20 ? this.form.formCustomViewPath : undefined,
-          }).then(response => {
-            this.$modal.msgSuccess("修改模型成功");
-            this.open = false;
-            this.getList();
-          });
-          return;
-        }
-        // 创建
-        createModel(this.form).then(response => {
-          this.open = false;
-          this.getList();
-          this.$alert('<strong>新建模型成功！</strong>后续需要执行如下 4 个步骤：' +
-            '<div>1. 点击【修改流程】按钮，配置流程的分类、表单信息</div>' +
-            '<div>2. 点击【设计流程】按钮，绘制流程图</div>' +
-            '<div>3. 点击【分配规则】按钮，设置每个用户任务的审批人</div>' +
-            '<div>4. 点击【发布流程】按钮，完成流程的最终发布</div>' +
-            '另外，每次流程修改后，都需要点击【发布流程】按钮，才能正式生效！！！',
-            '重要提示', {
-              dangerouslyUseHTMLString: true,
-              type: 'success'
-            });
-        });
-      });
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      const that = this;
-      this.$modal.confirm('是否删除该流程！！').then(function() {
-        deleteModel(row.id).then(response => {
-          that.getList();
-          that.$modal.msgSuccess("删除成功");
-        })
-      }).catch(() => {});
-    },
-    /** 部署按钮操作 */
-    handleDeploy(row) {
-      const that = this;
-      this.$modal.confirm('是否部署该流程！！').then(function() {
-        deployModel(row.id).then(response => {
-          that.getList();
-          that.$modal.msgSuccess("部署成功");
-        })
-      }).catch(() => {});
-    },
-    /** 流程表单的详情按钮操作 */
-    handleFormDetail(row) {
-      // 流程表单
-      if (row.formId) {
-        getForm(row.formId).then(response => {
-          // 设置值
-          const data = response.data
-          this.detailForm = {
-            ...JSON.parse(data.conf),
-            fields: decodeFields(data.fields)
-          }
-          // 弹窗打开
-          this.detailOpen = true
-        })
-        // 业务表单
-      } else if (row.formCustomCreatePath) {
-        this.$router.push({ path: row.formCustomCreatePath});
+    tableHeaderStyle() {
+      return {
+        backgroundColor: '#edeff0',
+        paddingLeft: '10px'
       }
     },
-    /** 流程图的详情按钮操作 */
-    handleBpmnDetail(row) {
-      getModel(row.id).then(response => {
-        this.bpmnXML = response.data.bpmnXml
-        // 弹窗打开
-        this.showBpmnOpen = true
+    tableCellStyle() {
+      return {
+        paddingLeft: '10px'
+      }
+    },
+    async getList() {
+      this.isCategorySorting = false
+      this.originalCategoryGroup = []
+      this.loading = true
+      try {
+        const [modelResp, categoryResp] = await Promise.all([
+          getModelList(this.queryParams.name || undefined),
+          getCategorySimpleList()
+        ])
+        this.buildCategoryGroup(modelResp.data || [], categoryResp.data || [])
+      } finally {
+        this.loading = false
+      }
+    },
+    buildCategoryGroup(modelList, categoryList) {
+      const previousMap = {}
+      this.categoryGroup.forEach((item) => {
+        previousMap[item.code] = item
+      })
+      const group = categoryList.map((category) => {
+        const prev = previousMap[category.code] || {}
+        return {
+          ...category,
+          expanded: prev.expanded !== undefined ? prev.expanded : true,
+          isModelSorting: false,
+          originalModelList: [],
+          modelList: modelList.filter((model) => model.categoryName === category.name || model.category === category.code)
+        }
+      })
+      const groupedIds = new Set(group.reduce((result, item) => {
+        return result.concat(item.modelList.map((model) => model.id))
+      }, []))
+      const otherModels = modelList.filter((model) => !groupedIds.has(model.id))
+      if (otherModels.length > 0) {
+        group.push({
+          id: '__empty__',
+          code: '__empty__',
+          name: '未分类',
+          expanded: true,
+          isModelSorting: false,
+          originalModelList: [],
+          modelList: otherModels
+        })
+      }
+      this.categoryGroup = group
+    },
+    handleHeaderCommand(command) {
+      if (command === 'categoryAdd') {
+        this.openCategoryForm('create')
+      } else if (command === 'categorySort') {
+        this.startCategorySort()
+      }
+    },
+    startCategorySort() {
+      this.originalCategoryGroup = deepClone(this.categoryGroup)
+      this.categoryGroup.forEach((category) => {
+        category.expanded = false
+      })
+      this.isCategorySorting = true
+    },
+    cancelCategorySort() {
+      this.categoryGroup = deepClone(this.originalCategoryGroup)
+      this.originalCategoryGroup = []
+      this.isCategorySorting = false
+    },
+    async saveCategorySort() {
+      const ids = this.categoryGroup
+        .map((item) => item.id)
+        .filter((id) => id && id !== '__empty__')
+      await updateCategorySortBatch(ids)
+      this.$modal.msgSuccess('排序分类成功')
+      this.isCategorySorting = false
+      this.originalCategoryGroup = []
+      this.getList()
+    },
+    handleQuery() {
+      this.getList()
+    },
+    openModelForm(type, id) {
+      const route = type === 'create'
+        ? { name: 'BpmModelCreate', params: { type: 'create' }}
+        : { name: type === 'copy' ? 'BpmModelCopy' : 'BpmModelUpdate', params: { type, id }}
+      this.$router.push(route)
+    },
+    async startModelSort(category) {
+      category.originalModelList = deepClone(category.modelList)
+      category.isModelSorting = true
+      await this.$nextTick()
+      this.initModelSort(category)
+    },
+    initModelSort(category) {
+      const table = this.$el.querySelector(`[data-category-code="${category.code}"] .el-table__body-wrapper tbody`)
+      if (!table || table._sortable) {
+        return
+      }
+      table._sortable = Sortable.create(table, {
+        animation: 150,
+        draggable: '.el-table__row',
+        handle: '.model-drag-icon',
+        onEnd: ({ newIndex, oldIndex }) => {
+          if (oldIndex === newIndex) {
+            return
+          }
+          category.modelList.splice(newIndex, 0, category.modelList.splice(oldIndex, 1)[0])
+        }
       })
     },
-    /** 跳转流程定义的列表 */
+    cancelModelSort(category) {
+      category.modelList = deepClone(category.originalModelList)
+      category.originalModelList = []
+      category.isModelSorting = false
+    },
+    async saveModelSort(category) {
+      const ids = category.modelList.map((item) => item.id)
+      await updateModelSortBatch(ids)
+      this.$modal.msgSuccess('排序模型成功')
+      category.isModelSorting = false
+      category.originalModelList = []
+      this.getList()
+    },
+    async handleDeploy(row) {
+      await this.$modal.confirm(`确认发布流程模型「${row.name}」？`)
+      await deployModel(row.id)
+      this.$modal.msgSuccess('发布成功')
+      this.getList()
+    },
+    async handleChangeState(row) {
+      const state = row.processDefinition.suspensionState
+      const newState = state === 1 ? 2 : 1
+      const text = state === 1 ? '停用' : '启用'
+      await this.$modal.confirm(`是否确认${text}流程名字为"${row.name}"的数据项?`)
+      await updateModelState(row.id, newState)
+      this.$modal.msgSuccess(`${text}成功`)
+      this.getList()
+    },
     handleDefinitionList(row) {
       this.$router.push({
-        name: "BpmProcessDefinition",
-        query:{
-          key: row.key
-        }
-      });
-    },
-    /** 更新状态操作 */
-    handleChangeState(row) {
-      const id = row.id;
-      let state = row.processDefinition.suspensionState;
-      let statusState = state === 1 ? '激活' : '挂起';
-      this.$modal.confirm('是否确认' + statusState + '流程名字为"' + row.name + '"的数据项?').then(function() {
-        return updateModelState(id, state);
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess(statusState + "成功");
-      }).catch(() => {
-        // 取消后，进行恢复按钮
-        row.processDefinition.suspensionState = (state === 1 ? 2 : 1);
-      });
-    },
-    /** 导入按钮操作 */
-    handleImport() {
-      this.upload.open = true;
-    },
-    // 文件上传中处理
-    handleFileUploadProgress(event, file, fileList) {
-      this.upload.isUploading = true;
-    },
-    // 文件上传成功处理
-    handleFileSuccess(response, file, fileList) {
-      if (response.code !== 0) {
-        this.$modal.msgError(response.msg)
-        return;
-      }
-      // 重置表单
-      this.uploadClose();
-      // 提示，并刷新
-      this.$modal.msgSuccess("导入流程成功！请点击【设计流程】按钮，进行编辑保存后，才可以进行【发布流程】");
-      this.getList();
-    },
-    uploadClose() {
-      // 关闭弹窗
-      this.upload.open = false;
-      // 重置上传状态和文件
-      this.upload.isUploading = false;
-      this.$refs.upload.clearFiles();
-      // 重置表单
-      this.upload.form = {};
-      this.resetForm("uploadForm");
-    },
-    /** 提交上传文件 */
-    submitFileForm() {
-      this.$refs["uploadForm"].validate(valid => {
-        if (!valid) {
-          return;
-        }
-        this.$refs.upload.submit();
+        name: 'BpmModelDefinition',
+        query: { key: row.key }
       })
     },
-    /** 处理任务分配规则列表的按钮操作 */
-    handleAssignRule(row) {
-      this.$refs['taskAssignRuleDialog'].initModel(row.id);
+    handleReport(row) {
+      if (!row.processDefinition) {
+        this.$message.warning('请先发布流程')
+        return
+      }
+      this.$router.push({
+        name: 'BpmProcessInstanceReport',
+        query: {
+          processDefinitionId: row.processDefinition.id,
+          processDefinitionKey: row.key
+        }
+      })
     },
+    handleModelCommand(command, row) {
+      if (command === 'definition') {
+        this.handleDefinitionList(row)
+      } else if (command === 'report') {
+        this.handleReport(row)
+      } else if (command === 'state') {
+        this.handleChangeState(row)
+      } else if (command === 'clean') {
+        this.handleClean(row)
+      } else if (command === 'delete') {
+        this.handleDelete(row)
+      }
+    },
+    handleCategoryCommand(command, category) {
+      if (command === 'rename') {
+        this.openCategoryForm('rename', category)
+      } else if (command === 'delete') {
+        this.handleDeleteCategory(category)
+      }
+    },
+    async openCategoryForm(mode, category) {
+      this.categoryFormMode = mode
+      this.categoryDialogTitle = mode === 'create' ? '添加流程分类' : '重命名分类'
+      if (mode === 'create') {
+        this.categoryForm = {
+          id: undefined,
+          name: undefined,
+          code: undefined,
+          description: undefined,
+          status: CommonStatusEnum.ENABLE,
+          sort: 0
+        }
+      } else {
+        const response = await getCategory(category.id)
+        this.categoryForm = response.data || {}
+      }
+      this.categoryDialogVisible = true
+      this.$nextTick(() => this.$refs.categoryForm && this.$refs.categoryForm.clearValidate())
+    },
+    submitCategoryForm () {
+      this.$refs.categoryForm.validate(async (valid) => {
+        if (!valid) {
+          return
+        }
+        if (this.categoryFormMode === 'create') {
+          await createCategory(this.categoryForm)
+          this.$modal.msgSuccess('新增成功')
+        } else {
+          await updateCategory(this.categoryForm)
+          this.$modal.msgSuccess('重命名成功')
+        }
+        this.categoryDialogVisible = false
+        this.getList()
+      })
+    },
+    async handleDeleteCategory(category) {
+      if (category.modelList.length > 0) {
+        this.$message.warning('该分类下仍有流程定义,不允许删除')
+        return
+      }
+      await this.$modal.confirm('确认删除分类吗?')
+      await deleteCategory(category.id)
+      this.$modal.msgSuccess('删除成功')
+      this.getList()
+    },
+    visibleScopeText(row) {
+      const users = row.startUsers || []
+      const depts = row.startDepts || []
+      if (users.length === 0 && depts.length === 0) {
+        return '全部可见'
+      }
+      if (users.length === 1) {
+        return users[0].nickname || users[0].name
+      }
+      if (depts.length === 1) {
+        return depts[0].name
+      }
+      if (depts.length > 1) {
+        return `${depts[0].name}等 ${depts.length} 个部门可见`
+      }
+      return `${users[0].nickname || users[0].name}等 ${users.length} 人可见`
+    },
+    async handleFormDetail(row) {
+      if (row.formId) {
+        const response = await getForm(row.formId)
+        const data = response.data
+        setConfAndFields2(this.formDetail, data.conf, data.fields)
+        this.formDetail.option.submitBtn = false
+        this.formDetail.option.resetBtn = false
+        this.formDetailVisible = true
+      } else if (row.formCustomCreatePath) {
+        this.$router.push({ path: row.formCustomCreatePath })
+      } else {
+        this.$message.info('该模型未配置表单')
+      }
+    },
+    async handleBpmnDetail(row) {
+      this.bpmnXML = ''
+      this.simpleModel = null
+      if (row.type === BpmModelType.SIMPLE && row.simpleModel) {
+        this.simpleModel = typeof row.simpleModel === 'string' ? JSON.parse(row.simpleModel) : row.simpleModel
+        this.bpmnVisible = true
+        return
+      }
+      if (row.processDefinition && row.processDefinition.id) {
+        const response = await getProcessDefinitionBpmnXML(row.processDefinition.id)
+        this.bpmnXML = response.data
+        this.bpmnVisible = true
+      } else if (row.bpmnXml) {
+        this.bpmnXML = row.bpmnXml
+        this.bpmnVisible = true
+      } else {
+        this.$message.info('暂无可预览的流程图')
+      }
+    },
+    async handleClean(row) {
+      await this.$modal.confirm(`确认清理流程模型「${row.name}」的历史定义？`)
+      await cleanModel(row.id)
+      this.$modal.msgSuccess('清理成功')
+      this.getList()
+    },
+    async handleDelete(row) {
+      await this.$modal.confirm(`确认删除流程模型「${row.name}」？`)
+      await deleteModel(row.id)
+      this.$modal.msgSuccess('删除成功')
+      this.getList()
+    }
   }
-};
+}
 </script>
 
-<style lang="scss">
-.my-process-designer {
-  height: calc(100vh - 200px);
+<style lang="scss" scoped>
+.bpm-model-page {
+  .model-page-card {
+    background: #fff;
+    border-radius: 4px;
+    padding: 0 15px 15px;
+  }
+
+  .model-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+    padding-left: 20px;
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+  }
+
+  .model-search-form {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+
+    ::v-deep .el-form-item {
+      margin-right: 10px;
+      margin-bottom: 0;
+    }
+  }
+
+  .model-search-input {
+    width: 240px;
+  }
+
+  .model-setting-button {
+    width: 30px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .model-sort-actions {
+    margin-right: 20px;
+  }
+
+  ::v-deep .el-divider--horizontal {
+    margin-top: 6px;
+  }
+
+  .model-category-list {
+    padding: 0 15px;
+  }
+
+  .model-category-card {
+    margin-bottom: 16px;
+    background: #fff;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .model-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 50px;
+  }
+
+  .model-category-title {
+    display: flex;
+    align-items: center;
+
+    h3 {
+      margin: 0 8px 0 20px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    span {
+      color: #606266;
+      font-size: 16px;
+    }
+  }
+
+  .category-drag-icon,
+  .model-drag-icon {
+    color: #8a909c;
+    cursor: move;
+  }
+
+  .category-drag-icon {
+    margin-left: 10px;
+    font-size: 22px;
+  }
+
+  .category-expand-icon {
+    margin-left: 20px;
+    color: #999;
+    cursor: pointer;
+  }
+
+  .model-category-actions {
+    display: flex;
+    align-items: center;
+    margin-right: 45px;
+  }
+
+  .model-muted-action {
+    margin-right: 20px;
+    color: #909399;
+  }
+
+  .model-name-cell {
+    display: flex;
+    align-items: center;
+  }
+
+  .model-drag-icon {
+    margin-right: 10px;
+  }
+
+  .model-flow-image,
+  .flow-icon {
+    width: 38px;
+    height: 38px;
+    margin-right: 10px;
+    border-radius: 4px;
+    flex: none;
+  }
+
+  .flow-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #409eff;
+
+    span {
+      color: #fff;
+      font-size: 12px;
+    }
+  }
+
+  .model-deployment-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .model-deployment-time {
+    display: inline-block;
+    width: 150px;
+  }
+
+  ::v-deep .el-table__cell {
+    overflow: hidden;
+    border-bottom: none !important;
+  }
 }
 </style>

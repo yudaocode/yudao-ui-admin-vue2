@@ -154,11 +154,36 @@ export const constantRoutes = [
         path: 'manager/form/edit',
         component: (resolve) => require(['@/views/bpm/form/formEditor'], resolve),
         name: 'BpmFormEditor',
-        meta: {title: '流程表单-编辑', activeMenu: '/bpm/manager/form'}
+        meta: {title: '设计流程表单', activeMenu: '/bpm/manager/form'}
       }, {
         path: 'manager/definition',
         component: (resolve) => require(['@/views/bpm/definition/index'], resolve),
         name: 'BpmProcessDefinition',
+        meta: {title: '流程定义', activeMenu: '/bpm/manager/model'}
+      }, {
+        path: 'manager/model/create',
+        component: (resolve) => require(['@/views/bpm/model/form/index'], resolve),
+        name: 'BpmModelCreate',
+        meta: {title: '创建流程', activeMenu: '/bpm/manager/model'}
+      }, {
+        path: 'manager/model/update/:id',
+        component: (resolve) => require(['@/views/bpm/model/form/index'], resolve),
+        name: 'BpmModelUpdate',
+        meta: {title: '修改流程', activeMenu: '/bpm/manager/model'}
+      }, {
+        path: 'manager/model/copy/:id',
+        component: (resolve) => require(['@/views/bpm/model/form/index'], resolve),
+        name: 'BpmModelCopy',
+        meta: {title: '复制流程', activeMenu: '/bpm/manager/model'}
+      }, {
+        path: 'manager/model/definition/restore/:id',
+        component: (resolve) => require(['@/views/bpm/model/form/index'], resolve),
+        name: 'BpmModelDefinitionRestore',
+        meta: {title: '恢复流程', activeMenu: '/bpm/manager/model'}
+      }, {
+        path: 'manager/model/definition',
+        component: (resolve) => require(['@/views/bpm/model/definition/index'], resolve),
+        name: 'BpmModelDefinition',
         meta: {title: '流程定义', activeMenu: '/bpm/manager/model'}
       }, {
         path: 'manager/model/design',
@@ -171,10 +196,50 @@ export const constantRoutes = [
         name: 'BpmProcessInstanceCreate',
         meta: {title: '发起流程', activeMenu: '/bpm/task/my'}
       }, {
+        path: 'task/create',
+        component: (resolve) => require(['@/views/bpm/processInstance/create/index'], resolve),
+        name: 'BpmProcessInstanceCreateAlias',
+        meta: {title: '发起流程', activeMenu: '/bpm/task/create'}
+      }, {
+        path: 'task/my',
+        component: (resolve) => require(['@/views/bpm/processInstance/index'], resolve),
+        name: 'BpmProcessInstanceMy',
+        meta: {title: '我的流程', activeMenu: '/bpm/task/my'}
+      }, {
+        path: 'process-instance/my',
+        component: (resolve) => require(['@/views/bpm/processInstance/index'], resolve),
+        name: 'BpmProcessInstanceMyAlias',
+        meta: {title: '我的流程', activeMenu: '/bpm/task/my'}
+      }, {
+        path: 'manager/process-instance/manager',
+        component: (resolve) => require(['@/views/bpm/processInstance/manager/index'], resolve),
+        name: 'BpmProcessInstanceManager',
+        meta: {title: '流程实例', activeMenu: '/bpm/manager/process-instance/manager'}
+      }, {
+        path: 'process-instance/manager',
+        component: (resolve) => require(['@/views/bpm/processInstance/manager/index'], resolve),
+        name: 'BpmProcessInstanceManagerAlias',
+        meta: {title: '流程实例', activeMenu: '/bpm/manager/process-instance/manager'}
+      }, {
+        path: 'manager/process-tasnk',
+        component: (resolve) => require(['@/views/bpm/task/manager/index'], resolve),
+        name: 'BpmTaskManager',
+        meta: {title: '流程任务', activeMenu: '/bpm/manager/process-tasnk'}
+      }, {
+        path: 'task/manager',
+        component: (resolve) => require(['@/views/bpm/task/manager/index'], resolve),
+        name: 'BpmTaskManagerAlias',
+        meta: {title: '流程任务', activeMenu: '/bpm/manager/process-tasnk'}
+      }, {
         path: 'process-instance/detail',
-        component: (resolve) => require(['@/views/bpm/processInstance/detail'], resolve),
+        component: (resolve) => require(['@/views/bpm/processInstance/detail/index'], resolve),
         name: 'BpmProcessInstanceDetail',
         meta: {title: '流程详情', activeMenu: '/bpm/task/my'}
+      }, {
+        path: 'process-instance/report',
+        component: (resolve) => require(['@/views/bpm/processInstance/report/index'], resolve),
+        name: 'BpmProcessInstanceReport',
+        meta: {title: '数据报表', activeMenu: '/bpm/manager/model'}
       }
     ]
   },
