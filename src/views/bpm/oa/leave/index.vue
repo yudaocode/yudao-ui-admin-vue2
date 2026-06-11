@@ -86,7 +86,7 @@
 <script>
 import { getLeavePage } from "@/api/bpm/leave"
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
-import {cancelProcessInstance} from "@/api/bpm/processInstance";
+import { cancelProcessInstanceByStartUser } from "@/api/bpm/processInstance";
 
 export default {
   name: "BpmOALeave",
@@ -162,7 +162,7 @@ export default {
         inputPattern: /^[\s\S]*.*\S[\s\S]*$/, // 判断非空，且非空格
         inputErrorMessage: "取消原因不能为空",
       }).then(({ value }) => {
-        return cancelProcessInstance(id, value);
+        return cancelProcessInstanceByStartUser(id, value);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("取消成功");

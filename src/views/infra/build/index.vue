@@ -25,6 +25,7 @@
 
 <script>
 import formCreate from '@form-create/element-ui'
+import { useFormCreateDesigner } from '@/components/FormCreate/src/useFormCreateDesigner'
 
 export default {
   name: 'InfraBuild',
@@ -79,6 +80,11 @@ export default {
       }
       return JSON.stringify(this.formData, null, 2);
     }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      useFormCreateDesigner(this.$refs.designer);
+    });
   },
   methods: {
     /** 打开弹窗 */

@@ -15,6 +15,48 @@ export function formatDate(cellValue) {
   return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes + ':' + seconds
 }
 
+/** el-table 的时间列格式化器 */
+export function dateFormatter(row, column, cellValue) {
+  if (!cellValue) {
+    return ''
+  }
+  return parseTime(cellValue, '{y}-{m}-{d} {h}:{i}:{s}')
+}
+
+/** el-table 的日期列格式化器 */
+export function dateFormatter2(row, column, cellValue) {
+  if (!cellValue) {
+    return ''
+  }
+  return parseTime(cellValue, '{y}-{m}-{d}')
+}
+
+/**
+ * 将耗时（毫秒）格式化为人类可读的文本，如 "2 天3 小时 0 分钟"
+ */
+export function formatPast2(ms) {
+  if (ms === undefined || ms === null || ms === '') {
+    return ''
+  }
+  const day = Math.floor(ms / (24 * 60 * 60 * 1000))
+  const hour = Math.floor(ms / (60 * 60 * 1000) - day * 24)
+  const minute = Math.floor(ms / (60 * 1000) - day * 24 * 60 - hour * 60)
+  const second = Math.floor(ms / 1000 - day * 24 * 60 * 60 - hour * 60 * 60 - minute * 60)
+  if (day > 0) {
+    return day + ' 天' + hour + ' 小时 ' + minute + ' 分钟'
+  }
+  if (hour > 0) {
+    return hour + ' 小时 ' + minute + ' 分钟'
+  }
+  if (minute > 0) {
+    return minute + ' 分钟'
+  }
+  if (second > 0) {
+    return second + ' 秒'
+  }
+  return 0 + ' 秒'
+}
+
 /**
  * @param {number} time
  * @param {string} option
@@ -335,6 +377,31 @@ export function createUniqueString() {
   const randomNum = parseInt((1 + Math.random()) * 65536) + ''
   return (+(randomNum + timestamp)).toString(32)
 }
+
+/**
+ * 生成 UUID（与 vue3 的 utils generateUUID 对齐）
+ * 用于 SimpleProcessDesigner 生成节点 ID
+ * @returns {string}
+ */
+export function generateUUID() {
+  if (typeof crypto === 'object' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  let timestamp = new Date().getTime()
+  let perforNow = (typeof performance !== 'undefined' && performance.now && performance.now() * 1000) || 0
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    let random = Math.random() * 16
+    if (timestamp > 0) {
+      random = (timestamp + random) % 16 | 0
+      timestamp = Math.floor(timestamp / 16)
+    } else {
+      random = (perforNow + random) % 16 | 0
+      perforNow = Math.floor(perforNow / 16)
+    }
+    return (c === 'x' ? random : (random & 0x3) | 0x8).toString(16)
+  })
+}
+
 
 /**
  * Check if an element has a class

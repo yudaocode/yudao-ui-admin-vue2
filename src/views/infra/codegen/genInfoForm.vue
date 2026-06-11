@@ -148,7 +148,7 @@
             <span>
               父编号字段
               <el-tooltip content="树显示的父编码字段名， 如：parent_Id" placement="top">
-                <Icon icon="ep:question-filled" />
+                <svg-icon icon-class="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
@@ -168,7 +168,7 @@
             <span>
               树名称字段
               <el-tooltip content="树节点的显示名称字段名， 如：dept_name" placement="top">
-                <Icon icon="ep:question-filled" />
+                <svg-icon icon-class="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
@@ -195,7 +195,7 @@
             <span>
               关联的主表
               <el-tooltip content="关联主表（父表）的表名， 如：system_user" placement="top">
-                <Icon icon="ep:question-filled" />
+                <svg-icon icon-class="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
@@ -215,7 +215,7 @@
             <span>
               子表关联的字段
               <el-tooltip content="子表关联的字段， 如：user_id" placement="top">
-                <Icon icon="ep:question-filled" />
+                <svg-icon icon-class="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
@@ -235,7 +235,7 @@
             <span>
               关联关系
               <el-tooltip content="主表与子表的关联关系" placement="top">
-                <Icon icon="ep:question-filled" />
+                <svg-icon icon-class="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>

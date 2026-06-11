@@ -4,6 +4,7 @@ import {setToken, removeToken} from '@/utils/auth'
 const user = {
   state: {
     id: 0, // 用户编号
+    deptId: undefined,
     name: '',
     avatar: '',
     roles: [],
@@ -13,6 +14,9 @@ const user = {
   mutations: {
     SET_ID: (state, id) => {
       state.id = id
+    },
+    SET_DEPT_ID: (state, deptId) => {
+      state.deptId = deptId
     },
     SET_NAME: (state, name) => {
       state.name = name
@@ -113,6 +117,7 @@ const user = {
             commit('SET_ROLES', ['ROLE_DEFAULT'])
           }
           commit('SET_ID', user.id)
+          commit('SET_DEPT_ID', user.deptId)
           commit('SET_NAME', user.userName)
           commit('SET_NICKNAME', user.nickname)
           commit('SET_AVATAR', avatar)
@@ -127,6 +132,7 @@ const user = {
     LogOut({ commit, state }) {
       return new Promise((resolve, reject) => {
         logout(state.token).then(() => {
+          commit('SET_DEPT_ID', undefined)
           commit('SET_ROLES', [])
           commit('SET_PERMISSIONS', [])
           removeToken()

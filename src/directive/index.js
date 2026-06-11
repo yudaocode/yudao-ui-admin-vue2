@@ -13,6 +13,12 @@ const install = function(Vue) {
   Vue.directive('dialogDrag', dialogDrag)
   Vue.directive('dialogDragWidth', dialogDragWidth)
   Vue.directive('dialogDragHeight', dialogDragHeight)
+  // v-mountedFocus：元素挂载后自动聚焦（用于 SimpleProcessDesigner 节点名称编辑）
+  Vue.directive('mountedFocus', {
+    inserted(el) {
+      el.focus()
+    }
+  })
 }
 
 if (window.Vue) {

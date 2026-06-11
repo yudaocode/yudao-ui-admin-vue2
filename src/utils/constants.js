@@ -44,6 +44,40 @@ export const CommonStatusEnum = {
 }
 
 /**
+ * BPM 模型类型
+ */
+export const BpmModelType = {
+  BPMN: 10,
+  SIMPLE: 20
+}
+
+/**
+ * BPM 表单类型
+ */
+export const BpmModelFormType = {
+  NORMAL: 10,
+  CUSTOM: 20
+}
+
+/**
+ * BPM 自动去重/自动通过类型
+ */
+export const BpmAutoApproveType = {
+  NONE: 0,
+  APPROVE_ALL: 1,
+  APPROVE_SEQUENTIAL: 2
+}
+
+/**
+ * 地区层级
+ */
+export const AreaLevelEnum = {
+  PROVINCE: 1,
+  CITY: 2,
+  DISTRICT: 3
+}
+
+/**
  * 菜单的类型枚举
  */
 export const SystemMenuTypeEnum = {

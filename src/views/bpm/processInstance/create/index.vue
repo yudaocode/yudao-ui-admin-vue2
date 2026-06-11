@@ -1,170 +1,226 @@
 <template>
-  <div class="app-container">
+  <div class="app-container process-create-page">
     <doc-alert title="流程发起、取消、重新发起" url="https://doc.iocoder.cn/bpm/process-instance/" />
 
-    <!-- 第一步，通过流程定义的列表，选择对应的流程 -->
-    <div v-if="!selectProcessInstance">
-      <el-table v-loading="loading" :data="list">
-        <el-table-column label="流程名称" align="center" prop="name" width="200">
-          <template v-slot="scope">
-            <el-button type="text" @click="handleBpmnDetail(scope.row)">
-              <span>{{ scope.row.name }}</span>
-            </el-button>
-          </template>
-        </el-table-column>
-        <el-table-column label="流程分类" align="center" prop="category" width="100">
-          <template v-slot="scope">
-            <dict-tag :type="DICT_TYPE.BPM_MODEL_CATEGORY" :value="scope.row.category" />
-          </template>
-        </el-table-column>
-        <el-table-column label="流程版本" align="center" prop="processDefinition.version" width="80">
-          <template v-slot="scope">
-            <el-tag size="medium" v-if="scope.row">v{{ scope.row.version }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="流程描述" align="center" prop="description" width="300" show-overflow-tooltip />
-        <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-          <template v-slot="scope">
-            <el-button type="text" size="small" icon="el-icon-plus" @click="handleSelect(scope.row)">选择</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-    <!-- 第二步，填写表单，进行流程的提交 -->
-    <div v-else>
-      <el-card class="box-card" >
-        <div slot="header" class="clearfix">
-          <span class="el-icon-document">申请信息【{{ selectProcessInstance.name }}】</span>
-          <el-button style="float: right;" type="primary" @click="selectProcessInstance = undefined">选择其它流程</el-button>
-        </div>
-        <el-col :span="16" :offset="6">
-          <div>
-            <parser :key="new Date().getTime()" :form-conf="detailForm" @submit="submitForm" />
-          </div>
+    <template v-if="!selectProcessDefinition">
+      <el-input
+        v-model="searchName"
+        placeholder="请输入流程名称"
+        clearable
+        class="search-input"
+        prefix-icon="el-icon-search"
+        @input="handleQuery"
+        @clear="handleQuery"
+      />
+      <el-row :gutter="16">
+        <el-col :span="5">
+          <el-card shadow="never" class="category-card">
+            <div
+              v-for="category in availableCategories"
+              :key="category.code"
+              class="category-item"
+              :class="{ active: activeCategory && activeCategory.code === category.code }"
+              @click="activeCategory = category"
+            >
+              {{ category.name }}
+            </div>
+          </el-card>
         </el-col>
-      </el-card>
-      <el-card class="box-card">
-        <div slot="header" class="clearfix">
-          <span class="el-icon-picture-outline">流程图</span>
-        </div>
-        <my-process-viewer key="designer" v-model="bpmnXML" v-bind="bpmnControlForm" />
-      </el-card>
-    </div>
+        <el-col :span="19">
+          <el-card shadow="never" v-loading="loading" class="definition-card">
+            <el-empty v-if="filteredDefinitions.length === 0" description="没有找到可发起的流程" />
+            <div v-else class="definition-grid">
+              <el-card
+                v-for="definition in filteredDefinitions"
+                :key="definition.id"
+                shadow="hover"
+                class="definition-item"
+                @click.native="handleSelect(definition)"
+              >
+                <div class="definition-item__icon">
+                  <img v-if="definition.icon" :src="definition.icon" alt="" />
+                  <span v-else>{{ (definition.name || '').slice(0, 2) }}</span>
+                </div>
+                <div class="definition-item__main">
+                  <div class="definition-item__title">{{ definition.name }}</div>
+                  <div class="definition-item__desc">{{ definition.description || '暂无描述' }}</div>
+                </div>
+              </el-card>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </template>
 
+    <ProcessDefinitionDetail
+      v-else
+      ref="processDefinitionDetail"
+      :select-process-definition="selectProcessDefinition"
+      @cancel="selectProcessDefinition = null"
+    />
   </div>
 </template>
 
 <script>
-import {getProcessDefinitionBpmnXML, getProcessDefinitionList} from "@/api/bpm/definition";
-import {DICT_TYPE, getDictDatas} from "@/utils/dict";
-import {decodeFields} from "@/utils/formGenerator";
-import Parser from '@/components/parser/Parser'
-import {createProcessInstance} from "@/api/bpm/processInstance";
+import { getCategorySimpleList } from '@/api/bpm/category'
+import { getProcessDefinitionList } from '@/api/bpm/definition'
+import { getProcessInstance } from '@/api/bpm/processInstance'
+import ProcessDefinitionDetail from './ProcessDefinitionDetail.vue'
 
-// 流程实例的发起
 export default {
-  name: "ProcessInstanceCreate",
+  name: 'BpmProcessInstanceCreate',
   components: {
-    Parser
+    ProcessDefinitionDetail
   },
   data() {
     return {
-      // 遮罩层
-      loading: true,
-      // 表格数据
-      list: [],
-
-      // 流程表单详情
-      detailForm: {
-        fields: []
-      },
-
-      // BPMN 数据
-      bpmnXML: null,
-      bpmnControlForm: {
-        prefix: "flowable"
-      },
-
-      // 流程表单
-      selectProcessInstance: undefined, // 选择的流程实例
-
-      // 数据字典
-      categoryDictDatas: getDictDatas(DICT_TYPE.BPM_MODEL_CATEGORY),
-    };
+      loading: false,
+      searchName: '',
+      categoryList: [],
+      activeCategory: null,
+      processDefinitionList: [],
+      filteredProcessDefinitionList: [],
+      selectProcessDefinition: null
+    }
   },
-  created() {
-    this.getList();
-  },
-  methods: {
-    /** 查询流程定义列表 */
-    getList() {
-      this.loading = true;
-      getProcessDefinitionList({
-        suspensionState: 1
-      }).then(response => {
-          this.list = response.data
-          this.loading = false
-        }
-      );
-    },
-    /** 处理选择流程的按钮操作 **/
-    handleSelect(row) {
-      // 设置选择的流程
-      this.selectProcessInstance = row;
-
-      // 流程表单
-      if (row.formId) {
-        // 设置对应的表单
-        this.detailForm = {
-          ...JSON.parse(row.formConf),
-          fields: decodeFields(row.formFields)
-        }
-
-        // 加载流程图
-        getProcessDefinitionBpmnXML(row.id).then(response => {
-          this.bpmnXML = response.data
-        })
-      } else if (row.formCustomCreatePath) {
-        this.$router.push({ path: row.formCustomCreatePath});
-        // 这里暂时无需加载流程图，因为跳出到另外个 Tab；
-      }
-    },
-    /** 提交按钮 */
-    submitForm(params) {
-      if (!params) {
-        return;
-      }
-      // 设置表单禁用
-      const conf = params.conf;
-      conf.disabled = true; // 表单禁用
-      conf.formBtns = false; // 按钮隐藏
-
-      // 提交表单，创建流程
-      const variables = params.values;
-      createProcessInstance({
-        processDefinitionId: this.selectProcessInstance.id,
-        variables: variables
-      }).then(response => {
-        this.$modal.msgSuccess("发起流程成功");
-        // 关闭当前窗口
-        this.$tab.closeOpenPage();
-        this.$router.go(-1);
-      }).catch(() => {
-        conf.disabled = false; // 表单开启
-        conf.formBtns = true; // 按钮展示
+  computed: {
+    availableCategories() {
+      return this.categoryList.filter((category) => {
+        return this.filteredProcessDefinitionList.some((definition) => definition.category === category.code)
       })
     },
+    filteredDefinitions() {
+      const list = this.filteredProcessDefinitionList
+      if (!this.activeCategory) {
+        return list
+      }
+      return list.filter((definition) => definition.category === this.activeCategory.code)
+    }
+  },
+  created() {
+    this.getList()
+  },
+  methods: {
+    async getList() {
+      this.loading = true
+      try {
+        const categoryResp = await getCategorySimpleList()
+        this.categoryList = categoryResp.data || []
+        const definitionResp = await getProcessDefinitionList({ suspensionState: 1 })
+        this.processDefinitionList = definitionResp.data || []
+        this.handleQuery()
+        if (this.availableCategories.length > 0) {
+          this.activeCategory = this.availableCategories[0]
+        }
+        await this.tryReCreate()
+      } finally {
+        this.loading = false
+      }
+    },
+    handleQuery() {
+      const keyword = (this.searchName || '').toLowerCase()
+      this.filteredProcessDefinitionList = keyword
+        ? this.processDefinitionList.filter((item) => (item.name || '').toLowerCase().includes(keyword))
+        : this.processDefinitionList
+      if (this.activeCategory && !this.availableCategories.some((item) => item.code === this.activeCategory.code)) {
+        this.activeCategory = this.availableCategories[0] || null
+      }
+    },
+    async tryReCreate() {
+      const processInstanceId = this.$route.query.processInstanceId
+      if (!processInstanceId) {
+        return
+      }
+      const response = await getProcessInstance(processInstanceId)
+      const processInstance = response.data
+      if (!processInstance || !processInstance.processDefinition) {
+        this.$message.error('重新发起流程失败，流程实例不存在')
+        return
+      }
+      const definition = this.processDefinitionList.find((item) => item.key === processInstance.processDefinition.key)
+      if (!definition) {
+        this.$message.error('重新发起流程失败，流程定义不存在')
+        return
+      }
+      this.handleSelect(definition, processInstance.formVariables)
+    },
+    async handleSelect(definition, formVariables) {
+      this.selectProcessDefinition = definition
+      await this.$nextTick()
+      this.$refs.processDefinitionDetail.initProcessInfo(definition, formVariables)
+    }
   }
-};
+}
 </script>
 
-<style lang="scss">
-.my-process-designer {
-  height: calc(100vh - 200px);
+<style scoped>
+.search-input {
+  width: 420px;
+  margin-bottom: 16px;
 }
 
-.box-card {
-  width: 100%;
-  margin-bottom: 20px;
+.category-card,
+.definition-card {
+  min-height: 680px;
+}
+
+.category-item {
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.category-item.active {
+  color: #3473ff;
+  background: #e8eeff;
+}
+
+.definition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.definition-item {
+  cursor: pointer;
+}
+
+.definition-item /deep/ .el-card__body {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.definition-item__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: #fff;
+  background: #3473ff;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.definition-item__icon img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.definition-item__title {
+  font-weight: 600;
+  color: #303133;
+}
+
+.definition-item__desc {
+  margin-top: 4px;
+  overflow: hidden;
+  color: #909399;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

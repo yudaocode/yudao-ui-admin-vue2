@@ -24,9 +24,20 @@ export default {
     this.download0(data, fileName, 'text/markdown');
   },
 
+  // 下载 JSON 方法
+  json(data, fileName = 'data.json') {
+    const content = data instanceof Blob || typeof data === 'string' ? data : JSON.stringify(data)
+    this.download0(content, fileName, 'application/json')
+  },
+
+  // 下载文本方法
+  text(data, fileName = 'data.txt') {
+    this.download0(data, fileName, 'text/plain;charset=utf-8')
+  },
+
   download0(data, fileName, mineType) {
     // 创建 blob
-    let blob = new Blob([data], {type: mineType});
+    let blob = data instanceof Blob ? data : new Blob([data], {type: mineType});
     // 创建 href 超链接，点击进行下载
     window.URL = window.URL || window.webkitURL;
     let href = URL.createObjectURL(blob);
