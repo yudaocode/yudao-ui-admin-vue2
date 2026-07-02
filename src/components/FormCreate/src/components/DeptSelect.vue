@@ -29,6 +29,11 @@ export default {
   components: {
     Treeselect
   },
+  inject: {
+    designer: {
+      default: null
+    }
+  },
   props: {
     value: [String, Number, Array],
     multiple: {
@@ -138,7 +143,14 @@ export default {
       return Array.isArray(this.value) ? this.value.length > 0 : true
     },
     setDefaultValue() {
-      if (!this.defaultCurrentDept || this.hasValidPresetValue()) {
+      if (!this.defaultCurrentDept) {
+        return
+      }
+      // 表单设计器中不设置动态默认值，避免保存时把设计者部门写入 rule.value
+      if (this.designer) {
+        return
+      }
+      if (this.hasValidPresetValue()) {
         return
       }
       const deptId = this.$store && this.$store.getters && this.$store.getters.deptId
