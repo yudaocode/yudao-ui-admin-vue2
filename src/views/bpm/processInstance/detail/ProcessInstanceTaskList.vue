@@ -26,6 +26,15 @@
           </el-button>
         </template>
       </el-table-column>
+      <el-table-column label="附件/签名" min-width="220">
+        <template v-slot="scope">
+          <ProcessTaskEvidence
+            compact
+            :attachments="scope.row.attachments"
+            :sign-pic-url="scope.row.signPicUrl"
+          />
+        </template>
+      </el-table-column>
       <el-table-column label="开始时间" prop="createTime" width="170">
         <template v-slot="scope">{{ parseTime(scope.row.createTime) }}</template>
       </el-table-column>
@@ -53,9 +62,13 @@
 import { getTaskListByProcessInstanceId } from '@/api/bpm/task'
 import { formatPast2 } from '@/utils'
 import { setConfAndFields2 } from '@/utils/formCreate'
+import ProcessTaskEvidence from './ProcessTaskEvidence.vue'
 
 export default {
   name: 'ProcessInstanceTaskList',
+  components: {
+    ProcessTaskEvidence
+  },
   props: {
     id: {
       type: [String, Number],

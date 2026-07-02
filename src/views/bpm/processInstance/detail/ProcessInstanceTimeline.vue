@@ -58,32 +58,13 @@
                 <span>{{ userName(task.assigneeUser || task.ownerUser) }}</span>
               </span>
               <dict-tag v-if="task.status !== undefined" :type="DICT_TYPE.BPM_TASK_STATUS" :value="task.status" />
-              <div v-if="shouldShowReasonAndAttachment(task, node, index)" class="timeline-reason">
-                <div v-if="task.reason">审批意见：{{ task.reason }}</div>
-                <div v-if="getAttachmentList(task).length" class="timeline-attachments">
-                  <template v-for="attachment in getAttachmentList(task)">
-                    <el-image
-                      v-if="isImageAttachment(attachment)"
-                      :key="attachment"
-                      class="timeline-attachment-image"
-                      :src="attachment"
-                      :preview-src-list="[attachment]"
-                      fit="cover"
-                    />
-                    <el-link
-                      v-else
-                      :key="attachment"
-                      :href="attachment"
-                      :underline="false"
-                      target="_blank"
-                      type="primary"
-                    >
-                      <i class="el-icon-document"></i>
-                      {{ getAttachmentName(attachment) }}
-                    </el-link>
-                  </template>
-                </div>
-              </div>
+              <ProcessTaskEvidence
+                v-if="shouldShowReasonAndAttachment(task, node, index)"
+                :reason="task.reason"
+                :reason-label="getReasonLabel(node)"
+                :attachments="task.attachments"
+                :sign-pic-url="task.signPicUrl"
+              />
             </div>
           </template>
           <template v-else-if="node.candidateUsers && node.candidateUsers.length">
@@ -100,18 +81,6 @@
           <span v-else class="timeline-empty">系统自动计算</span>
         </div>
 
-        <div v-if="showStatusIcon && node.tasks && node.tasks.length" class="timeline-task-extra">
-          <div v-for="task in node.tasks" :key="task.id + '-extra'">
-            <div v-if="task.signPicUrl" class="timeline-reason">
-              签名：
-              <el-image
-                class="timeline-sign"
-                :src="task.signPicUrl"
-                :preview-src-list="[task.signPicUrl]"
-              />
-            </div>
-          </div>
-        </div>
       </el-timeline-item>
     </el-timeline>
     <el-empty v-else description="暂无审批记录" />
@@ -125,10 +94,12 @@ import { TaskStatusEnum } from '@/api/bpm/task'
 import { CandidateStrategy, NodeType } from '@/components/SimpleProcessDesignerV2/src/consts'
 import { isEmpty } from '@/utils/is'
 import UserSelectForm from '@/components/UserSelectForm'
+import ProcessTaskEvidence from './ProcessTaskEvidence.vue'
 
 export default {
   name: 'ProcessInstanceTimeline',
   components: {
+    ProcessTaskEvidence,
     UserSelectForm
   },
   props: {
@@ -194,27 +165,20 @@ export default {
       if (node.nodeType === NodeType.START_USER_NODE && nodeIndex === 0) {
         return false
       }
-      return (task.reason || this.getAttachmentList(task).length > 0) &&
-        [NodeType.START_USER_NODE, NodeType.USER_TASK_NODE].includes(node.nodeType)
+      return this.hasTaskEvidence(task) &&
+        [NodeType.START_USER_NODE, NodeType.TRANSACTOR_NODE, NodeType.USER_TASK_NODE].includes(node.nodeType)
+    },
+    hasTaskEvidence(task) {
+      return !!(task && (task.reason || this.getAttachmentList(task).length > 0 || task.signPicUrl))
+    },
+    getReasonLabel(node) {
+      return node && node.nodeType === NodeType.TRANSACTOR_NODE ? '办理意见' : '审批意见'
     },
     getAttachmentList(task) {
       const attachments = task && task.attachments
       if (!attachments) return []
       if (Array.isArray(attachments)) return attachments
       return String(attachments).split(',').map((item) => item.trim()).filter(Boolean)
-    },
-    getAttachmentName(url) {
-      const cleanUrl = String(url || '').split(/[?#]/)[0]
-      const fileName = cleanUrl.slice(cleanUrl.lastIndexOf('/') + 1)
-      try {
-        return decodeURIComponent(fileName)
-      } catch (e) {
-        return fileName
-      }
-    },
-    isImageAttachment(url) {
-      const ext = String(url || '').split(/[?#]/)[0].split('.').pop().toLowerCase()
-      return ['bmp', 'gif', 'jpeg', 'jpg', 'png', 'webp'].includes(ext)
     },
     handleSelectUser(node) {
       if (!node || !node.id) {
@@ -306,36 +270,4 @@ export default {
   color: #909399;
 }
 
-.timeline-reason {
-  width: 100%;
-  color: #909399;
-  padding: 8px 10px;
-  line-height: 22px;
-  background: #f8f8fa;
-  border-radius: 4px;
-}
-
-.timeline-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.timeline-attachment-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-}
-
-.timeline-task-extra {
-  margin-top: 6px;
-}
-
-.timeline-sign {
-  width: 90px;
-  height: 40px;
-  margin-left: 5px;
-  vertical-align: middle;
-}
 </style>

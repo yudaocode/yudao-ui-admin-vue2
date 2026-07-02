@@ -47,6 +47,15 @@
         </template>
       </el-table-column>
       <el-table-column label="审批建议" align="center" prop="reason" min-width="180" show-overflow-tooltip />
+      <el-table-column label="附件/签名" align="center" min-width="220">
+        <template v-slot="scope">
+          <ProcessTaskEvidence
+            compact
+            :attachments="scope.row.attachments"
+            :sign-pic-url="scope.row.signPicUrl"
+          />
+        </template>
+      </el-table-column>
       <el-table-column label="耗时" align="center" prop="durationInMillis" width="160">
         <template v-slot="scope">{{ formatPast2(scope.row.durationInMillis) }}</template>
       </el-table-column>
@@ -72,9 +81,13 @@
 <script>
 import { getTaskManagerPage } from '@/api/bpm/task'
 import { formatPast2 } from '@/utils'
+import ProcessTaskEvidence from '@/views/bpm/processInstance/detail/ProcessTaskEvidence.vue'
 
 export default {
   name: 'BpmManagerTask',
+  components: {
+    ProcessTaskEvidence
+  },
   data() {
     return {
       loading: false,
@@ -116,7 +129,12 @@ export default {
       this.handleQuery()
     },
     handleDetail(row) {
-      this.$router.push({ name: 'BpmProcessInstanceDetail', query: { id: row.processInstance && row.processInstance.id } })
+      this.$router.push({
+        name: 'BpmProcessInstanceDetail',
+        query: {
+          id: row.processInstance && row.processInstance.id
+        }
+      })
     }
   }
 }
