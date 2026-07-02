@@ -11,7 +11,21 @@
           <dict-tag :type="DICT_TYPE.BPM_TASK_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="审批意见" prop="reason" min-width="180" show-overflow-tooltip />
+      <el-table-column label="审批意见" prop="reason" min-width="220" show-overflow-tooltip>
+        <template v-slot="scope">
+          <span>{{ scope.row.reason }}</span>
+          <el-button
+            v-if="scope.row.formId > 0"
+            class="task-form-button"
+            size="mini"
+            type="text"
+            icon="el-icon-document"
+            @click="handleFormDetail(scope.row)"
+          >
+            查看表单
+          </el-button>
+        </template>
+      </el-table-column>
       <el-table-column label="开始时间" prop="createTime" width="170">
         <template v-slot="scope">{{ parseTime(scope.row.createTime) }}</template>
       </el-table-column>
@@ -22,12 +36,23 @@
         <template v-slot="scope">{{ formatPast2(scope.row.durationInMillis) }}</template>
       </el-table-column>
     </el-table>
+
+    <el-dialog title="表单详情" :visible.sync="taskFormVisible" width="600px" append-to-body>
+      <form-create
+        v-if="taskForm.rule.length"
+        v-model="fApi"
+        :rule="taskForm.rule"
+        :option="taskForm.option"
+      />
+      <el-empty v-else description="暂无表单信息" />
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { getTaskListByProcessInstanceId } from '@/api/bpm/task'
 import { formatPast2 } from '@/utils'
+import { setConfAndFields2 } from '@/utils/formCreate'
 
 export default {
   name: 'ProcessInstanceTaskList',
@@ -44,7 +69,17 @@ export default {
   data() {
     return {
       innerLoading: false,
-      list: []
+      list: [],
+      taskFormVisible: false,
+      fApi: {},
+      taskForm: {
+        rule: [],
+        option: {
+          submitBtn: false,
+          resetBtn: false
+        },
+        value: {}
+      }
     }
   },
   watch: {
@@ -59,6 +94,22 @@ export default {
     formatPast2,
     userName(user) {
       return user ? (user.nickname || user.name || user.id) : '系统'
+    },
+    async handleFormDetail(row) {
+      setConfAndFields2(this.taskForm, row.formConf, row.formFields, row.formVariables)
+      this.taskForm.option.submitBtn = false
+      this.taskForm.option.resetBtn = false
+      this.taskFormVisible = true
+      await this.$nextTick()
+      if (this.fApi && this.fApi.btn) {
+        this.fApi.btn.show(false)
+      }
+      if (this.fApi && this.fApi.resetBtn) {
+        this.fApi.resetBtn.show(false)
+      }
+      if (this.fApi && this.fApi.disabled) {
+        this.fApi.disabled(true)
+      }
     },
     async getList() {
       if (!this.id) {
@@ -75,3 +126,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.task-form-button {
+  margin-left: 8px;
+}
+</style>

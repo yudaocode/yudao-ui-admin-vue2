@@ -37,7 +37,7 @@
         @mouseleave="stopDrag"
         @mouseenter="setGrabCursor"
       >
-        <ProcessNodeTree v-if="processNodeTree" :flow-node.sync="processNodeTree" />
+        <ProcessNodeTree v-if="processNodeTree" :key="importKey" :flow-node.sync="processNodeTree" />
       </div>
     </div>
     <el-dialog :visible.sync="errorDialogVisible" title="保存失败" width="400px" append-to-body>
@@ -64,7 +64,6 @@ import { useWatchNode } from './node'
 import { isString } from '@/utils/is'
 import download from '@/plugins/download'
 
-
 const props = defineProps({
   flowNode: {
     type: Object,
@@ -84,7 +83,7 @@ const processNodeTree = useWatchNode(props)
 provide('readonly', props.readonly)
 
 /** 拖拽、放大缩小等操作 */
-let scaleValue = ref(100)
+const scaleValue = ref(100)
 const MAX_SCALE_VALUE = 200
 const MIN_SCALE_VALUE = 50
 const isDragging = ref(false)
@@ -127,14 +126,14 @@ const stopDrag = () => {
 }
 
 const zoomIn = () => {
-  if (scaleValue.value == MAX_SCALE_VALUE) {
+  if (scaleValue.value === MAX_SCALE_VALUE) {
     return
   }
   scaleValue.value += 10
 }
 
 const zoomOut = () => {
-  if (scaleValue.value == MIN_SCALE_VALUE) {
+  if (scaleValue.value === MIN_SCALE_VALUE) {
     return
   }
   scaleValue.value -= 10
@@ -156,10 +155,10 @@ let errorNodes = []
 const validateNode = (node, errorNodes) => {
   if (node) {
     const { type, showText, conditionNodes } = node
-    if (type == NodeType.END_EVENT_NODE) {
+    if (type === NodeType.END_EVENT_NODE) {
       return
     }
-    if (type == NodeType.START_USER_NODE) {
+    if (type === NodeType.START_USER_NODE) {
       // 发起人节点暂时不用校验，直接校验孩子节点
       validateNode(node.childNode, errorNodes)
     }
@@ -176,9 +175,9 @@ const validateNode = (node, errorNodes) => {
     }
 
     if (
-      type == NodeType.CONDITION_BRANCH_NODE ||
-      type == NodeType.PARALLEL_BRANCH_NODE ||
-      type == NodeType.INCLUSIVE_BRANCH_NODE
+      type === NodeType.CONDITION_BRANCH_NODE ||
+      type === NodeType.PARALLEL_BRANCH_NODE ||
+      type === NodeType.INCLUSIVE_BRANCH_NODE
     ) {
       // 分支节点
       // 1. 先校验各个分支
@@ -192,7 +191,7 @@ const validateNode = (node, errorNodes) => {
 }
 
 /** 获取当前流程数据 */
-const getCurrentFlowData = async () => {
+const getCurrentFlowData = async() => {
   try {
     errorNodes = []
     validateNode(processNodeTree.value, errorNodes)
@@ -218,16 +217,22 @@ const exportJson = () => {
 
 /** 导入 JSON */
 const refFile = ref()
+const importKey = ref(0)
 const importJson = () => {
   refFile.value.click()
 }
 const importLocalFile = () => {
   const file = refFile.value.files[0]
+  refFile.value.value = ''
+  if (!file) {
+    return
+  }
   const reader = new FileReader()
   reader.readAsText(file)
-  reader.onload = function () {
+  reader.onload = function() {
     if (isString(this.result)) {
       processNodeTree.value = JSON.parse(this.result)
+      importKey.value++
       emits('save', processNodeTree.value)
     }
   }

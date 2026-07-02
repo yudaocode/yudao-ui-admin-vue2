@@ -18,6 +18,32 @@ export function listSimpleUsers() {
   })
 }
 
+// 获取用户精简信息列表（Vue3 新接口）
+export function getSimpleUserList() {
+  return request({
+    url: '/system/user/simple-list',
+    method: 'get'
+  })
+}
+
+// 查询多个用户
+export function getUserList(ids) {
+  return request({
+    url: '/system/user/list',
+    method: 'get',
+    params: { ids: Array.isArray(ids) ? ids.join(',') : ids }
+  })
+}
+
+// 按用户编号查询用户精简信息
+export function getSimpleUser(id) {
+  return request({
+    url: '/system/user/get-simple',
+    method: 'get',
+    params: { id }
+  })
+}
+
 // 查询用户详细
 export function getUser(userId) {
   return request({

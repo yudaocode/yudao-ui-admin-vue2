@@ -88,3 +88,11 @@ export function getJobNextTimes(jobId) {
     method: 'get'
   })
 }
+
+// 同步定时任务到 Quartz
+export function syncJob() {
+  return request({
+    url: '/infra/job/sync',
+    method: 'post'
+  })
+}

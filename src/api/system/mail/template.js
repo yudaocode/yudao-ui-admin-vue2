@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 
+// 查询邮件模版精简列表
+export function getSimpleMailTemplateList() {
+  return request({
+    url: '/system/mail-template/simple-list',
+    method: 'get'
+  })
+}
+
 // 创建邮件模版
 export function createMailTemplate(data) {
   return request({

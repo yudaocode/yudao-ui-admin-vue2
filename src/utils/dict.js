@@ -49,6 +49,7 @@ export const DICT_TYPE = {
   BPM_PROCESS_INSTANCE_STATUS: 'bpm_process_instance_status',
   BPM_PROCESS_INSTANCE_RESULT: 'bpm_process_instance_result',
   BPM_TASK_STATUS: 'bpm_task_status',
+  BPM_COMMENT_TYPE: 'bpm_comment_type',
   BPM_TASK_ASSIGN_SCRIPT: 'bpm_task_assign_script',
   BPM_OA_LEAVE_TYPE: 'bpm_oa_leave_type',
   BPM_PROCESS_LISTENER_TYPE: 'bpm_process_listener_type',

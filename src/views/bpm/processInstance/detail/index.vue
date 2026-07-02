@@ -68,6 +68,9 @@
         <el-tab-pane label="流转记录" name="record">
           <ProcessInstanceTaskList ref="taskList" :loading="processInstanceLoading" :id="currentId" />
         </el-tab-pane>
+        <el-tab-pane label="流程评论" name="comment">
+          <ProcessInstanceCommentList ref="commentList" :loading="processInstanceLoading" :id="currentId" />
+        </el-tab-pane>
       </el-tabs>
 
       <ProcessInstanceOperationButton
@@ -75,6 +78,9 @@
         :process-instance="processInstance"
         :process-definition="processDefinition"
         :user-options="userOptions"
+        :normal-form="detailForm"
+        :normal-form-api="fApi"
+        :writable-fields="writableFields"
         @success="refresh"
       />
     </el-card>
@@ -86,6 +92,7 @@
 <script>
 import { BpmModelFormType, BpmModelType } from '@/utils/constants'
 import { setConfAndFields2 } from '@/utils/formCreate'
+import { FieldPermissionType } from '@/components/SimpleProcessDesignerV2/src/consts'
 import {
   getApprovalDetail,
   getProcessInstanceBpmnModelView
@@ -95,6 +102,7 @@ import ProcessInstanceTimeline from './ProcessInstanceTimeline.vue'
 import ProcessInstanceBpmnViewer from './ProcessInstanceBpmnViewer.vue'
 import ProcessInstanceSimpleViewer from './ProcessInstanceSimpleViewer.vue'
 import ProcessInstanceTaskList from './ProcessInstanceTaskList.vue'
+import ProcessInstanceCommentList from './ProcessInstanceCommentList.vue'
 import ProcessInstanceOperationButton from './ProcessInstanceOperationButton.vue'
 import PrintDialog from './PrintDialog.vue'
 
@@ -105,6 +113,7 @@ export default {
     ProcessInstanceBpmnViewer,
     ProcessInstanceSimpleViewer,
     ProcessInstanceTaskList,
+    ProcessInstanceCommentList,
     ProcessInstanceOperationButton,
     PrintDialog
   },
@@ -133,6 +142,7 @@ export default {
       processModelView: {},
       activityNodes: [],
       taskList: [],
+      writableFields: [],
       userOptions: [],
       fApi: {},
       detailForm: {
@@ -170,6 +180,17 @@ export default {
     this.loadUsers()
     this.getDetail()
   },
+  watch: {
+    activeTab(value) {
+      if (value === 'comment') {
+        this.$nextTick(() => {
+          if (this.$refs.commentList) {
+            this.$refs.commentList.getList()
+          }
+        })
+      }
+    }
+  },
   methods: {
     async loadUsers() {
       try {
@@ -205,6 +226,7 @@ export default {
       this.processInstance = data.processInstance || {}
       this.processDefinition = data.processDefinition || {}
       this.activityNodes = data.activityNodes || []
+      this.writableFields = []
       this.taskList = []
       this.activityNodes.forEach((node) => {
         if (node.tasks && node.tasks.length) {
@@ -236,10 +258,51 @@ export default {
             if (this.fApi && this.fApi.disabled) {
               this.fApi.disabled(true)
             }
+            this.applyFormFieldsPermission(data.formFieldsPermission)
           })
         }
       } else if (this.processDefinition.formCustomViewPath) {
         this.BusinessFormComponent = this.loadBusinessComponent(this.processDefinition.formCustomViewPath)
+      }
+    },
+    applyFormFieldsPermission(formFieldsPermission) {
+      if (!formFieldsPermission || !this.fApi) {
+        return
+      }
+      Object.keys(formFieldsPermission).forEach((field) => {
+        this.setFieldPermission(field, formFieldsPermission[field])
+      })
+    },
+    setFieldPermission(field, permission) {
+      if (!this.fApi) {
+        return
+      }
+      if (permission === FieldPermissionType.READ) {
+        this.fApi.disabled && this.fApi.disabled(true, field)
+        this.clearFieldValidate(field)
+      } else if (permission === FieldPermissionType.WRITE) {
+        this.fApi.disabled && this.fApi.disabled(false, field)
+        this.fApi.hidden && this.fApi.hidden(false, field)
+        this.writableFields.push(field)
+      } else if (permission === FieldPermissionType.NONE) {
+        this.fApi.hidden && this.fApi.hidden(true, field)
+        this.clearFieldValidate(field)
+      }
+    },
+    clearFieldValidate(field) {
+      try {
+        if (this.fApi.updateValidate) {
+          this.fApi.updateValidate(field, [], false)
+        }
+        const rule = this.fApi.getRule && this.fApi.getRule(field)
+        if (rule) {
+          this.$set(rule, '$required', false)
+          if (rule.validate) {
+            this.$set(rule, 'validate', [])
+          }
+        }
+      } catch (e) {
+        // 兼容不同 form-create 字段类型的校验清理能力。
       }
     },
     loadBusinessComponent(path) {
@@ -251,7 +314,15 @@ export default {
         try {
           require([`@/views/${normalized}`], resolve)
         } catch (e) {
-          resolve({ render: (h) => h('el-alert', { props: { type: 'warning', title: '业务表单组件加载失败', closable: false } }) })
+          resolve({
+            render: h => h('el-alert', {
+              props: {
+                type: 'warning',
+                title: '业务表单组件加载失败',
+                closable: false
+              }
+            })
+          })
         }
       }
     },
@@ -267,6 +338,9 @@ export default {
       this.getDetail()
       if (this.$refs.taskList) {
         this.$refs.taskList.getList()
+      }
+      if (this.$refs.commentList) {
+        this.$refs.commentList.getList()
       }
     },
     handlePrint() {

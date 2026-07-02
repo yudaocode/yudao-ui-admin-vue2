@@ -37,6 +37,10 @@
                    v-hasPermi="['infra:job:query']">执行日志</el-button>
       </el-col>
       <el-col :span="1.5">
+        <el-button type="warning" plain icon="el-icon-refresh" size="mini" @click="handleSyncJob"
+                   :loading="syncLoading" v-hasPermi="['infra:job:create']">同步任务</el-button>
+      </el-col>
+      <el-col :span="1.5">
         <el-button
           type="danger"
           plain
@@ -163,7 +167,7 @@
 </template>
 
 <script>
-import { listJob, getJob, delJob, addJob, updateJob, exportJob, runJob, updateJobStatus, getJobNextTimes, delJobList } from "@/api/infra/job";
+import { listJob, getJob, delJob, addJob, updateJob, exportJob, runJob, updateJobStatus, getJobNextTimes, delJobList, syncJob } from "@/api/infra/job";
 import { InfraJobStatusEnum } from "@/utils/constants";
 import Crontab from '@/components/Crontab'
 
@@ -176,6 +180,8 @@ export default {
       loading: true,
       // 导出遮罩层
       exportLoading: false,
+      // 同步遮罩层
+      syncLoading: false,
       // 显示搜索条件
       showSearch: true,
       // 总条数
@@ -387,6 +393,18 @@ export default {
         this.$download.excel(response, '定时任务.xls');
       }).finally(() => {
         this.exportLoading = false;
+      });
+    },
+    /** 同步任务到 Quartz */
+    handleSyncJob() {
+      this.$modal.confirm('确认要同步所有任务到调度器?').then(() => {
+        this.syncLoading = true;
+        return syncJob();
+      }).then(() => {
+        this.$modal.msgSuccess("同步成功");
+        this.getList();
+      }).finally(() => {
+        this.syncLoading = false;
       });
     },
     // 批量删除操作

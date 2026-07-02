@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 
+// 查询站内信模板精简列表
+export function getSimpleNotifyTemplateList() {
+  return request({
+    url: '/system/notify-template/simple-list',
+    method: 'get'
+  })
+}
+
 // 创建站内信模板
 export function createNotifyTemplate(data) {
   return request({
@@ -61,4 +69,3 @@ export function exportNotifyTemplateExcel(query) {
     responseType: 'blob'
   })
 }
-

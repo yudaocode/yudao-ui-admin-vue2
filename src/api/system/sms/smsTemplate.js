@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 
+// 查询短信模板精简列表
+export function getSimpleSmsTemplateList() {
+  return request({
+    url: '/system/sms-template/simple-list',
+    method: 'get'
+  })
+}
+
 // 创建短信模板
 export function createSmsTemplate(data) {
   return request({
@@ -69,4 +77,3 @@ export function exportSmsTemplateExcel(query) {
     responseType: 'blob'
   })
 }
-
