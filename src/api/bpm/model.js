@@ -64,6 +64,34 @@ export function createModel(data) {
   })
 }
 
+// 导入流程模型（JSON 文件）
+export function importModel(file, key, name) {
+  const formData = new FormData()
+  formData.append('file', file)
+  if (key) {
+    formData.append('key', key)
+  }
+  if (name) {
+    formData.append('name', name)
+  }
+  return request({
+    url: '/bpm/model/import',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+// 导出流程模型（JSON）
+export function exportModel(id) {
+  return request({
+    url: '/bpm/model/export?id=' + id,
+    method: 'get'
+  })
+}
+
 export function deleteModel(id) {
   return request({
     url: '/bpm/model/delete?id=' + id,

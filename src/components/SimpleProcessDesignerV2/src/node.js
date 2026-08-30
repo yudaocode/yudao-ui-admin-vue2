@@ -29,7 +29,19 @@ const parseFormCreateFields = (formFields) => {
   const result = []
   if (formFields) {
     formFields.forEach((fieldStr) => {
-      parseFormFields(JSON.parse(fieldStr), result)
+      try {
+        // Form-create fields are persisted as JSON strings, while older
+        // models and test fixtures may already contain parsed objects.  A
+        // malformed optional field must not make the whole designer crash.
+        const field = typeof fieldStr === 'string' ? JSON.parse(fieldStr) : fieldStr
+        if (field) parseFormFields(field, result)
+      } catch (error) {
+        // Ignore one malformed field and keep the remaining permissions
+        // editable.  The server-side model validator will report invalid
+        // data when the model is saved.
+        // eslint-disable-next-line no-console
+        console.warn('[bpm] ignored malformed form-create field', error)
+      }
     })
   }
   return result

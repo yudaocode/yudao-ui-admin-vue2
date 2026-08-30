@@ -20,7 +20,7 @@
               :key="category.code"
               class="category-item"
               :class="{ active: activeCategory && activeCategory.code === category.code }"
-              @click="activeCategory = category"
+              @click="handleCategoryClick(category)"
             >
               {{ category.name }}
             </div>
@@ -29,23 +29,38 @@
         <el-col :span="19">
           <el-card shadow="never" v-loading="loading" class="definition-card">
             <el-empty v-if="filteredDefinitions.length === 0" description="没有找到可发起的流程" />
-            <div v-else class="definition-grid">
-              <el-card
-                v-for="definition in filteredDefinitions"
-                :key="definition.id"
-                shadow="hover"
-                class="definition-item"
-                @click.native="handleSelect(definition)"
+            <div
+              v-else
+              ref="definitionScroll"
+              class="definition-scroll"
+              @scroll="handleScroll"
+            >
+              <section
+                v-for="(definitions, categoryCode) in groupedDefinitions"
+                :key="categoryCode"
+                :ref="'category-' + categoryCode"
+                class="definition-section"
               >
-                <div class="definition-item__icon">
-                  <img v-if="definition.icon" :src="definition.icon" alt="" />
-                  <span v-else>{{ (definition.name || '').slice(0, 2) }}</span>
+                <h3 class="definition-section__title">{{ getCategoryName(categoryCode) }}</h3>
+                <div class="definition-grid">
+                  <el-card
+                    v-for="definition in definitions"
+                    :key="definition.id"
+                    shadow="hover"
+                    class="definition-item"
+                    @click.native="handleSelect(definition)"
+                  >
+                    <div class="definition-item__icon">
+                      <img v-if="definition.icon" :src="definition.icon" alt="" />
+                      <span v-else>{{ (definition.name || '').slice(0, 2) }}</span>
+                    </div>
+                    <div class="definition-item__main">
+                      <div class="definition-item__title">{{ definition.name }}</div>
+                      <div class="definition-item__desc">{{ definition.description || '暂无描述' }}</div>
+                    </div>
+                  </el-card>
                 </div>
-                <div class="definition-item__main">
-                  <div class="definition-item__title">{{ definition.name }}</div>
-                  <div class="definition-item__desc">{{ definition.description || '暂无描述' }}</div>
-                </div>
-              </el-card>
+              </section>
             </div>
           </el-card>
         </el-col>
@@ -90,11 +105,27 @@ export default {
       })
     },
     filteredDefinitions() {
-      const list = this.filteredProcessDefinitionList
-      if (!this.activeCategory) {
-        return list
+      // 分类只负责滚动定位，不再把其它分类的流程从列表中隐藏；这与 Vue3
+      // 页面「分组展示 + 左侧锚点」的交互一致，也避免切换分类后误以为流程不存在。
+      return this.filteredProcessDefinitionList
+    },
+    groupedDefinitions() {
+      const grouped = {}
+      const definitions = this.filteredProcessDefinitionList || []
+      this.categoryList.forEach((category) => {
+        const items = definitions.filter((definition) => definition.category === category.code)
+        if (items.length) {
+          grouped[category.code] = items
+        }
+      })
+      // 保留没有配置分类的定义，避免后端脏数据在迁移后不可发起。
+      const uncategorized = definitions.filter((definition) => {
+        return !this.categoryList.some((category) => category.code === definition.category)
+      })
+      if (uncategorized.length) {
+        grouped.__uncategorized = uncategorized
       }
-      return list.filter((definition) => definition.category === this.activeCategory.code)
+      return grouped
     }
   },
   created() {
@@ -124,6 +155,54 @@ export default {
         : this.processDefinitionList
       if (this.activeCategory && !this.availableCategories.some((item) => item.code === this.activeCategory.code)) {
         this.activeCategory = this.availableCategories[0] || null
+      }
+    },
+    getCategoryName(categoryCode) {
+      if (categoryCode === '__uncategorized') {
+        return '未分类'
+      }
+      const category = this.categoryList.find((item) => item.code === categoryCode)
+      return category ? category.name : categoryCode
+    },
+    getSectionElement(categoryCode) {
+      const section = this.$refs['category-' + categoryCode]
+      if (Array.isArray(section)) {
+        return section[0]
+      }
+      return section
+    },
+    handleCategoryClick(category) {
+      if (!category) {
+        return
+      }
+      this.activeCategory = category
+      this.$nextTick(() => {
+        const container = this.$refs.definitionScroll
+        const section = this.getSectionElement(category.code)
+        if (!container || !section) {
+          return
+        }
+        if (typeof container.scrollTo === 'function') {
+          container.scrollTo({ top: section.offsetTop, behavior: 'smooth' })
+        } else {
+          container.scrollTop = section.offsetTop
+        }
+      })
+    },
+    handleScroll(event) {
+      const container = event && event.target ? event.target : this.$refs.definitionScroll
+      if (!container) {
+        return
+      }
+      let current = null
+      this.availableCategories.forEach((category) => {
+        const section = this.getSectionElement(category.code)
+        if (section && section.offsetTop <= container.scrollTop + 50) {
+          current = category
+        }
+      })
+      if (current && (!this.activeCategory || this.activeCategory.code !== current.code)) {
+        this.activeCategory = current
       }
     },
     async tryReCreate() {
@@ -162,6 +241,26 @@ export default {
 .category-card,
 .definition-card {
   min-height: 680px;
+}
+
+.definition-scroll {
+  max-height: 680px;
+  padding-right: 4px;
+  overflow-y: auto;
+}
+
+.definition-section + .definition-section {
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid #ebeef5;
+}
+
+.definition-section__title {
+  padding-left: 2px;
+  margin: 0 0 10px;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .category-item {

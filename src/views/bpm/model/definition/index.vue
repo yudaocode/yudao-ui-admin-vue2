@@ -41,7 +41,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center">
         <template v-slot="scope">
-          <el-button type="text" @click="handleRestore(scope.row)">恢复</el-button>
+          <el-button type="text" @click="handleRestore(scope.row)"
+                     v-hasPermi="['bpm:model:update']">恢复</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -65,7 +66,7 @@
 </template>
 
 <script>
-import { getProcessDefinitionBpmnXML, getProcessDefinitionPage } from '@/api/bpm/definition'
+import { getProcessDefinition, getProcessDefinitionPage } from '@/api/bpm/definition'
 import { setConfAndFields2 } from '@/utils/formCreate'
 import { BpmModelFormType } from '@/utils/constants'
 
@@ -99,8 +100,9 @@ export default {
       this.loading = true
       try {
         const response = await getProcessDefinitionPage(this.queryParams)
-        this.list = response.data.list || []
-        this.total = response.data.total || 0
+        const data = response && response.data ? response.data : {}
+        this.list = data.list || []
+        this.total = data.total || 0
       } finally {
         this.loading = false
       }
@@ -118,19 +120,41 @@ export default {
       }
     },
     visibleScopeText(row) {
-      const users = row.startUsers || []
-      if (users.length === 0) {
+      const users = Array.isArray(row.startUsers) ? row.startUsers : []
+      const depts = Array.isArray(row.startDepts) ? row.startDepts : []
+      if (users.length === 0 && depts.length === 0) {
+        // Definition responses from older BPM services expose only ids. Do
+        // not incorrectly claim "全部可见" when an explicit id list exists.
+        const userIds = Array.isArray(row.startUserIds) ? row.startUserIds : []
+        const deptIds = Array.isArray(row.startDeptIds) ? row.startDeptIds : []
+        if (userIds.length > 0) {
+          return `指定用户（${userIds.length} 人）`
+        }
+        if (deptIds.length > 0) {
+          return `指定部门（${deptIds.length} 个）`
+        }
         return '全部可见'
       }
       if (users.length === 1) {
         return users[0].nickname || users[0].name
       }
+      if (users.length === 0 && depts.length === 1) {
+        return depts[0].name
+      }
+      if (users.length === 0 && depts.length > 1) {
+        return `${depts[0].name}等 ${depts.length} 个部门可见`
+      }
       return `${users[0].nickname || users[0].name}等 ${users.length} 人可见`
     },
     async handleBpmnDetail(row) {
-      const response = await getProcessDefinitionBpmnXML(row.id)
-      this.bpmnXML = response.data
-      this.bpmnVisible = true
+      try {
+        const response = await getProcessDefinition(row.id)
+        this.bpmnXML = response && response.data && (response.data.bpmnXml || response.data.bpmnXML)
+        this.bpmnVisible = true
+      } catch (e) {
+        this.bpmnXML = ''
+        this.$message.error('流程图加载失败')
+      }
     },
     handleRestore(row) {
       this.$router.push({

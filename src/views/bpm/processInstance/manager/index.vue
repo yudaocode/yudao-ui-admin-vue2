@@ -11,10 +11,10 @@
       <el-form-item label="流程名称" prop="name">
         <el-input v-model="queryParams.name" placeholder="请输入流程名称" clearable class="w-240" @keyup.enter.native="handleQuery" />
       </el-form-item>
-      <el-form-item label="所属流程" prop="processDefinitionId">
+      <el-form-item label="所属流程" prop="processDefinitionKey">
         <el-input
-          v-model="queryParams.processDefinitionId"
-          placeholder="请输入流程定义的编号"
+          v-model="queryParams.processDefinitionKey"
+          placeholder="请输入流程定义标识"
           clearable
           class="w-240"
           @keyup.enter.native="handleQuery"
@@ -88,9 +88,17 @@
       <el-table-column label="流程编号" align="center" prop="id" min-width="320" show-overflow-tooltip />
       <el-table-column label="操作" align="center" fixed="right" width="180">
         <template v-slot="scope">
-          <el-button type="text" size="mini" @click="handleDetail(scope.row)">详情</el-button>
+          <el-button
+            v-hasPermi="['bpm:process-instance:query']"
+            type="text"
+            size="mini"
+            @click="handleDetail(scope.row)"
+          >
+            详情
+          </el-button>
           <el-button
             v-if="scope.row.status === TaskStatusEnum.RUNNING"
+            v-hasPermi="['bpm:process-instance:cancel-by-admin']"
             type="text"
             size="mini"
             @click="handleCancel(scope.row)"
@@ -137,7 +145,7 @@ export default {
         pageSize: 10,
         startUserId: undefined,
         name: '',
-        processDefinitionId: undefined,
+        processDefinitionKey: undefined,
         category: undefined,
         status: undefined,
         createTime: []

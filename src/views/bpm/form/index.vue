@@ -39,6 +39,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template v-slot="scope">
+          <el-button size="mini" type="text" icon="el-icon-copy-document" @click="handleCopy(scope.row)"
+                     v-hasPermi="['bpm:form:update']">复制</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleDetail(scope.row)"
                      v-hasPermi="['bpm:form:query']">详情</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
@@ -129,11 +131,24 @@ export default {
         name: "BpmFormEditor"
       });
     },
+    /** 复制表单：沿用 Vue3 的 type + id 查询契约，由编辑器清除主键后创建副本。 */
+    handleCopy(row) {
+      this.$router.push({
+        name: "BpmFormEditor",
+        query: {
+          type: 'copy',
+          id: row && row.id,
+          formId: row && row.id
+        }
+      });
+    },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.$router.push({
         name: "BpmFormEditor",
         query:{
+          type: 'update',
+          id: row.id,
           formId: row.id
         }
       });

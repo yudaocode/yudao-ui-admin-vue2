@@ -1,20 +1,32 @@
 <template>
   <div class="operation-bar" v-if="processInstance && processInstance.id">
-    <template v-if="todoTask && todoTask.id">
-      <el-button type="success" icon="el-icon-check" size="small" @click="openAction('approve')">通过</el-button>
-      <el-button type="danger" icon="el-icon-close" size="small" @click="openAction('reject')">拒绝</el-button>
+    <template v-if="todoTask && todoTask.id && canHandleTask">
+      <el-button
+        v-if="isShowButton(OperationButtonType.APPROVE)"
+        type="success"
+        icon="el-icon-check"
+        size="small"
+        @click="openAction('approve')"
+      >{{ getButtonDisplayName(OperationButtonType.APPROVE) }}</el-button>
+      <el-button
+        v-if="isShowButton(OperationButtonType.REJECT)"
+        type="danger"
+        icon="el-icon-close"
+        size="small"
+        @click="openAction('reject')"
+      >{{ getButtonDisplayName(OperationButtonType.REJECT) }}</el-button>
       <el-button type="primary" icon="el-icon-chat-line-round" size="small" @click="openAction('comment')">评论</el-button>
-      <el-button icon="el-icon-back" size="small" @click="openAction('return')">退回</el-button>
-      <el-button icon="el-icon-position" size="small" @click="openAction('transfer')">转办</el-button>
-      <el-button icon="el-icon-user" size="small" @click="openAction('delegate')">委派</el-button>
-      <el-button icon="el-icon-plus" size="small" @click="openAction('addSign')">加签</el-button>
+      <el-button v-if="isShowButton(OperationButtonType.RETURN)" icon="el-icon-back" size="small" @click="openAction('return')">{{ getButtonDisplayName(OperationButtonType.RETURN) }}</el-button>
+      <el-button v-if="isShowButton(OperationButtonType.TRANSFER)" icon="el-icon-position" size="small" @click="openAction('transfer')">{{ getButtonDisplayName(OperationButtonType.TRANSFER) }}</el-button>
+      <el-button v-if="isShowButton(OperationButtonType.DELEGATE)" icon="el-icon-user" size="small" @click="openAction('delegate')">{{ getButtonDisplayName(OperationButtonType.DELEGATE) }}</el-button>
+      <el-button v-if="isShowButton(OperationButtonType.ADD_SIGN)" icon="el-icon-plus" size="small" @click="openAction('addSign')">{{ getButtonDisplayName(OperationButtonType.ADD_SIGN) }}</el-button>
       <el-button icon="el-icon-minus" size="small" @click="openAction('deleteSign')">减签</el-button>
-      <el-button icon="el-icon-message" size="small" @click="openAction('copy')">抄送</el-button>
+      <el-button v-if="isShowButton(OperationButtonType.COPY)" icon="el-icon-message" size="small" @click="openAction('copy')">{{ getButtonDisplayName(OperationButtonType.COPY) }}</el-button>
       <el-button icon="el-icon-refresh-left" size="small" @click="handleWithdraw">撤回</el-button>
     </template>
     <template v-else>
       <el-button
-        v-if="processInstance.status === TaskStatusEnum.RUNNING"
+        v-if="canCancel"
         type="danger"
         icon="el-icon-close"
         size="small"
@@ -22,7 +34,12 @@
       >
         取消流程
       </el-button>
-      <el-button icon="el-icon-refresh" size="small" @click="handleReCreate">重新发起</el-button>
+      <el-button
+        v-if="canReCreate"
+        icon="el-icon-refresh"
+        size="small"
+        @click="handleReCreate"
+      >重新发起</el-button>
     </template>
 
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="760px" append-to-body @close="handleDialogClose">
@@ -83,7 +100,14 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item v-if="actionType === 'approve' && todoTask && todoTask.signEnable" label="签名图片" prop="signPicUrl">
-          <el-input v-model="form.signPicUrl" placeholder="请输入签名图片 URL" />
+          <el-button size="small" @click="$refs.signDialog && $refs.signDialog.open(form.signPicUrl)">点击签名</el-button>
+          <el-image
+            v-if="form.signPicUrl"
+            class="sign-preview"
+            :src="form.signPicUrl"
+            :preview-src-list="[form.signPicUrl]"
+            fit="contain"
+          />
         </el-form-item>
         <el-form-item :label="reasonLabel" prop="reason">
           <el-input
@@ -123,6 +147,7 @@
         <el-button type="primary" :loading="formLoading" @click="submitAction">确 定</el-button>
       </div>
     </el-dialog>
+    <SignDialog ref="signDialog" @success="handleSignFinish" />
   </div>
 </template>
 
@@ -143,22 +168,28 @@ import {
 } from '@/api/bpm/task'
 import { createComment } from '@/api/bpm/comment'
 import {
-  cancelProcessInstanceByAdmin,
   cancelProcessInstanceByStartUser,
   getNextApprovalNodes
 } from '@/api/bpm/processInstance'
 import { BpmModelFormType } from '@/utils/constants'
-import { CandidateStrategy, NodeType } from '@/components/SimpleProcessDesignerV2/src/consts'
+import {
+  CandidateStrategy,
+  NodeType,
+  OPERATION_BUTTON_NAME,
+  OperationButtonType
+} from '@/components/SimpleProcessDesignerV2/src/consts'
 import { setConfAndFields2 } from '@/utils/formCreate'
 import { isEmpty } from '@/utils/is'
 import FileUpload from '@/components/FileUpload'
 import ProcessInstanceTimeline from './ProcessInstanceTimeline.vue'
+import SignDialog from './SignDialog.vue'
 
 export default {
   name: 'ProcessInstanceOperationButton',
   components: {
     FileUpload,
-    ProcessInstanceTimeline
+    ProcessInstanceTimeline,
+    SignDialog
   },
   props: {
     processInstance: {
@@ -189,6 +220,7 @@ export default {
   data() {
     return {
       TaskStatusEnum,
+      OperationButtonType,
       BpmModelFormType,
       todoTask: null,
       dialogVisible: false,
@@ -272,6 +304,36 @@ export default {
       if (this.actionType === 'comment') return '请输入评论内容'
       return this.actionType === 'approve' ? `请输入${this.nodeTypeName}意见` : '请输入处理意见'
     },
+    /**
+     * 取消/重新发起属于流程发起人的操作。详情页也会被审批人、抄送人和
+     * 管理员打开，不能仅凭「没有待办任务」就把这些按钮展示给所有人。
+     */
+    isStartUser() {
+      const startUser = this.processInstance && this.processInstance.startUser
+      const startUserId = startUser && startUser.id !== undefined
+        ? startUser.id
+        : this.processInstance && this.processInstance.startUserId
+      const currentUserId = this.$store && this.$store.getters && this.$store.getters.userId
+      return startUserId !== undefined && startUserId !== null && currentUserId !== undefined && currentUserId !== null && String(startUserId) === String(currentUserId)
+    },
+    canCancel() {
+      return this.isStartUser && Number(this.processInstance && this.processInstance.status) === TaskStatusEnum.RUNNING
+    },
+    // A task may be returned by the detail API in WAIT/APPROVING state (for
+    // example while another sign task is pending). Keep task operations
+    // disabled until Flowable marks the task RUNNING, matching the Vue3
+    // `isHandleTaskStatus` guard and preventing invalid state transitions.
+    canHandleTask() {
+      return !!(this.todoTask && this.todoTask.id && Number(this.todoTask.status) === TaskStatusEnum.RUNNING)
+    },
+    canReCreate() {
+      if (!this.isStartUser || !this.isEndProcessStatus(this.processInstance.status)) {
+        return false
+      }
+      const formType = this.processDefinition && this.processDefinition.formType
+      return Number(formType) === Number(BpmModelFormType.NORMAL) ||
+        (Number(formType) === Number(BpmModelFormType.CUSTOM) && !!(this.processDefinition && this.processDefinition.formCustomCreatePath))
+    },
     actionRules() {
       const reasonRequired = this.isReasonRequired()
       return {
@@ -342,6 +404,9 @@ export default {
       })
     },
     async openAction(type) {
+      if ((type === 'cancel' && !this.canCancel) || (type !== 'cancel' && !this.canHandleTask)) {
+        return
+      }
       this.actionType = type
       this.resetFormData()
       if (type === 'approve') {
@@ -404,8 +469,31 @@ export default {
       }
       return true
     },
+    /**
+     * Task responses carry button settings as a map keyed by the numeric
+     * OperationButtonType. Keep the old default (visible) when an older task
+     * response does not contain the map, while honoring explicit false.
+     */
+    isShowButton(btnType) {
+      const settings = this.todoTask && this.todoTask.buttonsSetting
+      if (!settings) {
+        return true
+      }
+      const setting = Array.isArray(settings)
+        ? settings.find((item) => Number(item && item.id) === Number(btnType))
+        : settings[btnType] || settings[String(btnType)]
+      return !setting || setting.enable === undefined ? true : !!setting.enable
+    },
+    getButtonDisplayName(btnType) {
+      const settings = this.todoTask && this.todoTask.buttonsSetting
+      const defaultName = OPERATION_BUTTON_NAME.get(btnType) || ''
+      const setting = Array.isArray(settings)
+        ? settings.find((item) => Number(item && item.id) === Number(btnType))
+        : settings && (settings[btnType] || settings[String(btnType)])
+      return setting && setting.displayName ? setting.displayName : defaultName
+    },
     validateNormalForm() {
-      if (!this.processDefinition || this.processDefinition.formType !== BpmModelFormType.NORMAL) {
+      if (!this.processDefinition || Number(this.processDefinition.formType) !== Number(BpmModelFormType.NORMAL)) {
         return Promise.resolve(true)
       }
       if (!this.normalFormApi || !this.normalFormApi.validate) {
@@ -489,6 +577,10 @@ export default {
     selectNextAssigneesConfirm(id, userList) {
       this.$set(this.form.nextAssignees, id, (userList || []).map((item) => item.id))
       this.$nextTick(() => this.$refs.form && this.$refs.form.validateField('nextAssignees'))
+    },
+    handleSignFinish(url) {
+      this.form.signPicUrl = url || ''
+      this.$nextTick(() => this.$refs.form && this.$refs.form.validateField('signPicUrl'))
     },
     validateNextAssignees() {
       for (const node of this.nextAssigneesActivityNode) {
@@ -604,17 +696,12 @@ export default {
           reason,
           copyUserIds: this.form.userIds
         }),
-        cancel: () => {
-          const isStartUser = this.processInstance.startUser && this.processInstance.startUser.id === this.$store.getters.userId
-          return isStartUser
-            ? cancelProcessInstanceByStartUser(this.processInstance.id, reason)
-            : cancelProcessInstanceByAdmin(this.processInstance.id, reason)
-        }
+        cancel: () => cancelProcessInstanceByStartUser(this.processInstance.id, reason)
       }
       return map[this.actionType]()
     },
     async handleWithdraw() {
-      if (!this.todoTask || !this.todoTask.id) {
+      if (!this.canHandleTask) {
         return
       }
       await this.$modal.confirm('确认撤回当前任务？')
@@ -623,12 +710,28 @@ export default {
       this.$emit('success')
     },
     handleReCreate() {
+      if (!this.canReCreate) {
+        return
+      }
+      const formType = this.processDefinition && this.processDefinition.formType
+      if (Number(formType) === Number(BpmModelFormType.CUSTOM) && this.processDefinition.formCustomCreatePath) {
+        this.$router.push({
+          path: this.processDefinition.formCustomCreatePath,
+          query: {
+            id: this.processInstance.businessKey
+          }
+        })
+        return
+      }
       this.$router.push({
         name: 'BpmProcessInstanceCreate',
         query: {
           processInstanceId: this.processInstance.id
         }
       })
+    },
+    isEndProcessStatus(status) {
+      return [2, 3, 4].includes(Number(status))
     }
   }
 }
@@ -646,5 +749,12 @@ export default {
   padding: 0 0 12px;
   margin-bottom: 12px;
   border-bottom: 1px solid #ebeef5;
+}
+
+.sign-preview {
+  width: 90px;
+  height: 40px;
+  margin-left: 8px;
+  vertical-align: middle;
 }
 </style>

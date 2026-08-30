@@ -85,6 +85,7 @@ import { listSimpleUsers } from '@/api/system/user'
 import { DICT_TYPE, getDictDataLabel, getDictDatas } from '@/utils/dict'
 import { decodeFields } from '@/utils/formCreate'
 import { formatDate } from '@/utils'
+import { sanitizePrintTemplate } from '@/views/bpm/model/form/print-template'
 
 export default {
   name: 'PrintDialog',
@@ -457,7 +458,11 @@ export default {
         return ''
       }
       const parser = new DOMParser()
-      const doc = parser.parseFromString(this.printData.printTemplateHtml, 'text/html')
+      // Reuse the editor's marker normalizer so templates saved by the old
+      // Vue2 textarea (`{流程名称}`) continue to render, and strip executable
+      // elements before the result reaches v-html.
+      const template = sanitizePrintTemplate(this.printData.printTemplateHtml, this.formFields)
+      const doc = parser.parseFromString(template, 'text/html')
       const tables = doc.querySelectorAll('table')
       tables.forEach((item) => {
         item.setAttribute('border', '1')

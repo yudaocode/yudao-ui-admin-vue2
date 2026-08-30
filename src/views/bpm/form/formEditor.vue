@@ -91,7 +91,8 @@ export default {
     };
   },
   created() {
-    const formId = this.$route.query.formId;
+    // Accept both the historical formId query and the Vue3 id/type contract.
+    const formId = this.$route.query.formId || this.$route.query.id;
     if (formId) {
       getForm(formId).then(response => {
         const data = response.data;
@@ -105,6 +106,13 @@ export default {
         this.$nextTick(() => {
           setConfAndFields(this.$refs.designer, data.conf, data.fields);
         });
+        if (this.$route.query.type === 'copy') {
+          // A copy must be submitted as a new form; preserve the designer
+          // fields while clearing only the server identity and making the
+          // duplicate distinguishable in the list.
+          this.formData.id = undefined;
+          this.formData.name = `${this.formData.name || ''}_copy`;
+        }
       });
     }
   },

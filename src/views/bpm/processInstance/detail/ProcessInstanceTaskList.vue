@@ -28,8 +28,7 @@
       </el-table-column>
       <el-table-column label="附件/签名" min-width="220">
         <template v-slot="scope">
-          <ProcessTaskEvidence
-            compact
+          <TaskEvidenceCell
             :attachments="scope.row.attachments"
             :sign-pic-url="scope.row.signPicUrl"
           />
@@ -50,6 +49,7 @@
       <form-create
         v-if="taskForm.rule.length"
         v-model="fApi"
+        :value="taskForm.value"
         :rule="taskForm.rule"
         :option="taskForm.option"
       />
@@ -62,12 +62,12 @@
 import { getTaskListByProcessInstanceId } from '@/api/bpm/task'
 import { formatPast2 } from '@/utils'
 import { setConfAndFields2 } from '@/utils/formCreate'
-import ProcessTaskEvidence from './ProcessTaskEvidence.vue'
+import TaskEvidenceCell from '@/views/bpm/task/components/TaskEvidenceCell.vue'
 
 export default {
   name: 'ProcessInstanceTaskList',
   components: {
-    ProcessTaskEvidence
+    TaskEvidenceCell
   },
   props: {
     id: {
@@ -83,6 +83,7 @@ export default {
     return {
       innerLoading: false,
       list: [],
+      listRequestId: 0,
       taskFormVisible: false,
       fApi: {},
       taskForm: {
@@ -125,15 +126,22 @@ export default {
       }
     },
     async getList() {
-      if (!this.id) {
+      const requestId = ++this.listRequestId
+      const processInstanceId = this.id
+      if (!processInstanceId) {
+        this.list = []
         return
       }
       this.innerLoading = true
       try {
-        const response = await getTaskListByProcessInstanceId(this.id)
-        this.list = response.data || []
+        const response = await getTaskListByProcessInstanceId(processInstanceId)
+        if (requestId === this.listRequestId && processInstanceId === this.id) {
+          this.list = response.data || []
+        }
       } finally {
-        this.innerLoading = false
+        if (requestId === this.listRequestId) {
+          this.innerLoading = false
+        }
       }
     }
   }

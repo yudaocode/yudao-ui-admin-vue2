@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import { getProcessDefinition, getProcessDefinitionBpmnXML } from '@/api/bpm/definition'
+import { getProcessDefinition } from '@/api/bpm/definition'
 import {
   createProcessInstance,
   getApprovalDetail
@@ -201,19 +201,22 @@ export default {
       if (this.isSimpleModel) {
         const simpleModel = this.definition.simpleModel || (definitionDetail && definitionDetail.simpleModel)
         if (simpleModel) {
-          this.simpleModel = typeof simpleModel === 'string'
-            ? JSON.parse(simpleModel)
-            : simpleModel
+          try {
+            this.simpleModel = typeof simpleModel === 'string'
+              ? JSON.parse(simpleModel)
+              : simpleModel
+          } catch (e) {
+            // A malformed persisted SIMPLE model must not abort the whole
+            // start page before approval details are loaded. Keep the
+            // diagram empty and let the form/approval path remain usable.
+            this.simpleModel = null
+            this.$message && this.$message.warning('流程图数据格式错误，暂无法预览')
+          }
         }
       } else {
-        try {
-          if (this.definition.bpmnXml || this.definition.bpmnXML) {
-            this.bpmnXML = this.definition.bpmnXml || this.definition.bpmnXML
-          } else {
-            const response = await getProcessDefinitionBpmnXML(this.definition.id)
-            this.bpmnXML = response.data
-          }
-        } catch (e) {}
+        // /bpm/process-definition/get 返回完整定义，流程图 XML 位于 bpmnXml。
+        // 旧 /get-bpmn-xml 已被后端移除，不能再回退请求该地址。
+        this.bpmnXML = this.definition.bpmnXml || this.definition.bpmnXML || ''
       }
     },
     async loadApprovalDetail(variables) {

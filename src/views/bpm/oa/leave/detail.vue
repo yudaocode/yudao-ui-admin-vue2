@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- 对话框(添加 / 修改) -->
-      <el-form ref="form" :model="form" label-width="100px">
+      <el-form ref="form" v-loading="detailLoading" :model="form" label-width="100px">
         <el-form-item label="开始时间：" prop="startTime"> {{parseTime(form.startTime, '{y}-{m}-{d}')}} </el-form-item>
         <el-form-item label="结束时间：" prop="endTime"> {{parseTime(form.endTime, '{y}-{m}-{d}')}} </el-form-item>
         <el-form-item label="请假类型：" prop="type">
@@ -28,6 +28,7 @@ export default {
   data() {
     return {
       leaveId: undefined, // 请假编号
+      detailLoading: false,
       // 表单参数
       form: {
         startTime: undefined,
@@ -49,10 +50,14 @@ export default {
   },
   methods: {
     /** 获得请假信息 */
-    getDetail() {
-      getLeave(this.leaveId).then(response => {
-        this.form = response.data;
-      });
+    async getDetail() {
+      this.detailLoading = true;
+      try {
+        const response = await getLeave(this.leaveId);
+        this.form = (response && response.data) || {};
+      } finally {
+        this.detailLoading = false;
+      }
     },
   }
 };

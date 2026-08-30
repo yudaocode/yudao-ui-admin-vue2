@@ -45,10 +45,8 @@ export function getUserGroupPage(query) {
 
 // 获取用户组精简信息列表
 export function listSimpleUserGroups() {
-  return request({
-    url: '/bpm/user-group/list-all-simple',
-    method: 'get'
-  })
+  // 兼容旧页面别名；Cloud 后端仅保留 /simple-list。
+  return getUserGroupSimpleList()
 }
 
 // 获取用户组精简信息列表（新版接口，与 vue3 对齐）

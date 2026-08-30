@@ -44,7 +44,7 @@
             <el-col :span="8">
               <el-card shadow="never">
                 <div slot="header">审批时间线</div>
-                <ProcessInstanceTimeline :activity-nodes="activityNodes" />
+                <ProcessInstanceTimeline ref="timeline" :activity-nodes="activityNodes" />
               </el-card>
             </el-col>
           </el-row>
@@ -62,6 +62,9 @@
             v-else
             :loading="processInstanceLoading"
             :model-view="processModelView"
+            :activity-nodes="activityNodes"
+            :tasks="taskList"
+            :process-instance="processInstance"
           />
         </el-tab-pane>
 
@@ -145,6 +148,8 @@ export default {
       writableFields: [],
       userOptions: [],
       fApi: {},
+      routeReloadTimer: null,
+      detailRequestId: 0,
       detailForm: {
         rule: [],
         option: {
@@ -180,7 +185,36 @@ export default {
     this.loadUsers()
     this.getDetail()
   },
+  beforeDestroy() {
+    if (this.routeReloadTimer) {
+      clearTimeout(this.routeReloadTimer)
+      this.routeReloadTimer = null
+    }
+  },
   watch: {
+    // Vue Router 会复用同一个详情组件实例，仅更新 query。若不监听，
+    // 从任务/抄送列表连续打开两个流程时页面会继续展示上一个实例。
+    '$route.query.id': {
+      handler(value, oldValue) {
+        if (value && value !== oldValue && !this.id) {
+          this.reloadForRouteChange()
+        }
+      }
+    },
+    '$route.query.taskId': {
+      handler(value, oldValue) {
+        if (value !== oldValue && !this.id) {
+          this.reloadForRouteChange()
+        }
+      }
+    },
+    '$route.query.activityId': {
+      handler(value, oldValue) {
+        if (value !== oldValue && !this.id) {
+          this.reloadForRouteChange()
+        }
+      }
+    },
     activeTab(value) {
       if (value === 'comment') {
         this.$nextTick(() => {
@@ -201,24 +235,75 @@ export default {
       }
     },
     async getDetail() {
-      if (!this.currentId) {
+      const requestId = ++this.detailRequestId
+      const instanceId = this.currentId
+      if (!instanceId) {
         this.$message.error('未传递流程实例编号')
         return
       }
+      // Clear the previous task while the two detail requests are in flight;
+      // otherwise a refresh can briefly leave an old approval button active
+      // against the newly selected process instance.
+      if (this.$refs.operationButton && this.$refs.operationButton.loadTodoTask) {
+        this.$refs.operationButton.loadTodoTask(null)
+      }
+      if (this.$refs.timeline && this.$refs.timeline.resetCustomApproveUsers) {
+        this.$refs.timeline.resetCustomApproveUsers()
+      }
       this.processInstanceLoading = true
       try {
-        await Promise.all([this.getApprovalDetail(), this.getProcessModelView()])
+        await Promise.all([
+          this.getApprovalDetail(instanceId, requestId),
+          this.getProcessModelView(instanceId, requestId)
+        ])
       } finally {
-        this.processInstanceLoading = false
+        if (requestId === this.detailRequestId) {
+          this.processInstanceLoading = false
+        }
       }
     },
-    async getApprovalDetail() {
+    reloadForRouteChange() {
+      if (this.routeReloadTimer) {
+        clearTimeout(this.routeReloadTimer)
+      }
+      this.routeReloadTimer = setTimeout(() => {
+        this.routeReloadTimer = null
+        this.activeTab = 'form'
+        this.processInstance = {}
+        this.processDefinition = {}
+        this.processModelView = {}
+        this.activityNodes = []
+        this.taskList = []
+        this.writableFields = []
+        this.detailForm = {
+          rule: [],
+          option: {
+            submitBtn: false,
+            resetBtn: false
+          },
+          value: {}
+        }
+        this.fApi = {}
+        this.BusinessFormComponent = null
+        if (this.$refs.operationButton && this.$refs.operationButton.loadTodoTask) {
+          this.$refs.operationButton.loadTodoTask(null)
+        }
+        if (this.$refs.timeline && this.$refs.timeline.resetCustomApproveUsers) {
+          this.$refs.timeline.resetCustomApproveUsers()
+        }
+        this.getDetail()
+      }, 0)
+    },
+    async getApprovalDetail(instanceId = this.currentId, requestId = this.detailRequestId) {
       const response = await getApprovalDetail({
-        processInstanceId: this.currentId,
+        processInstanceId: instanceId,
         taskId: this.currentTaskId,
         activityId: this.currentActivityId
       })
       const data = response.data
+      if (requestId !== this.detailRequestId || instanceId !== this.currentId) {
+        return
+      }
       if (!data) {
         this.$message.error('查询不到审批详情信息')
         return
@@ -235,12 +320,18 @@ export default {
       })
       this.initForm(data)
       this.$nextTick(() => {
-        if (this.$refs.operationButton) {
+        if (requestId === this.detailRequestId && instanceId === this.currentId && this.$refs.operationButton) {
           this.$refs.operationButton.loadTodoTask(data.todoTask)
         }
       })
     },
     initForm(data) {
+      // Clear the previous instance's form/component before applying the new
+      // definition.  Router reuse can switch from a normal form to a custom
+      // form (or an empty form), where otherwise stale controls remain visible.
+      this.detailForm.rule = []
+      this.detailForm.value = {}
+      this.BusinessFormComponent = null
       if (this.processDefinition.formType === BpmModelFormType.NORMAL) {
         if (this.processDefinition.formConf && this.processDefinition.formFields) {
           setConfAndFields2(
@@ -315,7 +406,7 @@ export default {
           require([`@/views/${normalized}`], resolve)
         } catch (e) {
           resolve({
-            render: h => h('el-alert', {
+            render: (h) => h('el-alert', {
               props: {
                 type: 'warning',
                 title: '业务表单组件加载失败',
@@ -326,12 +417,16 @@ export default {
         }
       }
     },
-    async getProcessModelView() {
+    async getProcessModelView(instanceId = this.currentId, requestId = this.detailRequestId) {
       try {
-        const response = await getProcessInstanceBpmnModelView(this.currentId)
-        this.processModelView = response.data || {}
+        const response = await getProcessInstanceBpmnModelView(instanceId)
+        if (requestId === this.detailRequestId && instanceId === this.currentId) {
+          this.processModelView = response.data || {}
+        }
       } catch (e) {
-        this.processModelView = {}
+        if (requestId === this.detailRequestId && instanceId === this.currentId) {
+          this.processModelView = {}
+        }
       }
     },
     refresh() {

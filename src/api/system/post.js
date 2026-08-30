@@ -12,9 +12,16 @@ export function listPost(query) {
 // 获取岗位精简信息列表
 export function listSimplePosts() {
   return request({
-    url: '/system/post/list-all-simple',
+    // Keep the old function name while targeting the current simple-list
+    // contract used by the Vue3 BPMN designer.
+    url: '/system/post/simple-list',
     method: 'get'
   })
+}
+
+// Vue3-compatible alias used by BPMN task configuration components.
+export function getSimplePostList() {
+  return listSimplePosts()
 }
 
 // 查询岗位详细
@@ -54,7 +61,7 @@ export function delPost(postId) {
 // 批量删除岗位
 export function delPostList(ids) {
   return request({
-    url: `/system/post/delete-batch?ids=${ids.join(',')}`,
+    url: `/system/post/delete-list?ids=${ids.join(',')}`,
     method: 'delete'
   })
 }

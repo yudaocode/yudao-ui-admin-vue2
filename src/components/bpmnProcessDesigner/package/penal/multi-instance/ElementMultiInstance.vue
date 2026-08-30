@@ -1,40 +1,80 @@
 <template>
   <div class="panel-tab__content">
-    <el-form size="mini" label-width="90px" @submit.native.prevent>
+    <!-- Flowable exposes the business-level approval mode on UserTask. -->
+    <el-form v-if="type === 'UserTask' && supportsApproveMethod" size="mini" label-width="110px" @submit.native.prevent>
+      <el-form-item label="多人审批方式">
+        <el-radio-group v-model="approveMethod" @change="onApproveMethodChange">
+          <div class="flex-col">
+            <div v-for="item in approveMethods" :key="item.value" class="approve-method-row">
+              <el-radio :label="item.value">{{ item.label }}</el-radio>
+              <el-input-number
+                v-if="Number(item.value) === ApproveMethodType.APPROVE_BY_RATIO && Number(approveMethod) === ApproveMethodType.APPROVE_BY_RATIO"
+                v-model="approveRatio"
+                :min="10"
+                :max="100"
+                :step="10"
+                size="small"
+                controls-position="right"
+                @change="onApproveRatioChange"
+              />
+              <span
+                v-if="Number(item.value) === ApproveMethodType.APPROVE_BY_RATIO && Number(approveMethod) === ApproveMethodType.APPROVE_BY_RATIO"
+                class="approve-ratio-suffix"
+              >%</span>
+            </div>
+          </div>
+        </el-radio-group>
+      </el-form-item>
+    </el-form>
+    <div v-else class="multi-instance-tip">
+      {{ supportsApproveMethod ? '除了 UserTask 以外节点的多实例待实现' : '当前 BPMN 方言不支持 Flowable 多人审批方式' }}
+    </div>
+
+    <!-- 与 Simple 设计器配置合并，保留以前的代码。业务面板默认隐藏，
+         但方法仍支持旧 XML 中的 StandardLoop/异步属性。 -->
+    <el-form label-width="90px" style="display: none" @submit.native.prevent>
+      <el-form-item label="快捷配置">
+        <el-button size="small" @click="changeConfig('依次审批')">依次审批</el-button>
+        <el-button size="small" @click="changeConfig('会签')">会签</el-button>
+        <el-button size="small" @click="changeConfig('或签')">或签</el-button>
+      </el-form-item>
       <el-form-item label="回路特性">
         <el-select v-model="loopCharacteristics" @change="changeLoopCharacteristicsType">
-          <!--bpmn:MultiInstanceLoopCharacteristics-->
           <el-option label="并行多重事件" value="ParallelMultiInstance" />
           <el-option label="时序多重事件" value="SequentialMultiInstance" />
-          <!--bpmn:StandardLoopCharacteristics-->
           <el-option label="循环事件" value="StandardLoop" />
           <el-option label="无" value="Null" />
         </el-select>
       </el-form-item>
       <template v-if="loopCharacteristics === 'ParallelMultiInstance' || loopCharacteristics === 'SequentialMultiInstance'">
-        <el-form-item label="循环基数" key="loopCardinality">
+        <el-form-item label="循环数量" key="loopCardinality">
           <el-input v-model="loopInstanceForm.loopCardinality" clearable @change="updateLoopCardinality" />
         </el-form-item>
         <el-form-item label="集合" key="collection" v-show="false">
           <el-input v-model="loopInstanceForm.collection" clearable @change="updateLoopBase" />
         </el-form-item>
-        <el-form-item label="元素变量" key="elementVariable">
+        <el-form-item label="元素变量" key="elementVariable" style="display: none">
           <el-input v-model="loopInstanceForm.elementVariable" clearable @change="updateLoopBase" />
         </el-form-item>
         <el-form-item label="完成条件" key="completionCondition">
           <el-input v-model="loopInstanceForm.completionCondition" clearable @change="updateLoopCondition" />
         </el-form-item>
-        <el-form-item label="异步状态" key="async">
+        <el-form-item label="异步状态" key="async" style="display: none">
           <el-checkbox v-model="loopInstanceForm.asyncBefore" label="异步前" @change="updateLoopAsync('asyncBefore')" />
           <el-checkbox v-model="loopInstanceForm.asyncAfter" label="异步后" @change="updateLoopAsync('asyncAfter')" />
           <el-checkbox
-            v-model="loopInstanceForm.exclusive"
             v-if="loopInstanceForm.asyncAfter || loopInstanceForm.asyncBefore"
+            v-model="loopInstanceForm.exclusive"
             label="排除"
             @change="updateLoopAsync('exclusive')"
           />
         </el-form-item>
-        <el-form-item label="重试周期" prop="timeCycle" v-if="loopInstanceForm.asyncAfter || loopInstanceForm.asyncBefore" key="timeCycle">
+        <el-form-item
+          v-if="loopInstanceForm.asyncAfter || loopInstanceForm.asyncBefore"
+          label="重试周期"
+          prop="timeCycle"
+          key="timeCycle"
+        >
           <el-input v-model="loopInstanceForm.timeCycle" clearable @change="updateLoopTimeCycle" />
         </el-form-item>
       </template>
@@ -43,150 +83,330 @@
 </template>
 
 <script>
+import { ApproveMethodType, APPROVE_METHODS } from '@/components/SimpleProcessDesignerV2/src/consts'
+
+function asArray(value) {
+  return Array.isArray(value) ? value : []
+}
+
 export default {
-  name: "ElementMultiInstance",
+  name: 'ElementMultiInstance',
   props: {
     businessObject: Object,
-    type: String
+    type: String,
+    id: String
   },
   inject: {
-    prefix: "prefix"
+    prefixRef: {
+      from: 'prefix',
+      default: 'flowable'
+    }
   },
   data() {
     return {
-      loopCharacteristics: "",
-      //默认配置，用来覆盖原始不存在的选项，避免报错
+      ApproveMethodType,
+      approveMethods: APPROVE_METHODS,
+      approveMethod: null,
+      approveRatio: 100,
+      otherExtensions: [],
+      // ApproveMethod is a Flowable-only extension.  Keep the visual default
+      // for Activiti/Camunda panels, but do not repeatedly try to create an
+      // undeclared moddle type on every element refresh.
+      approveMethodUnsupported: false,
+      // Keep a missing Flowable ApproveMethod extension distinguishable from
+      // an explicitly configured sequential approval.  Opening a plain
+      // single-instance UserTask must not mutate its BPMN semantics.
+      approveMethodConfigured: false,
+      loopCharacteristics: '',
       defaultLoopInstanceForm: {
-        completionCondition: "",
-        loopCardinality: "",
+        completionCondition: '',
+        loopCardinality: '',
         extensionElements: [],
         asyncAfter: false,
         asyncBefore: false,
         exclusive: false
       },
-      loopInstanceForm: {}
-    };
+      loopInstanceForm: {},
+      bpmnElement: null,
+      multiLoopInstance: null
+    }
+  },
+  computed: {
+    prefix() {
+      const value = this.prefixRef && this.prefixRef.value !== undefined ? this.prefixRef.value : this.prefixRef
+      return value || 'flowable'
+    },
+    supportsApproveMethod() {
+      return this.prefix === 'flowable'
+    }
   },
   watch: {
     businessObject: {
       immediate: true,
-      handler(val) {
-        this.bpmnElement = window.bpmnInstances.bpmnElement;
-        this.getElementLoop(val);
+      handler(value) {
+        this.syncBpmnElement()
+        this.getElementLoop(value || {})
+        this.getElementLoopNew()
+      }
+    },
+    id: {
+      immediate: true,
+      handler(value) {
+        if (!value) return
+        this.$nextTick(() => {
+          this.syncBpmnElement()
+          this.getElementLoop(this.businessObject || {})
+          this.getElementLoopNew()
+        })
       }
     }
   },
   methods: {
+    getBpmnInstances() {
+      return typeof window !== 'undefined' && window.bpmnInstances ? window.bpmnInstances : null
+    },
+    syncBpmnElement() {
+      const instances = this.getBpmnInstances()
+      if (!instances) return null
+      let element = instances.bpmnElement
+      if (this.id && element && element.id !== this.id && instances.elementRegistry && instances.elementRegistry.get) {
+        element = instances.elementRegistry.get(this.id)
+      }
+      if (!element && this.id && instances.elementRegistry && instances.elementRegistry.get) {
+        element = instances.elementRegistry.get(this.id)
+      }
+      if (element) this.bpmnElement = element
+      return this.bpmnElement
+    },
+    moddleCreate(type, properties) {
+      const instances = this.getBpmnInstances()
+      return instances && instances.moddle ? instances.moddle.create(type, properties) : null
+    },
+    updateProperties(properties) {
+      const instances = this.getBpmnInstances()
+      if (!instances || !instances.modeling || !this.bpmnElement) return false
+      instances.modeling.updateProperties(this.bpmnElement, properties)
+      return true
+    },
+    updateModdleProperties(target, properties) {
+      const instances = this.getBpmnInstances()
+      if (!instances || !instances.modeling || !this.bpmnElement || !target) return false
+      instances.modeling.updateModdleProperties(this.bpmnElement, target, properties)
+      return true
+    },
     getElementLoop(businessObject) {
-      if (!businessObject.loopCharacteristics) {
-        this.loopCharacteristics = "Null";
-        this.loopInstanceForm = {};
-        return;
+      const loop = businessObject && businessObject.loopCharacteristics
+      if (!loop) {
+        this.loopCharacteristics = 'Null'
+        this.loopInstanceForm = {}
+        this.multiLoopInstance = null
+        return
       }
-      if (businessObject.loopCharacteristics.$type === "bpmn:StandardLoopCharacteristics") {
-        this.loopCharacteristics = "StandardLoop";
-        this.loopInstanceForm = {};
-        return;
+      if (loop.$type === 'bpmn:StandardLoopCharacteristics') {
+        this.loopCharacteristics = 'StandardLoop'
+        this.loopInstanceForm = {}
+        this.multiLoopInstance = null
+        return
       }
-      if (businessObject.loopCharacteristics.isSequential) {
-        this.loopCharacteristics = "SequentialMultiInstance";
-      } else {
-        this.loopCharacteristics = "ParallelMultiInstance";
-      }
-      // 合并配置
+      this.loopCharacteristics = loop.isSequential ? 'SequentialMultiInstance' : 'ParallelMultiInstance'
       this.loopInstanceForm = {
         ...this.defaultLoopInstanceForm,
-        ...businessObject.loopCharacteristics,
-        completionCondition: businessObject.loopCharacteristics?.completionCondition?.body ?? "",
-        loopCardinality: businessObject.loopCharacteristics?.loopCardinality?.body ?? ""
-      };
-      // 保留当前元素 businessObject 上的 loopCharacteristics 实例
-      this.multiLoopInstance = window.bpmnInstances.bpmnElement.businessObject.loopCharacteristics;
-      // 更新表单
-      if (
-        businessObject.loopCharacteristics.extensionElements &&
-        businessObject.loopCharacteristics.extensionElements.values &&
-        businessObject.loopCharacteristics.extensionElements.values.length
-      ) {
-        this.$set(this.loopInstanceForm, "timeCycle", businessObject.loopCharacteristics.extensionElements.values[0].body);
+        ...loop,
+        completionCondition: loop.completionCondition && loop.completionCondition.body || '',
+        loopCardinality: loop.loopCardinality && loop.loopCardinality.body || ''
       }
+      const instances = this.getBpmnInstances()
+      this.multiLoopInstance = instances && instances.bpmnElement && instances.bpmnElement.businessObject
+        ? instances.bpmnElement.businessObject.loopCharacteristics
+        : loop
+      const values = loop.extensionElements && loop.extensionElements.values
+      if (values && values.length) this.$set(this.loopInstanceForm, 'timeCycle', values[0].body)
     },
     changeLoopCharacteristicsType(type) {
-      // this.loopInstanceForm = { ...this.defaultLoopInstanceForm }; // 切换类型取消原表单配置
-      // 取消多实例配置
-      if (type === "Null") {
-        window.bpmnInstances.modeling.updateProperties(this.bpmnElement, { loopCharacteristics: null });
-        return;
+      if (!this.bpmnElement) this.syncBpmnElement()
+      if (!this.bpmnElement) return
+      if (type === 'Null') {
+        this.updateProperties({ loopCharacteristics: null })
+        this.multiLoopInstance = null
+        return
       }
-      // 配置循环
-      if (type === "StandardLoop") {
-        const loopCharacteristicsObject = window.bpmnInstances.moddle.create("bpmn:StandardLoopCharacteristics");
-        window.bpmnInstances.modeling.updateProperties(this.bpmnElement, {
-          loopCharacteristics: loopCharacteristicsObject
-        });
-        this.multiLoopInstance = null;
-        return;
+      if (type === 'StandardLoop') {
+        const standard = this.moddleCreate('bpmn:StandardLoopCharacteristics')
+        if (standard) this.updateProperties({ loopCharacteristics: standard })
+        this.multiLoopInstance = null
+        return
       }
-      // 时序
-      if (type === "SequentialMultiInstance") {
-        this.multiLoopInstance = window.bpmnInstances.moddle.create("bpmn:MultiInstanceLoopCharacteristics", { isSequential: true });
-      } else {
-        this.multiLoopInstance = window.bpmnInstances.moddle.create("bpmn:MultiInstanceLoopCharacteristics", { collection: "${coll_userList}" });
-      }
-      window.bpmnInstances.modeling.updateProperties(this.bpmnElement, {
-        loopCharacteristics: this.multiLoopInstance
-      });
+      this.multiLoopInstance = type === 'SequentialMultiInstance'
+        ? this.moddleCreate('bpmn:MultiInstanceLoopCharacteristics', { isSequential: true, collection: '${coll_userList}' })
+        : this.moddleCreate('bpmn:MultiInstanceLoopCharacteristics', { collection: '${coll_userList}' })
+      if (this.multiLoopInstance) this.updateProperties({ loopCharacteristics: this.multiLoopInstance })
     },
-    // 循环基数
     updateLoopCardinality(cardinality) {
-      let loopCardinality = null;
-      if (cardinality && cardinality.length) {
-        loopCardinality = window.bpmnInstances.moddle.create("bpmn:FormalExpression", { body: cardinality });
-      }
-      window.bpmnInstances.modeling.updateModdleProperties(this.bpmnElement, this.multiLoopInstance, { loopCardinality });
+      const value = cardinality ? this.moddleCreate('bpmn:FormalExpression', { body: cardinality }) : null
+      this.updateModdleProperties(this.multiLoopInstance, { loopCardinality: value })
     },
-    // 完成条件
     updateLoopCondition(condition) {
-      let completionCondition = null;
-      if (condition && condition.length) {
-        completionCondition = window.bpmnInstances.moddle.create("bpmn:FormalExpression", { body: condition });
-      }
-      window.bpmnInstances.modeling.updateModdleProperties(this.bpmnElement, this.multiLoopInstance, { completionCondition });
+      const value = condition ? this.moddleCreate('bpmn:FormalExpression', { body: condition }) : null
+      this.updateModdleProperties(this.multiLoopInstance, { completionCondition: value })
     },
-    // 重试周期
     updateLoopTimeCycle(timeCycle) {
-      const extensionElements = window.bpmnInstances.moddle.create("bpmn:ExtensionElements", {
-        values: [
-          window.bpmnInstances.moddle.create(`${this.prefix}:FailedJobRetryTimeCycle`, {
-            body: timeCycle
-          })
-        ]
-      });
-      window.bpmnInstances.modeling.updateModdleProperties(this.bpmnElement, this.multiLoopInstance, { extensionElements });
+      const retry = this.moddleCreate(`${this.prefix}:FailedJobRetryTimeCycle`, { body: timeCycle })
+      const extensionElements = retry ? this.moddleCreate('bpmn:ExtensionElements', { values: [retry] }) : null
+      this.updateModdleProperties(this.multiLoopInstance, { extensionElements })
     },
-    // 直接更新的基础信息
     updateLoopBase() {
-      window.bpmnInstances.modeling.updateModdleProperties(this.bpmnElement, this.multiLoopInstance, {
+      this.updateModdleProperties(this.multiLoopInstance, {
         collection: this.loopInstanceForm.collection || null,
         elementVariable: this.loopInstanceForm.elementVariable || null
-      });
+      })
     },
-    // 各异步状态
     updateLoopAsync(key) {
-      const { asyncBefore, asyncAfter } = this.loopInstanceForm;
-      let asyncAttr = Object.create(null);
+      const asyncBefore = !!this.loopInstanceForm.asyncBefore
+      const asyncAfter = !!this.loopInstanceForm.asyncAfter
+      let attrs = {}
       if (!asyncBefore && !asyncAfter) {
-        this.$set(this.loopInstanceForm, "exclusive", false);
-        asyncAttr = { asyncBefore: false, asyncAfter: false, exclusive: false, extensionElements: null };
+        this.$set(this.loopInstanceForm, 'exclusive', false)
+        attrs = { asyncBefore: false, asyncAfter: false, exclusive: false, extensionElements: null }
       } else {
-        asyncAttr[key] = this.loopInstanceForm[key];
+        attrs[key] = this.loopInstanceForm[key]
       }
-      window.bpmnInstances.modeling.updateModdleProperties(this.bpmnElement, this.multiLoopInstance, asyncAttr);
+      this.updateModdleProperties(this.multiLoopInstance, attrs)
+    },
+    changeConfig(config) {
+      if (config === '依次审批') {
+        this.changeLoopCharacteristicsType('SequentialMultiInstance')
+        this.updateLoopCardinality('1')
+        this.updateLoopCondition('${ nrOfCompletedInstances >= nrOfInstances }')
+      } else if (config === '会签') {
+        this.changeLoopCharacteristicsType('ParallelMultiInstance')
+        this.updateLoopCondition('${ nrOfCompletedInstances >= nrOfInstances }')
+      } else if (config === '或签') {
+        this.changeLoopCharacteristicsType('ParallelMultiInstance')
+        this.updateLoopCondition('${ nrOfCompletedInstances > 0 }')
+      }
+    },
+    getElementLoopNew() {
+      if (this.type !== 'UserTask') return
+      const element = this.bpmnElement || this.syncBpmnElement()
+      const instances = this.getBpmnInstances()
+      if (!element || !instances || !instances.moddle) return
+      const values = asArray(element.businessObject && element.businessObject.extensionElements && element.businessObject.extensionElements.values)
+      const approve = values.find(item => item && item.$type === `${this.prefix}:ApproveMethod`)
+      this.approveMethodConfigured = !!approve
+      this.otherExtensions = values.filter(item => !item || item.$type !== `${this.prefix}:ApproveMethod`)
+      this.approveMethodUnsupported = !this.supportsApproveMethod
+      const ratio = this.readApproveRatio(element.businessObject && element.businessObject.loopCharacteristics)
+      this.approveRatio = ratio || 100
+      if (approve && approve.value !== undefined) {
+        this.approveMethod = Number(approve.value)
+      } else {
+        // Infer a display value from an already-existing loop, but never
+        // create a loop or extension merely because the properties panel was
+        // opened.  A plain UserTask remains a plain UserTask until the user
+        // explicitly selects an approval mode.
+        this.approveMethod = this.inferApproveMethod(element.businessObject && element.businessObject.loopCharacteristics)
+      }
+    },
+    inferApproveMethod(loop) {
+      if (!loop) return null
+      if (loop.isSequential) return ApproveMethodType.SEQUENTIAL_APPROVE
+      const body = loop.completionCondition && loop.completionCondition.body
+      if (body && /nrOfCompletedInstances\s*>\s*0/.test(String(body))) return ApproveMethodType.ANY_APPROVE
+      if (body && /nrOfCompletedInstances\s*\/\s*nrOfInstances\s*>=/.test(String(body))) return ApproveMethodType.APPROVE_BY_RATIO
+      return ApproveMethodType.ANY_APPROVE
+    },
+    readApproveRatio(loop) {
+      const body = loop && loop.completionCondition && loop.completionCondition.body
+      if (!body) return null
+      const match = String(body).match(/nrOfCompletedInstances\s*\/\s*nrOfInstances\s*>=\s*([0-9.]+)/)
+      if (!match) return null
+      const ratio = Math.round(Number(match[1]) * 100)
+      return ratio >= 10 && ratio <= 100 ? ratio : null
+    },
+    onApproveMethodChange() {
+      this.approveMethodConfigured = true
+      this.approveRatio = 100
+      this.updateLoopCharacteristics()
+    },
+    onApproveRatioChange() {
+      this.updateLoopCharacteristics()
+    },
+    updateLoopCharacteristics() {
+      const element = this.bpmnElement || this.syncBpmnElement()
+      const instances = this.getBpmnInstances()
+      if (!element || !instances || !instances.moddle || !instances.modeling || !this.approveMethod) return
+      const method = Number(this.approveMethod)
+      let loop = null
+      if (method === ApproveMethodType.RANDOM_SELECT_ONE_APPROVE) {
+        instances.modeling.updateProperties(element, { loopCharacteristics: null })
+        this.multiLoopInstance = null
+      } else if (method === ApproveMethodType.APPROVE_BY_RATIO) {
+        loop = instances.moddle.create('bpmn:MultiInstanceLoopCharacteristics', {
+          isSequential: false,
+          collection: '${coll_userList}'
+        })
+        loop.completionCondition = instances.moddle.create('bpmn:FormalExpression', {
+          body: '${ nrOfCompletedInstances/nrOfInstances >= ' + (Number(this.approveRatio) || 100) / 100 + '}'
+        })
+      } else if (method === ApproveMethodType.ANY_APPROVE) {
+        loop = instances.moddle.create('bpmn:MultiInstanceLoopCharacteristics', {
+          isSequential: false,
+          collection: '${coll_userList}'
+        })
+        loop.completionCondition = instances.moddle.create('bpmn:FormalExpression', {
+          body: '${ nrOfCompletedInstances > 0 }'
+        })
+      } else {
+        loop = instances.moddle.create('bpmn:MultiInstanceLoopCharacteristics', {
+          isSequential: true,
+          collection: '${coll_userList}'
+        })
+        loop.loopCardinality = instances.moddle.create('bpmn:FormalExpression', { body: '1' })
+        loop.completionCondition = instances.moddle.create('bpmn:FormalExpression', {
+          body: '${ nrOfCompletedInstances >= nrOfInstances }'
+        })
+      }
+      if (loop) {
+        this.multiLoopInstance = loop
+        instances.modeling.updateProperties(element, { loopCharacteristics: loop })
+      }
+      if (this.approveMethodUnsupported) return
+      try {
+        const extensionValues = this.otherExtensions.concat([
+          instances.moddle.create(`${this.prefix}:ApproveMethod`, { value: method })
+        ])
+        const extensions = instances.moddle.create('bpmn:ExtensionElements', { values: extensionValues })
+        instances.modeling.updateProperties(element, { extensionElements: extensions })
+      } catch (error) {
+        // Older Activiti/Camunda descriptors do not declare this Flowable
+        // extension; keep the BPMN loop update usable in those deployments.
+        // eslint-disable-next-line no-console
+        console.warn('[bpmn] ApproveMethod extension is unavailable for prefix ' + this.prefix, error)
+        this.approveMethodUnsupported = true
+      }
     }
   },
   beforeDestroy() {
-    this.multiLoopInstance = null;
-    this.bpmnElement = null;
+    this.multiLoopInstance = null
+    this.bpmnElement = null
   }
-};
+}
 </script>
+
+<style scoped>
+.approve-method-row {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.approve-ratio-suffix {
+  margin-left: 4px;
+}
+
+.multi-instance-tip {
+  color: #909399;
+  font-size: 12px;
+  padding: 8px 0;
+}
+</style>

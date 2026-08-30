@@ -187,12 +187,15 @@ export default {
     syncSelectedUsers() {
       const startUserIds = Array.isArray(this.modelData.startUserIds) ? this.modelData.startUserIds : []
       const managerUserIds = Array.isArray(this.modelData.managerUserIds) ? this.modelData.managerUserIds : []
-      this.selectedStartUsers = this.userList.filter((user) => startUserIds.includes(user.id))
-      this.selectedManagerUsers = this.userList.filter((user) => managerUserIds.includes(user.id))
+      const hasId = (ids, id) => ids.map((item) => String(item)).includes(String(id))
+      this.selectedStartUsers = this.userList.filter((user) => hasId(startUserIds, user.id))
+      this.selectedManagerUsers = this.userList.filter((user) => hasId(managerUserIds, user.id))
     },
     syncSelectedStartDepts() {
       const startDeptIds = Array.isArray(this.modelData.startDeptIds) ? this.modelData.startDeptIds : []
-      this.selectedStartDepts = this.deptList.filter((dept) => startDeptIds.includes(dept.id))
+      this.selectedStartDepts = this.deptList.filter((dept) => {
+        return startDeptIds.map((item) => String(item)).includes(String(dept.id))
+      })
     },
     openStartUserSelect() {
       this.currentSelectType = 'start'
@@ -227,7 +230,7 @@ export default {
       this.$set(
         this.modelData,
         'startUserIds',
-        (this.modelData.startUserIds || []).filter((id) => id !== user.id)
+        (this.modelData.startUserIds || []).filter((id) => String(id) !== String(user.id))
       )
       this.syncSelectedUsers()
     },
@@ -235,7 +238,7 @@ export default {
       this.$set(
         this.modelData,
         'managerUserIds',
-        (this.modelData.managerUserIds || []).filter((id) => id !== user.id)
+        (this.modelData.managerUserIds || []).filter((id) => String(id) !== String(user.id))
       )
       this.syncSelectedUsers()
     },

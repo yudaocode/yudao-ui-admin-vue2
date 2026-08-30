@@ -49,8 +49,7 @@
       <el-table-column label="审批建议" align="center" prop="reason" min-width="180" show-overflow-tooltip />
       <el-table-column label="附件/签名" align="center" min-width="220">
         <template v-slot="scope">
-          <ProcessTaskEvidence
-            compact
+          <TaskEvidenceCell
             :attachments="scope.row.attachments"
             :sign-pic-url="scope.row.signPicUrl"
           />
@@ -81,12 +80,12 @@
 <script>
 import { getTaskManagerPage } from '@/api/bpm/task'
 import { formatPast2 } from '@/utils'
-import ProcessTaskEvidence from '@/views/bpm/processInstance/detail/ProcessTaskEvidence.vue'
+import TaskEvidenceCell from '@/views/bpm/task/components/TaskEvidenceCell.vue'
 
 export default {
   name: 'BpmManagerTask',
   components: {
-    ProcessTaskEvidence
+    TaskEvidenceCell
   },
   data() {
     return {

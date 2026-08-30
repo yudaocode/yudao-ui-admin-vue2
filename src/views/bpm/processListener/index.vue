@@ -68,59 +68,20 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
 
-    <!-- 对话框(添加 / 修改) -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="名字" prop="name">
-          <el-input v-model="form.name" placeholder="请输入名字" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.COMMON_STATUS)"
-                      :key="dict.value" :label="parseInt(dict.value)">{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="类型" prop="type">
-          <el-select v-model="form.type" placeholder="请选择类型" @change="form.event = undefined">
-            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.BPM_PROCESS_LISTENER_TYPE)"
-                       :key="dict.value" :label="dict.label" :value="dict.value"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="事件" prop="event">
-          <el-select v-model="form.event" placeholder="请选择事件">
-            <el-option v-for="event in eventOptions" :key="event" :label="event" :value="event"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="值类型" prop="valueType">
-          <el-select v-model="form.valueType" placeholder="请选择值类型">
-            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.BPM_PROCESS_LISTENER_VALUE_TYPE)"
-                       :key="dict.value" :label="dict.label" :value="dict.value"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="form.type === 'class' ? '类路径' : '表达式'" prop="value">
-          <el-input v-model="form.value" :placeholder="form.type === 'class' ? '请输入类路径' : '请输入表达式'" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <!-- 表单弹窗：添加/修改。表单自身负责详情加载、校验和提交。 -->
+    <ProcessListenerForm ref="processListenerForm" @success="getList" />
   </div>
 </template>
 
 <script>
-import {
-  createProcessListener,
-  updateProcessListener,
-  deleteProcessListener,
-  getProcessListener,
-  getProcessListenerPage
-} from "@/api/bpm/processListener";
-import { CommonStatusEnum } from "@/utils/constants";
+import { deleteProcessListener, getProcessListenerPage } from '@/api/bpm/processListener'
+import ProcessListenerForm from './ProcessListenerForm.vue'
 
 export default {
-  name: "BpmProcessListener",
+  name: 'BpmProcessListener',
+  components: {
+    ProcessListenerForm
+  },
   data() {
     return {
       // 遮罩层
@@ -131,10 +92,6 @@ export default {
       total: 0,
       // 流程监听器列表
       list: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -142,118 +99,59 @@ export default {
         name: null,
         type: null,
         event: null
-      },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        name: [{ required: true, message: "名字不能为空", trigger: "blur" }],
-        type: [{ required: true, message: "类型不能为空", trigger: "change" }],
-        status: [{ required: true, message: "状态不能为空", trigger: "blur" }],
-        event: [{ required: true, message: "监听事件不能为空", trigger: "change" }],
-        valueType: [{ required: true, message: "值类型不能为空", trigger: "change" }],
-        value: [{ required: true, message: "值不能为空", trigger: "blur" }]
       }
-    };
-  },
-  computed: {
-    // 事件下拉选项：根据监听器类型动态变化
-    eventOptions() {
-      return this.form.type === 'execution'
-        ? ['开始', '结束']
-        : ['创建', '指派', '完成', '删除', '更新', '超时'];
     }
   },
   created() {
-    this.getList();
+    this.getList()
   },
   methods: {
     /** 查询列表 */
     getList() {
-      this.loading = true;
-      getProcessListenerPage(this.queryParams).then(response => {
-        this.list = response.data.list;
-        this.total = response.data.total;
-        this.loading = false;
-      });
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        id: undefined,
-        name: undefined,
-        type: undefined,
-        status: CommonStatusEnum.ENABLE,
-        event: undefined,
-        valueType: undefined,
-        value: undefined
-      };
-      this.resetForm("form");
+      this.loading = true
+      return getProcessListenerPage(this.queryParams).then(response => {
+        const data = response && response.data ? response.data : {}
+        this.list = data.list || []
+        this.total = data.total || 0
+      }).finally(() => {
+        this.loading = false
+      })
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.queryParams.pageNo = 1;
-      this.getList();
+      this.queryParams.pageNo = 1
+      this.getList()
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.resetForm("queryForm");
-      this.handleQuery();
+      this.resetForm('queryForm')
+      this.handleQuery()
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加流程监听器";
+      this.openForm('create')
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getProcessListener(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改流程监听器";
-      });
+      this.openForm('update', row && row.id)
     },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (!valid) {
-          return;
-        }
-        // 修改的提交
-        if (this.form.id != null) {
-          updateProcessListener(this.form).then(() => {
-            this.$modal.msgSuccess("修改成功");
-            this.open = false;
-            this.getList();
-          });
-          return;
-        }
-        // 添加的提交
-        createProcessListener(this.form).then(() => {
-          this.$modal.msgSuccess("新增成功");
-          this.open = false;
-          this.getList();
-        });
-      });
+    /** 打开可复用的添加/修改表单 */
+    openForm(type, id) {
+      const form = this.$refs.processListenerForm
+      if (form && form.open) {
+        form.open(type, id)
+      }
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const id = row.id;
+      const id = row.id
       this.$modal.confirm('是否确认删除流程监听器编号为"' + id + '"的数据项?').then(function() {
-        return deleteProcessListener(id);
+        return deleteProcessListener(id)
       }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
+        this.getList()
+        this.$modal.msgSuccess('删除成功')
+      }).catch(() => {})
     }
   }
-};
+}
 </script>

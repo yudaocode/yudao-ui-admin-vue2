@@ -289,10 +289,16 @@ const addNode = (type) => {
           type: 1
         },
         timeoutSetting: {
-          enable: false
+          enable: false,
+          type: 1,
+          timeExpression: ''
         },
         multiInstanceSetting: {
-          enable: false
+          enable: false,
+          sequential: false,
+          approveRatio: 100,
+          sourceType: 1,
+          source: '1'
         }
       }
     }

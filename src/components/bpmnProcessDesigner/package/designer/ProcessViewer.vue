@@ -44,6 +44,12 @@ export default {
   mounted() {
     this.xml = this.value;
     this.activityList = this.activityData;
+    // The detail page passes all viewer data before mount.  The legacy
+    // component's watchers are not `immediate`, so without copying these
+    // props here the first render silently drops process/task metadata and
+    // cannot paint task results or hover details until a later refresh.
+    this.processInstance = this.processInstanceData;
+    this.taskList = this.taskData;
     // 初始化
     this.initBpmnModeler();
     this.createNewDiagram(this.xml);
@@ -151,7 +157,7 @@ export default {
         if (!activity) {
           return;
         }
-        if (n.$type === 'bpmn:UserTask') { // 用户任务
+        if (n.$type === 'bpmn:UserTask' || n.$type === 'bpmn:CallActivity') { // 用户任务和子流程调用
           // 处理用户任务的高亮
           const task = this.taskList.find(m => m.id === activity.taskId); // 找到活动对应的 taskId
           if (!task) {
@@ -316,17 +322,19 @@ export default {
             <p>Elemet type: ${element.type}</p>
           </div>`; // 默认值
         if (element.type === 'bpmn:StartEvent' && this.processInstance) {
-          html = `<p>发起人：${this.processInstance.startUser.nickname}</p>
-                  <p>部门：${this.processInstance.startUser.deptName}</p>
+          const startUser = this.processInstance.startUser || {};
+          html = `<p>发起人：${startUser.nickname || startUser.name || this.processInstance.startUserNickname || ''}</p>
+                  <p>部门：${startUser.deptName || ''}</p>
                   <p>创建时间：${this.parseTime(this.processInstance.createTime)}`;
-        } else if (element.type === 'bpmn:UserTask') {
+        } else if (element.type === 'bpmn:UserTask' || element.type === 'bpmn:CallActivity') {
           // debugger
           let task = this.taskList.find(m => m.id === activity.taskId); // 找到活动对应的 taskId
           if (!task) {
             return;
           }
-          html = `<p>审批人：${task.assigneeUser.nickname}</p>
-                  <p>部门：${task.assigneeUser.deptName}</p>
+          const assignee = task.assigneeUser || task.ownerUser || {};
+          html = `<p>审批人：${assignee.nickname || assignee.name || assignee.id || ''}</p>
+                  <p>部门：${assignee.deptName || ''}</p>
                   <p>结果：${this.getDictDataLabel(this.DICT_TYPE.BPM_PROCESS_INSTANCE_RESULT, task.result)}</p>
                   <p>创建时间：${this.parseTime(task.createTime)}</p>`;
           if (task.endTime) {

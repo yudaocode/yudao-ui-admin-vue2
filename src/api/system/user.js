@@ -12,10 +12,9 @@ export function listUser(query) {
 
 // 获取用户精简信息列表
 export function listSimpleUsers() {
-  return request({
-    url: '/system/user/list-all-simple',
-    method: 'get'
-  })
+  // Keep the legacy function name for Vue2 callers, but use the canonical
+  // simple-list route shared with the Vue3 APIs.
+  return getSimpleUserList()
 }
 
 // 获取用户精简信息列表（Vue3 新接口）
@@ -81,7 +80,7 @@ export function delUser(userId) {
 // 批量删除用户
 export function delUserList(ids) {
   return request({
-    url: `/system/user/delete-batch?ids=${ids.join(',')}`,
+    url: `/system/user/delete-list?ids=${ids.join(',')}`,
     method: 'delete'
   })
 }

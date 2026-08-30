@@ -32,8 +32,10 @@ export function getSimpleProcessDefinitionList() {
 }
 
 export function getProcessDefinitionBpmnXML(id) {
-  return request({
-    url: '/bpm/process-definition/get-bpmn-xml?id=' + id,
-    method: 'get'
-  })
+  // 兼容旧调用方：后端已移除 /get-bpmn-xml，改从流程定义详情中读取 bpmnXml。
+  // 保持旧函数返回 response.data 为 XML 字符串，避免未迁移的外部调用方再次请求 404。
+  return getProcessDefinition(id).then((response) => ({
+    ...response,
+    data: response.data && (response.data.bpmnXml || response.data.bpmnXML)
+  }))
 }

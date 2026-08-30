@@ -14,7 +14,10 @@
     </el-table>
     <div class="element-drawer__button">
       <el-button size="mini" type="primary" icon="el-icon-plus" @click="openListenerForm(null)">添加监听器</el-button>
+      <el-button size="mini" type="success" icon="el-icon-s-operation" @click="openProcessListenerDialog">选择监听器</el-button>
     </div>
+
+    <ProcessListenerDialog ref="processListenerDialog" @select="selectProcessListener" />
 
     <!-- 监听器 编辑/创建 部分 -->
     <el-drawer :visible.sync="listenerFormModelVisible" title="执行监听器" :size="`${width}px`" append-to-body destroy-on-close>
@@ -162,9 +165,11 @@
 <script>
 import { createListenerObject, updateElementExtensions } from "../../utils";
 import { initListenerType, initListenerForm, listenerType, fieldType } from "./utilSelf";
+import ProcessListenerDialog from './ProcessListenerDialog';
 
 export default {
   name: "ElementListeners",
+  components: { ProcessListenerDialog },
   props: {
     id: String,
     type: String
@@ -184,7 +189,13 @@ export default {
       editingListenerIndex: -1, // 监听器所在下标，-1 为新增
       editingListenerFieldIndex: -1, // 字段所在下标，-1 为新增
       listenerTypeObject: listenerType,
-      fieldTypeObject: fieldType
+      fieldTypeObject: fieldType,
+      // Declare mutable designer state up front. Vue 2 cannot make
+      // properties added later reactive, which otherwise leaves the table
+      // stale after choosing a listener from the catalog.
+      bpmnElement: null,
+      bpmnElementListeners: [],
+      otherExtensionList: []
     };
   },
   watch: {
@@ -196,8 +207,30 @@ export default {
     }
   },
   methods: {
+    openProcessListenerDialog() {
+      if (this.$refs.processListenerDialog) this.$refs.processListenerDialog.open('execution')
+    },
+    selectProcessListener(listener) {
+      if (!listener || !this.bpmnElement) return
+      const valueType = listener.valueType || 'class'
+      const listenerForm = {
+        event: listener.event || 'start',
+        listenerType: valueType === 'delegateExpression' ? 'delegateExpressionListener' : (valueType === 'expression' ? 'expressionListener' : 'classListener'),
+        class: valueType === 'class' ? listener.value : '',
+        expression: valueType === 'expression' ? listener.value : '',
+        delegateExpression: valueType === 'delegateExpression' ? listener.value : '',
+        fields: []
+      }
+      const listenerObject = createListenerObject(listenerForm, false, this.prefix)
+      this.bpmnElementListeners.push(listenerObject)
+      this.elementListenersList.push(initListenerType(listenerObject))
+      this.otherExtensionList = this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type !== `${this.prefix}:ExecutionListener`) || []
+      updateElementExtensions(this.bpmnElement, this.otherExtensionList.concat(this.bpmnElementListeners))
+    },
     resetListenersList() {
-      this.bpmnElement = window.bpmnInstances.bpmnElement;
+      const instances = typeof window !== 'undefined' ? window.bpmnInstances : null
+      if (!instances || !instances.bpmnElement) return
+      this.bpmnElement = instances.bpmnElement;
       this.otherExtensionList = [];
       this.bpmnElementListeners =
         this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type === `${this.prefix}:ExecutionListener`) ?? [];

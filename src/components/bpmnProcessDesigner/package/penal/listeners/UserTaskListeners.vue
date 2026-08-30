@@ -15,7 +15,10 @@
     </el-table>
     <div class="element-drawer__button">
       <el-button size="mini" type="primary" icon="el-icon-plus" @click="openListenerForm(null)">添加监听器</el-button>
+      <el-button size="mini" type="success" icon="el-icon-s-operation" @click="openProcessListenerDialog">选择监听器</el-button>
     </div>
+
+    <ProcessListenerDialog ref="processListenerDialog" @select="selectProcessListener" />
 
     <!-- 监听器 编辑/创建 部分 -->
     <el-drawer :visible.sync="listenerFormModelVisible" title="任务监听器" :size="`${width}px`" append-to-body destroy-on-close>
@@ -186,9 +189,11 @@
 <script>
 import { createListenerObject, updateElementExtensions } from "../../utils";
 import { initListenerForm, initListenerType, eventType, listenerType, fieldType } from "./utilSelf";
+import ProcessListenerDialog from './ProcessListenerDialog';
 
 export default {
   name: "UserTaskListeners",
+  components: { ProcessListenerDialog },
   props: {
     id: String,
     type: String
@@ -209,7 +214,12 @@ export default {
       listenerFieldFormModelVisible: false, // 监听器 注入字段表单弹窗 显示状态
       editingListenerIndex: -1, // 监听器所在下标，-1 为新增
       editingListenerFieldIndex: -1, // 字段所在下标，-1 为新增
-      listenerFieldForm: {} // 监听器 注入字段 详情表单
+      listenerFieldForm: {}, // 监听器 注入字段 详情表单
+      // These are assigned during resetListenersList; declaring them here is
+      // required for Vue 2 reactivity when adding/removing listeners.
+      bpmnElement: null,
+      bpmnElementListeners: [],
+      otherExtensionList: []
     };
   },
   watch: {
@@ -221,8 +231,31 @@ export default {
     }
   },
   methods: {
+    openProcessListenerDialog() {
+      if (this.$refs.processListenerDialog) this.$refs.processListenerDialog.open('task')
+    },
+    selectProcessListener(listener) {
+      if (!listener || !this.bpmnElement) return
+      const valueType = listener.valueType || 'class'
+      const listenerForm = {
+        id: String(listener.id || listener.name || Date.now()),
+        event: listener.event || 'create',
+        listenerType: valueType === 'delegateExpression' ? 'delegateExpressionListener' : (valueType === 'expression' ? 'expressionListener' : 'classListener'),
+        class: valueType === 'class' ? listener.value : '',
+        expression: valueType === 'expression' ? listener.value : '',
+        delegateExpression: valueType === 'delegateExpression' ? listener.value : '',
+        fields: Array.isArray(listener.fields) ? listener.fields : []
+      }
+      const listenerObject = createListenerObject(listenerForm, true, this.prefix)
+      this.bpmnElementListeners.push(listenerObject)
+      this.elementListenersList.push(initListenerType(listenerObject))
+      this.otherExtensionList = this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type !== `${this.prefix}:TaskListener`) || []
+      updateElementExtensions(this.bpmnElement, this.otherExtensionList.concat(this.bpmnElementListeners))
+    },
     resetListenersList() {
-      this.bpmnElement = window.bpmnInstances.bpmnElement;
+      const instances = typeof window !== 'undefined' ? window.bpmnInstances : null
+      if (!instances || !instances.bpmnElement) return
+      this.bpmnElement = instances.bpmnElement;
       this.otherExtensionList = [];
       this.bpmnElementListeners = this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type === `${this.prefix}:TaskListener`) ?? [];
       this.elementListenersList = this.bpmnElementListeners.map(listener => initListenerType(listener));

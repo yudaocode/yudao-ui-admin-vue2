@@ -48,6 +48,7 @@
 import translations from '@/components/bpmnProcessDesigner/src/translations'
 import CustomContentPadProvider from '@/components/bpmnProcessDesigner/package/designer/plugins/content-pad'
 import CustomPaletteProvider from '@/components/bpmnProcessDesigner/package/designer/plugins/palette'
+import { getForm } from '@/api/bpm/form'
 import { BpmModelFormType, BpmModelType } from '@/utils/constants'
 import { SimpleProcessDesigner } from '@/components/SimpleProcessDesignerV2/src'
 
@@ -109,11 +110,20 @@ export default {
       required: true
     }
   },
+  provide() {
+    return {
+      formFields: this.formFieldsRef,
+      formType: this.formTypeRef
+    }
+  },
   data() {
     return {
       BpmModelType,
       BpmModelFormType,
       modeler: null,
+      modelerInitToken: 0,
+      formFieldsRef: { value: [] },
+      formTypeRef: { value: this.value && this.value.formType },
       translationsSelf: translations,
       controlForm: {
         simulation: true,
@@ -139,6 +149,11 @@ export default {
     'modelData.type': {
       immediate: true,
       handler() {
+        // The BPMN designer is destroyed when switching to SIMPLE. Clear the
+        // old instance before Vue re-renders so PropertiesPanel never mounts
+        // against a destroyed injector during a quick type toggle.
+        this.modelerInitToken += 1
+        this.modeler = null
         this.initProcessData()
       }
     },
@@ -147,9 +162,36 @@ export default {
     },
     'modelData.name'() {
       this.initProcessData()
+    },
+    'modelData.formId': {
+      immediate: true,
+      handler() {
+        this.loadFormFields()
+      }
+    },
+    'modelData.formType'(value) {
+      this.formTypeRef.value = value
+      this.loadFormFields()
     }
   },
   methods: {
+    async loadFormFields() {
+      const formId = this.modelData && this.modelData.formId
+      // Axios/Jackson deployments may hydrate enum values as strings. Treat
+      // numeric and string representations identically so form fields are not
+      // silently omitted from the BPMN custom-config panel.
+      if (!formId || Number(this.modelData.formType) !== Number(BpmModelFormType.NORMAL)) {
+        this.formFieldsRef.value = []
+        return
+      }
+      try {
+        const response = await getForm(formId)
+        const data = response && response.data ? response.data : response
+        this.formFieldsRef.value = data && Array.isArray(data.fields) ? data.fields : []
+      } catch (e) {
+        this.formFieldsRef.value = []
+      }
+    },
     initProcessData() {
       if (this.modelData.type === BpmModelType.BPMN && this.modelData.bpmnXml === undefined && this.modelData.key && this.modelData.name) {
         this.$set(this.modelData, 'bpmnXml', createDefaultBpmnXml(this.modelData.key, this.modelData.name))
@@ -159,7 +201,11 @@ export default {
       }
     },
     initModeler(modeler) {
+      const token = this.modelerInitToken
       setTimeout(() => {
+        if (token !== this.modelerInitToken || this.modelData.type !== BpmModelType.BPMN || !this.$refs.processDesigner) {
+          return
+        }
         this.modeler = modeler
       }, 10)
     },
@@ -187,6 +233,10 @@ export default {
         throw new Error('请设计 BPMN 流程')
       }
     }
+  },
+  beforeDestroy() {
+    this.modelerInitToken += 1
+    this.modeler = null
   }
 }
 </script>

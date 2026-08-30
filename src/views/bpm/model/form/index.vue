@@ -9,8 +9,18 @@
         <el-step v-for="step in steps" :key="step.title" :title="step.title" @click.native="handleStepClick(step.index)" />
       </el-steps>
       <div class="model-form-header__right">
-        <el-button v-if="formData.id" type="success" @click="handleDeploy">发 布</el-button>
-        <el-button type="primary" @click="handleSave">{{ actionType === 'definition' ? '恢 复' : '保 存' }}</el-button>
+        <el-button
+          v-if="formData.id"
+          type="success"
+          :loading="saveLoading"
+          :disabled="saveLoading"
+          @click="handleDeploy"
+        >发 布</el-button>
+        <el-button
+          type="primary"
+          :loading="saveLoading"
+          @click="handleSave"
+        >{{ actionType === 'definition' ? '恢 复' : '保 存' }}</el-button>
       </div>
     </div>
 
@@ -147,7 +157,8 @@ export default {
       formList: [],
       categoryList: [],
       userList: [],
-      deptList: []
+      deptList: [],
+      saveLoading: false
     }
   },
   computed: {
@@ -185,9 +196,18 @@ export default {
           this.formData.name = `${this.formData.name || ''}副本`
           this.formData.key = `${this.formData.key || ''}_copy`
           if (this.formData.bpmnXml) {
-            this.formData.bpmnXml = this.formData.bpmnXml
-              .replace(new RegExp(response.data.name, 'g'), this.formData.name)
-              .replace(new RegExp(response.data.key, 'g'), this.formData.key)
+            // Replace literal identifiers. Constructing a RegExp directly
+            // from a user-supplied name/key breaks on values such as `[` and
+            // treats `+`, `.`, etc. as regex operators, corrupting copied XML.
+            const replaceAllLiteral = (source, search, replacement) => {
+              if (!search) return source
+              return String(source).split(String(search)).join(String(replacement))
+            }
+            this.formData.bpmnXml = replaceAllLiteral(
+              replaceAllLiteral(this.formData.bpmnXml, response.data.name, this.formData.name),
+              response.data.key,
+              this.formData.key
+            )
           }
         }
       } else if (this.actionType === 'definition') {
@@ -215,9 +235,24 @@ export default {
     },
     async validateStep(index) {
       const step = this.steps[index]
-      const ref = this.$refs[step.ref]
-      if (ref && ref.validate) {
-        await ref.validate()
+      // ProcessDesign is intentionally mounted lazily because the BPMN editor
+      // is expensive. Mount it just long enough to run the full-model
+      // validation when Save/Deploy is clicked from another step.
+      let restoreStep
+      if (index === 2 && !this.$refs[step.ref]) {
+        restoreStep = this.currentStep
+        this.currentStep = index
+        await this.$nextTick()
+      }
+      try {
+        const ref = this.$refs[step.ref]
+        if (ref && ref.validate) {
+          await ref.validate()
+        }
+      } finally {
+        if (restoreStep !== undefined && this.currentStep === index) {
+          this.currentStep = restoreStep
+        }
       }
     },
     async validateAll() {
@@ -250,6 +285,10 @@ export default {
       }
     },
     async handleSave() {
+      if (this.saveLoading) {
+        return
+      }
+      this.saveLoading = true
       try {
         await this.validateAll()
         const data = this.buildSubmitData()
@@ -267,9 +306,15 @@ export default {
         }
       } catch (e) {
         this.$message.warning(e.message || '请完善流程模型配置')
+      } finally {
+        this.saveLoading = false
       }
     },
     async handleDeploy() {
+      if (this.saveLoading) {
+        return
+      }
+      this.saveLoading = true
       try {
         await this.validateAll()
         const data = this.buildSubmitData()
@@ -284,6 +329,8 @@ export default {
         this.$router.push({ name: 'BpmModel' })
       } catch (e) {
         this.$message.warning(e.message || '发布失败')
+      } finally {
+        this.saveLoading = false
       }
     },
     handleBack() {

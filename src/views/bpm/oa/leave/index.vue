@@ -13,9 +13,9 @@
         <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss" type="daterange"
                         range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" :default-time="['00:00:00', '23:59:59']" />
       </el-form-item>
-      <el-form-item label="结果" prop="result">
-        <el-select v-model="queryParams.result" placeholder="请选择流结果" clearable>
-          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.BPM_PROCESS_INSTANCE_RESULT)"
+      <el-form-item label="审批结果" prop="status">
+        <el-select v-model="queryParams.status" placeholder="请选择审批结果" clearable>
+          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS)"
                      :key="dict.value" :label="dict.label" :value="dict.value"/>
         </el-select>
       </el-form-item>
@@ -40,9 +40,9 @@
     <!-- 列表 -->
     <el-table v-loading="loading" :data="list">
       <el-table-column label="申请编号" align="center" prop="id" />
-      <el-table-column label="状态" align="center" prop="result">
+      <el-table-column label="状态" align="center" prop="status">
         <template v-slot="scope">
-          <dict-tag :type="DICT_TYPE.BPM_PROCESS_INSTANCE_RESULT" :value="scope.row.result"/>
+          <dict-tag :type="DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS" :value="scope.row.status"/>
         </template>
       </el-table-column>
       <el-table-column label="开始时间" align="center" prop="startTime" width="180">
@@ -61,7 +61,7 @@
         </template>
       </el-table-column>
       <el-table-column label="原因" align="center" prop="reason" />
-      <el-table-column label="申请时间" align="center" prop="applyTime" width="180">
+      <el-table-column label="申请时间" align="center" prop="createTime" width="180">
         <template v-slot="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
@@ -69,10 +69,13 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleCancel(scope.row)"
-                     v-hasPermi="['bpm:oa-leave:create']" v-if="scope.row.result === 1">取消请假</el-button>
+                     v-hasPermi="['bpm:oa-leave:create']" v-if="scope.row.status === 1">取消请假</el-button>
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)"
                      v-hasPermi="['bpm:oa-leave:query']">详情</el-button>
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleProcessDetail(scope.row)">审批进度</el-button>
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleProcessDetail(scope.row)"
+                     v-hasPermi="['bpm:oa-leave:query']">审批进度</el-button>
+          <el-button size="mini" type="text" icon="el-icon-refresh" @click="handleReCreate(scope.row)"
+                     v-hasPermi="['bpm:oa-leave:create']" v-if="scope.row.status !== 1">重新发起</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -106,29 +109,38 @@ export default {
       queryParams: {
         pageNo: 1,
         pageSize: 10,
-        result: null,
+        status: null,
         type: null,
         reason: null,
         createTime: []
       },
 
       leaveTypeDictData: getDictDatas(DICT_TYPE.BPM_OA_LEAVE_TYPE),
-      leaveResultData: getDictDatas(DICT_TYPE.BPM_PROCESS_INSTANCE_RESULT),
     };
   },
   created() {
     this.getList();
   },
+  // The list view can remain cached while opening a leave detail/create tab.
+  // Refresh it when the route returns so status changes made in another tab
+  // are reflected without a manual reload.
+  watch: {
+    $route() {
+      this.getList();
+    }
+  },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       this.loading = true;
-      // 执行查询
-      getLeavePage(this.queryParams).then(response => {
-        this.list = response.data.list;
-        this.total = response.data.total;
+      try {
+        const response = await getLeavePage(this.queryParams);
+        const data = response && response.data ? response.data : {};
+        this.list = data.list || [];
+        this.total = data.total || 0;
+      } finally {
         this.loading = false;
-      });
+      }
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -150,11 +162,23 @@ export default {
     },
     /** 查看审批进度的操作 */
     handleProcessDetail(row) {
+      if (!row || !row.processInstanceId) {
+        this.$message.warning('该请假申请尚未生成流程实例');
+        return;
+      }
       this.$router.push({ name: "BpmProcessInstanceDetail", query: { id: row.processInstanceId}});
+    },
+    /** 重新发起已结束的请假申请，沿用创建页的回填逻辑 */
+    handleReCreate(row) {
+      this.$router.push({ name: "BpmOALeaveCreate", query: { id: row.id }});
     },
     /** 取消请假 */
     handleCancel(row) {
       const id = row.processInstanceId;
+      if (!id) {
+        this.$message.warning('该请假申请尚未生成流程实例，无法取消');
+        return;
+      }
       this.$prompt('请输入取消原因？', "取消流程", {
         type: 'warning',
         confirmButtonText: "确定",
@@ -166,7 +190,7 @@ export default {
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("取消成功");
-      })
+      }).catch(() => {});
     }
   }
 };

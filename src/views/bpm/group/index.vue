@@ -39,7 +39,7 @@
       <el-table-column label="描述" align="center" prop="description" />
       <el-table-column label="成员" align="center">
         <template v-slot="scope">
-          <span v-for="userId in scope.row.memberUserIds">
+          <span v-for="userId in scope.row.userIds" :key="userId">
             {{ getUserNickname(userId) }}
           </span>
         </template>
@@ -67,43 +67,20 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
 
-    <!-- 对话框(添加 / 修改) -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="组名" prop="name">
-          <el-input v-model="form.name" placeholder="请输入组名" />
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" placeholder="请输入描述" />
-        </el-form-item>
-        <el-form-item label="成员" prop="memberUserIds">
-          <el-select v-model="form.memberUserIds" multiple placeholder="请选择成员">
-            <el-option v-for="user in users" :key="parseInt(user.id)" :label="user.nickname" :value="parseInt(user.id)"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.COMMON_STATUS)"
-                      :key="dict.value" :label="parseInt(dict.value)">{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <!-- 表单弹窗：添加/修改。成员加载与 userIds 规范化由子表单统一负责。 -->
+    <UserGroupForm ref="userGroupForm" @success="getList" />
   </div>
 </template>
 
 <script>
-import { createUserGroup, updateUserGroup, deleteUserGroup, getUserGroup, getUserGroupPage } from "@/api/bpm/userGroup";
-import {CommonStatusEnum} from "@/utils/constants";
-import {listSimpleUsers} from "@/api/system/user";
+import { deleteUserGroup, getUserGroupPage } from '@/api/bpm/userGroup'
+import { getSimpleUserList } from '@/api/system/user'
+import UserGroupForm from './UserGroupForm.vue'
 
 export default {
-  name: "BpmUserGroup",
+  name: 'BpmUserGroup',
   components: {
+    UserGroupForm
   },
   data() {
     return {
@@ -117,10 +94,6 @@ export default {
       list: [],
       // 用户列表
       users: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -128,119 +101,75 @@ export default {
         name: null,
         status: null,
         createTime: []
-      },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        name: [{ required: true, message: "组名不能为空", trigger: "blur" }],
-        description: [{ required: true, message: "描述不能为空", trigger: "blur" }],
-        memberUserIds: [{ required: true, message: "成员不能为空", trigger: "change" }],
-        status: [{ required: true, message: "状态不能为空", trigger: "blur" }],
       }
-    };
+    }
   },
   created() {
-    this.getList();
+    this.getList()
     // 获得用户列表
-    listSimpleUsers().then(response => {
-      this.users = response.data;
+    getSimpleUserList().then(response => {
+      const data = response && response.data !== undefined ? response.data : response
+      this.users = Array.isArray(data) ? data : []
+    }).catch(() => {
+      this.users = []
     })
   },
   methods: {
     /** 查询列表 */
-    getList() {
-      this.loading = true;
-      // 执行查询
-      getUserGroupPage(this.queryParams).then(response => {
-        this.list = response.data.list;
-        this.total = response.data.total;
-        this.loading = false;
-      });
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        id: undefined,
-        name: undefined,
-        description: undefined,
-        memberUserIds: [],
-        status: CommonStatusEnum.ENABLE,
-      };
-      this.resetForm("form");
+    async getList() {
+      this.loading = true
+      try {
+        const response = await getUserGroupPage(this.queryParams)
+        const data = response && response.data ? response.data : {}
+        this.list = data.list || []
+        this.total = data.total || 0
+      } finally {
+        this.loading = false
+      }
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.queryParams.pageNo = 1;
-      this.getList();
+      this.queryParams.pageNo = 1
+      this.getList()
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.resetForm("queryForm");
-      this.handleQuery();
+      this.resetForm('queryForm')
+      this.handleQuery()
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加用户组";
+      this.openForm('create')
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getUserGroup(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改用户组";
-      });
+      this.openForm('update', row && row.id)
     },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (!valid) {
-          return;
-        }
-        // 修改的提交
-        if (this.form.id != null) {
-          updateUserGroup(this.form).then(response => {
-            this.$modal.msgSuccess("修改成功");
-            this.open = false;
-            this.getList();
-          });
-          return;
-        }
-        // 添加的提交
-        createUserGroup(this.form).then(response => {
-          this.$modal.msgSuccess("新增成功");
-          this.open = false;
-          this.getList();
-        });
-      });
+    /** 打开可复用的添加/修改表单 */
+    openForm(type, id) {
+      const form = this.$refs.userGroupForm
+      if (form && form.open) {
+        form.open(type, id)
+      }
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const id = row.id;
+      const id = row.id
       this.$modal.confirm('是否确认删除用户组编号为"' + id + '"的数据项?').then(function() {
-        return deleteUserGroup(id);
+        return deleteUserGroup(id)
       }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
+        this.getList()
+        this.$modal.msgSuccess('删除成功')
+      }).catch(() => {})
     },
     getUserNickname(userId) {
       for (const user of this.users) {
-        if (user.id === userId) {
-          return user.nickname;
+        if (String(user.id) === String(userId)) {
+          return user.nickname
         }
       }
-      return '未知(' + userId + ')';
-    },
+      return '未知(' + userId + ')'
+    }
   }
-};
+}
 </script>

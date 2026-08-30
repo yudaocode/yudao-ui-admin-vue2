@@ -91,9 +91,14 @@ export default {
     }
   },
   data() {
+    // Keep the injected processData reference pointed at the live tree from
+    // the first render.  RouterNodeConfig uses it to enumerate valid target
+    // nodes; leaving it undefined until the first explicit save makes a
+    // newly-added router see only itself and not the surrounding flow.
+    const initialTree = this.value ? clone(this.value) : createDefaultModel()
     return {
-      processNodeTree: this.value ? clone(this.value) : createDefaultModel(),
-      processDataRef: { value: undefined },
+      processNodeTree: initialTree,
+      processDataRef: { value: initialTree },
       formFieldsRef: { value: [] },
       formTypeRef: { value: this.modelFormType },
       roleListRef: { value: [] },
@@ -109,7 +114,9 @@ export default {
       deep: true,
       handler(value) {
         if (value) {
-          this.processNodeTree = clone(value)
+          const nextTree = clone(value)
+          this.processNodeTree = nextTree
+          this.processDataRef.value = nextTree
         }
       }
     },
@@ -164,7 +171,9 @@ export default {
       this.$confirm('确认重置当前仿真流程设计？', '提示', {
         type: 'warning'
       }).then(() => {
-        this.processNodeTree = createDefaultModel()
+        const nextTree = createDefaultModel()
+        this.processNodeTree = nextTree
+        this.processDataRef.value = nextTree
       }).catch(() => {})
     },
     handleModelSave(data) {

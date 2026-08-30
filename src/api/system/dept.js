@@ -28,7 +28,7 @@ export function getDept(deptId) {
 // 获取部门精简信息列表
 export function listSimpleDepts() {
   return request({
-    url: '/system/dept/list-all-simple',
+    url: '/system/dept/simple-list',
     method: 'get'
   })
 }
@@ -62,7 +62,7 @@ export function delDept(id) {
 // 批量删除部门
 export function delDeptList(ids) {
   return request({
-    url: `/system/dept/delete-batch?ids=${ids.join(',')}`,
+    url: `/system/dept/delete-list?ids=${ids.join(',')}`,
     method: 'delete'
   })
 }

@@ -8,6 +8,15 @@
         placement="top"
         :color="getApprovalNodeColor(node.status)"
       >
+        <template slot="dot">
+          <span
+            class="timeline-status-dot"
+            :style="{ backgroundColor: getApprovalNodeColor(node.status) }"
+            :aria-label="showStatusIcon ? getStatusIconLabel(node.status) : '流程节点'"
+          >
+            <i v-if="showStatusIcon" :class="getStatusIconClass(node.status)" />
+          </span>
+        </template>
         <div class="timeline-title">
           <span>{{ node.name }}<span v-if="node.status === TaskStatusEnum.SKIP">【跳过】</span></span>
           <dict-tag v-if="node.status !== undefined" :type="DICT_TYPE.BPM_TASK_STATUS" :value="node.status" />
@@ -62,7 +71,7 @@
                 v-if="shouldShowReasonAndAttachment(task, node, index)"
                 :reason="task.reason"
                 :reason-label="getReasonLabel(node)"
-                :attachments="task.attachments"
+                :attachments="getAttachmentList(task)"
                 :sign-pic-url="task.signPicUrl"
               />
             </div>
@@ -151,11 +160,43 @@ export default {
       }
       return map[status] || '#409eff'
     },
+    getStatusIconClass(status) {
+      const map = {
+        '-2': 'el-icon-arrow-down',
+        '-1': 'el-icon-time',
+        0: 'el-icon-time',
+        1: 'el-icon-loading',
+        2: 'el-icon-success',
+        3: 'el-icon-error',
+        4: 'el-icon-delete',
+        5: 'el-icon-error',
+        6: 'el-icon-loading',
+        7: 'el-icon-success'
+      }
+      return map[status] || 'el-icon-more'
+    },
+    getStatusIconLabel(status) {
+      const map = {
+        '-2': '已跳过',
+        '-1': '未开始',
+        0: '待审批',
+        1: '审批中',
+        2: '审批通过',
+        3: '审批不通过',
+        4: '已取消',
+        5: '已退回',
+        6: '委派中',
+        7: '审批通过中'
+      }
+      return map[status] || '流程节点状态'
+    },
     shouldSelectUser(node) {
       return isEmpty(node.tasks) &&
         (
           (CandidateStrategy.START_USER_SELECT === node.candidateStrategy && isEmpty(node.candidateUsers)) ||
-          (this.enableApproveUserSelect && CandidateStrategy.APPROVE_USER_SELECT === node.candidateStrategy && isEmpty(node.candidateUsers))
+          // APPROVE_USER_SELECT can return candidateUsers from the preview;
+          // those users are still editable and must not hide the selector.
+          (this.enableApproveUserSelect && CandidateStrategy.APPROVE_USER_SELECT === node.candidateStrategy)
         )
     },
     shouldShowReasonAndAttachment(task, node, nodeIndex) {
@@ -227,6 +268,19 @@ export default {
   align-items: center;
   gap: 8px;
   font-weight: 600;
+}
+
+.timeline-status-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  box-shadow: 0 0 0 1px #dcdfe6;
+  font-size: 10px;
 }
 
 .timeline-users {

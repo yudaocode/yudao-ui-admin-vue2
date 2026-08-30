@@ -63,6 +63,7 @@ export default {
       DICT_TYPE,
       commentLoading: false, // 评论列表的加载中
       comments: [], // 评论列表
+      listRequestId: 0,
       commentColorMap: {
         primary: '#409eff',
         success: '#67c23a',
@@ -85,16 +86,22 @@ export default {
   methods: {
     /** 查询评论列表 */
     async getList() {
-      if (!this.id) {
+      const requestId = ++this.listRequestId
+      const processInstanceId = this.id
+      if (!processInstanceId) {
         this.comments = []
         return
       }
       this.commentLoading = true
       try {
-        const response = await getCommentListByProcessInstanceId(this.id)
-        this.comments = response.data || []
+        const response = await getCommentListByProcessInstanceId(processInstanceId)
+        if (requestId === this.listRequestId && processInstanceId === this.id) {
+          this.comments = response.data || []
+        }
       } finally {
-        this.commentLoading = false
+        if (requestId === this.listRequestId) {
+          this.commentLoading = false
+        }
       }
     },
     /** 获得评论类型简称 */

@@ -57,46 +57,85 @@
     <el-form-item label="摘要设置">
       <el-switch v-model="modelData.summarySetting.enable" />
       <el-select
-        v-if="modelData.summarySetting.enable"
+        v-if="modelData.summarySetting.enable && Number(modelData.formType) === Number(BpmModelFormType.NORMAL)"
         v-model="modelData.summarySetting.summary"
         multiple
         filterable
-        allow-create
-        default-first-option
-        placeholder="请输入或选择摘要字段"
+        placeholder="请选择要展示的表单字段"
         style="width: 100%; margin-top: 8px"
+      >
+        <el-option
+          v-for="field in formFields"
+          :key="field.field"
+          :label="field.title"
+          :value="field.field"
+        />
+      </el-select>
+    </el-form-item>
+
+    <el-alert
+      v-if="formFieldsLoadError"
+      title="表单字段加载失败，字段映射暂不可用；请检查表单服务后重试"
+      type="warning"
+      :closable="false"
+      show-icon
+      class="trigger-setting-alert"
+    />
+    <el-form-item
+      v-for="trigger in triggerDefinitions"
+      :key="trigger.settingKey"
+      :label="trigger.label"
+      class="trigger-setting-item"
+    >
+      <div class="trigger-setting-toggle">
+        <el-switch
+          v-model="triggerEnabled[trigger.key]"
+          active-text="开启"
+          inactive-text="关闭"
+          @change="toggleTrigger(trigger, $event)"
+        />
+        <span class="trigger-setting-hint">{{ trigger.hint }}</span>
+      </div>
+      <HttpRequestSetting
+        v-if="triggerEnabled[trigger.key] && modelData[trigger.settingKey]"
+        :setting="modelData[trigger.settingKey]"
+        :response-enable="true"
+        :form-item-prefix="trigger.settingKey"
+        :form-fields="formFields"
       />
     </el-form-item>
+
     <el-form-item label="打印模板">
-      <el-switch v-model="modelData.printTemplateSetting.enable" />
+      <el-switch
+        v-model="modelData.printTemplateSetting.enable"
+        @change="handlePrintTemplateEnableChange"
+      />
       <el-button
         v-if="modelData.printTemplateSetting.enable"
         type="text"
         icon="el-icon-edit"
         style="margin-left: 12px"
-        @click="printTemplateVisible = true"
+        @click="handleEditPrintTemplate"
       >
         编辑模板
       </el-button>
     </el-form-item>
 
-    <el-dialog title="自定义打印模板" :visible.sync="printTemplateVisible" width="760px" append-to-body>
-      <el-input
-        v-model="modelData.printTemplateSetting.template"
-        type="textarea"
-        :rows="18"
-        placeholder="请输入 HTML 打印模板，可使用表单字段占位符"
-      />
-      <div slot="footer">
-        <el-button @click="printTemplateVisible = false">取 消</el-button>
-        <el-button type="primary" @click="printTemplateVisible = false">确 定</el-button>
-      </div>
-    </el-dialog>
+    <PrintTemplateEditor
+      ref="printTemplateEditor"
+      :form-fields="formFields"
+      @confirm="handlePrintTemplateConfirm"
+    />
   </el-form>
 </template>
 
 <script>
-import { BpmAutoApproveType } from '@/utils/constants'
+import { BpmAutoApproveType, BpmModelFormType } from '@/utils/constants'
+import { getForm } from '@/api/bpm/form'
+import { parseFormFields } from '@/components/FormCreate/src/utils'
+import HttpRequestSetting from '@/components/SimpleProcessDesignerV2/src/nodes-config/components/HttpRequestSetting.vue'
+import PrintTemplateEditor from './PrintTemplateEditor.vue'
+import { DEFAULT_PRINT_TEMPLATE } from './print-template'
 
 function pad(value) {
   return String(value).padStart(2, '0')
@@ -104,6 +143,19 @@ function pad(value) {
 
 export default {
   name: 'BpmModelExtraSettings',
+  components: {
+    HttpRequestSetting,
+    PrintTemplateEditor
+  },
+  // HttpRequestSetting/HttpRequestParamSetting use the same injected raw
+  // form-field contract as the Vue3 implementation.  ExtraSettings is a
+  // sibling of ProcessDesign, so without a local provider those composables
+  // resolve to an empty fallback and every "来自表单" selector is blank.
+  provide() {
+    return {
+      formFields: this.formFieldsRawRef
+    }
+  },
   props: {
     value: {
       type: Object,
@@ -113,7 +165,42 @@ export default {
   data() {
     return {
       BpmAutoApproveType,
-      printTemplateVisible: false
+      BpmModelFormType,
+      formFields: [],
+      formFieldsRawRef: { value: [] },
+      formFieldsLoadError: false,
+      triggerDefinitions: [
+        {
+          key: 'processBefore',
+          settingKey: 'processBeforeTriggerSetting',
+          label: '流程前置通知',
+          hint: '流程启动后通知'
+        },
+        {
+          key: 'processAfter',
+          settingKey: 'processAfterTriggerSetting',
+          label: '流程后置通知',
+          hint: '流程结束后通知'
+        },
+        {
+          key: 'taskBefore',
+          settingKey: 'taskBeforeTriggerSetting',
+          label: '任务前置通知',
+          hint: '任务执行时通知'
+        },
+        {
+          key: 'taskAfter',
+          settingKey: 'taskAfterTriggerSetting',
+          label: '任务后置通知',
+          hint: '任务结束后通知'
+        }
+      ],
+      triggerEnabled: {
+        processBefore: false,
+        processAfter: false,
+        taskBefore: false,
+        taskAfter: false
+      }
     }
   },
   computed: {
@@ -143,6 +230,33 @@ export default {
   },
   methods: {
     validate() {
+      for (const trigger of this.triggerDefinitions) {
+        if (!this.triggerEnabled[trigger.key]) continue
+        const setting = this.modelData[trigger.settingKey]
+        if (!setting || !String(setting.url || '').trim()) {
+          return Promise.reject(new Error(`${trigger.label}的请求地址不能为空`))
+        }
+        try {
+          const parsedUrl = new URL(String(setting.url).trim())
+          if (!parsedUrl.protocol || !parsedUrl.host) throw new Error('invalid url')
+        } catch (e) {
+          return Promise.reject(new Error(`${trigger.label}的请求地址格式不正确`))
+        }
+        // Match the backend @NotEmpty checks for request parameters before the
+        // model request is sent.  Empty optional arrays remain valid.
+        for (const group of ['header', 'body']) {
+          for (const item of (setting[group] || [])) {
+            if (!String(item.key || '').trim() || !String(item.value || '').trim()) {
+              return Promise.reject(new Error(`${trigger.label}的${group === 'header' ? '请求头' : '请求体'}参数不完整`))
+            }
+          }
+        }
+        for (const item of (setting.response || [])) {
+          if (!String(item.key || '').trim() || !String(item.value || '').trim()) {
+            return Promise.reject(new Error(`${trigger.label}的返回值映射不完整`))
+          }
+        }
+      }
       return Promise.resolve()
     },
     initData() {
@@ -158,6 +272,101 @@ export default {
       if (!this.modelData.printTemplateSetting) {
         this.$set(this.modelData, 'printTemplateSetting', { enable: false, template: '' })
       }
+      this.triggerDefinitions.forEach((trigger) => {
+        const setting = this.modelData[trigger.settingKey]
+        this.$set(this.triggerEnabled, trigger.key, !!setting)
+        if (setting) {
+          this.ensureTriggerSetting(setting)
+        }
+      })
+      if (this.modelData.printTemplateSetting.enable && !this.modelData.printTemplateSetting.template) {
+        this.$set(this.modelData.printTemplateSetting, 'template', this.defaultPrintTemplate())
+      }
+    },
+    async loadFormFields(formId) {
+      this.formFields = []
+      this.formFieldsRawRef.value = []
+      this.formFieldsLoadError = false
+      if (!formId || Number(this.modelData.formType) !== Number(BpmModelFormType.NORMAL)) {
+        return
+      }
+      try {
+        const response = await getForm(formId)
+        const data = response && response.data ? response.data : response
+        const result = []
+        const rawFields = data && Array.isArray(data.fields) ? data.fields : []
+        this.formFieldsRawRef.value = rawFields
+        rawFields.forEach((field) => {
+          try {
+            const rule = typeof field === 'string' ? JSON.parse(field) : field
+            if (rule && typeof rule === 'object') {
+              parseFormFields(rule, result)
+            }
+          } catch (e) {
+            // Keep optional notification configuration usable if one old rule is malformed.
+          }
+        })
+        this.formFields = result
+      } catch (e) {
+        this.formFields = []
+        this.formFieldsRawRef.value = []
+        this.formFieldsLoadError = true
+        // Keep the optional editor usable, but do not turn a failed API call
+        // into an apparent success. The warning is visible in the drawer and
+        // the original error remains available in the browser console.
+        // eslint-disable-next-line no-console
+        console.error('[BPM] 加载流程表单字段失败', e)
+      }
+    },
+    ensureTriggerSetting(setting) {
+      if (!Array.isArray(setting.header)) this.$set(setting, 'header', [])
+      if (!Array.isArray(setting.body)) this.$set(setting, 'body', [])
+      if (!Array.isArray(setting.response)) this.$set(setting, 'response', [])
+    },
+    createTriggerSetting() {
+      return {
+        url: '',
+        header: [],
+        body: [],
+        response: []
+      }
+    },
+    toggleTrigger(trigger, value) {
+      if (value) {
+        if (!this.modelData[trigger.settingKey]) {
+          this.$set(this.modelData, trigger.settingKey, this.createTriggerSetting())
+        } else {
+          this.ensureTriggerSetting(this.modelData[trigger.settingKey])
+        }
+      } else {
+        this.$set(this.modelData, trigger.settingKey, null)
+      }
+    },
+    defaultPrintTemplate() {
+      return DEFAULT_PRINT_TEMPLATE
+    },
+    handleEditPrintTemplate() {
+      if (!this.$refs.printTemplateEditor) return
+      this.$refs.printTemplateEditor.open(this.modelData.printTemplateSetting.template)
+    },
+    handlePrintTemplateConfirm(template) {
+      this.$set(this.modelData.printTemplateSetting, 'template', template)
+    },
+    handlePrintTemplateEnableChange(value) {
+      if (value && !String(this.modelData.printTemplateSetting.template || '').trim()) {
+        this.$set(this.modelData.printTemplateSetting, 'template', this.defaultPrintTemplate())
+      }
+    }
+  },
+  watch: {
+    'modelData.formId': {
+      immediate: true,
+      handler(value) {
+        this.loadFormFields(value)
+      }
+    },
+    'modelData.formType'() {
+      this.loadFormFields(this.modelData.formId)
     }
   },
   created() {

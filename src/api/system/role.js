@@ -12,9 +12,16 @@ export function listRole(query) {
 // 查询角色（精简)列表
 export function listSimpleRoles() {
   return request({
-    url: '/system/role/list-all-simple',
+    // The current System service exposes the Vue3-compatible simple-list
+    // endpoint. Keep this legacy function name for existing Vue2 callers.
+    url: '/system/role/simple-list',
     method: 'get'
   })
+}
+
+// Vue3-compatible alias used by BPMN task configuration components.
+export function getSimpleRoleList() {
+  return listSimpleRoles()
 }
 
 // 查询角色详细
@@ -67,7 +74,7 @@ export function delRole(roleId) {
 // 批量删除角色
 export function delRoleList(ids) {
   return request({
-    url: `/system/role/delete-batch?ids=${ids.join(',')}`,
+    url: `/system/role/delete-list?ids=${ids.join(',')}`,
     method: 'delete'
   })
 }

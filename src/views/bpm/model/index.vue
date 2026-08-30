@@ -25,18 +25,32 @@
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="el-icon-plus" @click="openModelForm('create')">
+            <el-button
+              v-hasPermi="['bpm:model:create']"
+              type="primary"
+              icon="el-icon-plus"
+              @click="openModelForm('create')"
+            >
               新建模型
+            </el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              v-hasPermi="['bpm:model:import']"
+              icon="el-icon-upload2"
+              @click="openImportDialog"
+            >
+              导入模型
             </el-button>
           </el-form-item>
           <el-form-item>
             <el-dropdown trigger="click" placement="bottom-end" @command="handleHeaderCommand">
               <el-button plain class="model-setting-button" icon="el-icon-setting" />
               <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item command="categoryAdd">
+                <el-dropdown-item command="categoryAdd" v-hasPermi="['bpm:category:create']">
                   <i class="el-icon-circle-plus-outline" /> 新建分类
                 </el-dropdown-item>
-                <el-dropdown-item command="categorySort">
+                <el-dropdown-item command="categorySort" v-hasPermi="['bpm:category:update']">
                   <i class="el-icon-sort" /> 分类排序
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -83,6 +97,8 @@
                 <template v-if="!category.isModelSorting">
                   <el-button
                     v-if="category.modelList.length > 0"
+                    v-hasPermi="['bpm:model:update']"
+                    :disabled="!canManageModels(category)"
                     type="text"
                     class="model-muted-action"
                     icon="el-icon-sort"
@@ -92,6 +108,7 @@
                   </el-button>
                   <el-button
                     v-else
+                    v-hasPermi="['bpm:model:create']"
                     type="text"
                     class="model-muted-action"
                     icon="el-icon-plus"
@@ -104,8 +121,8 @@
                       分类
                     </el-button>
                     <el-dropdown-menu slot="dropdown">
-                      <el-dropdown-item command="rename">重命名</el-dropdown-item>
-                      <el-dropdown-item command="delete">删除该类</el-dropdown-item>
+                      <el-dropdown-item command="rename" v-hasPermi="['bpm:category:update']">重命名</el-dropdown-item>
+                      <el-dropdown-item command="delete" v-hasPermi="['bpm:category:delete']">删除该类</el-dropdown-item>
                     </el-dropdown-menu>
                   </el-dropdown>
                 </template>
@@ -191,21 +208,28 @@
                   </el-table-column>
                   <el-table-column label="操作" width="200" fixed="right">
                     <template v-slot="scope">
-                      <el-button type="text" @click="openModelForm('update', scope.row.id)">修改</el-button>
-                      <el-button type="text" @click="openModelForm('copy', scope.row.id)">复制</el-button>
-                      <el-button type="text" @click="handleDeploy(scope.row)">发布</el-button>
-                      <el-dropdown trigger="click" @command="(command) => handleModelCommand(command, scope.row)">
+                      <el-button type="text" v-hasPermi="['bpm:model:update']" :disabled="!isModelManager(scope.row)" @click="openModelForm('update', scope.row.id)">修改</el-button>
+                      <el-button type="text" v-hasPermi="['bpm:model:update']" :disabled="!isModelManager(scope.row)" @click="openModelForm('copy', scope.row.id)">复制</el-button>
+                      <el-button type="text" v-hasPermi="['bpm:model:deploy']" :disabled="!isModelManager(scope.row)" @click="handleDeploy(scope.row)">发布</el-button>
+                      <el-dropdown
+                        v-if="hasModelMorePermission"
+                        trigger="click"
+                        @command="(command) => handleModelCommand(command, scope.row)"
+                      >
                         <el-button type="text">更多</el-button>
                         <el-dropdown-menu slot="dropdown">
-                          <el-dropdown-item command="definition">历史</el-dropdown-item>
-                          <el-dropdown-item command="report" :disabled="!scope.row.processDefinition">
+                          <el-dropdown-item command="definition" v-hasPermi="['bpm:process-definition:query']">历史</el-dropdown-item>
+                          <el-dropdown-item command="export" v-hasPermi="['bpm:model:export']">
+                            导出
+                          </el-dropdown-item>
+                          <el-dropdown-item command="report" v-hasPermi="['bpm:process-instance:manager-query']" :disabled="!scope.row.processDefinition || !isModelManager(scope.row)">
                             报表
                           </el-dropdown-item>
-                          <el-dropdown-item command="state" :disabled="!scope.row.processDefinition">
+                          <el-dropdown-item command="state" v-hasPermi="['bpm:model:update']" :disabled="!scope.row.processDefinition || !isModelManager(scope.row)">
                             {{ scope.row.processDefinition && scope.row.processDefinition.suspensionState === 1 ? '停用' : '启用' }}
                           </el-dropdown-item>
-                          <el-dropdown-item command="clean">清理</el-dropdown-item>
-                          <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                          <el-dropdown-item command="clean" v-hasPermi="['bpm:model:clean']" :disabled="!isModelManager(scope.row)">清理</el-dropdown-item>
+                          <el-dropdown-item command="delete" v-hasPermi="['bpm:model:delete']" :disabled="!isModelManager(scope.row)" divided>删除</el-dropdown-item>
                         </el-dropdown-menu>
                       </el-dropdown>
                     </template>
@@ -218,23 +242,9 @@
       </div>
     </div>
 
-    <el-dialog :title="categoryDialogTitle" :visible.sync="categoryDialogVisible" width="500px" append-to-body>
-      <el-form ref="categoryForm" :model="categoryForm" :rules="categoryRules" label-width="100px">
-        <el-form-item label="分类名" prop="name">
-          <el-input v-model="categoryForm.name" placeholder="请输入分类名" />
-        </el-form-item>
-        <el-form-item v-if="categoryFormMode === 'create'" label="分类标志" prop="code">
-          <el-input v-model="categoryForm.code" placeholder="请输入分类标志" />
-        </el-form-item>
-        <el-form-item v-if="categoryFormMode === 'create'" label="分类描述" prop="description">
-          <el-input v-model="categoryForm.description" type="textarea" placeholder="请输入分类描述" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="categoryDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="submitCategoryForm">确 定</el-button>
-      </div>
-    </el-dialog>
+    <!-- 可复用表单：分类新增/重命名与模型 JSON 导入。 -->
+    <CategoryForm ref="categoryForm" @success="getList" />
+    <ModelImportForm ref="modelImportForm" @success="getList" />
 
     <el-dialog title="表单详情" :visible.sync="formDetailVisible" width="800px" append-to-body>
       <form-create v-if="formDetailVisible" :rule="formDetail.rule" :option="formDetail.option" />
@@ -259,30 +269,32 @@ import {
   cleanModel,
   deleteModel,
   deployModel,
+  exportModel,
   getModelList,
   updateModelSortBatch,
   updateModelState
 } from '@/api/bpm/model'
 import {
-  createCategory,
   deleteCategory,
-  getCategory,
   getCategorySimpleList,
-  updateCategory,
   updateCategorySortBatch
 } from '@/api/bpm/category'
 import { getForm } from '@/api/bpm/form'
-import { getProcessDefinitionBpmnXML } from '@/api/bpm/definition'
+import { getProcessDefinition } from '@/api/bpm/definition'
 import { setConfAndFields2 } from '@/utils/formCreate'
-import { BpmModelFormType, BpmModelType, CommonStatusEnum } from '@/utils/constants'
+import { BpmModelFormType, BpmModelType } from '@/utils/constants'
 import { deepClone, formatDate } from '@/utils'
 import { SimpleProcessViewer } from '@/components/SimpleProcessDesignerV2/src'
+import CategoryForm from '../category/CategoryForm.vue'
+import ModelImportForm from './ModelImportForm.vue'
 
 export default {
   name: 'BpmModel',
   components: {
     draggable,
-    SimpleProcessViewer
+    SimpleProcessViewer,
+    CategoryForm,
+    ModelImportForm
   },
   data() {
     return {
@@ -295,14 +307,6 @@ export default {
       categoryGroup: [],
       originalCategoryGroup: [],
       isCategorySorting: false,
-      categoryDialogVisible: false,
-      categoryDialogTitle: '',
-      categoryFormMode: 'create',
-      categoryForm: {},
-      categoryRules: {
-        name: [{ required: true, message: '分类名不能为空', trigger: 'blur' }],
-        code: [{ required: true, message: '分类标志不能为空', trigger: 'blur' }]
-      },
       formDetailVisible: false,
       formDetail: {
         rule: [],
@@ -311,6 +315,31 @@ export default {
       bpmnVisible: false,
       bpmnXML: '',
       simpleModel: null
+    }
+  },
+  computed: {
+    // Hide an empty “更多” menu for roles that cannot perform any model
+    // operation. Each child item still has its own v-hasPermi guard so mixed
+    // permission roles only see actions granted by the backend.
+    hasModelMorePermission() {
+      const permissions = this.$store.getters && this.$store.getters.permissions
+      if (!Array.isArray(permissions)) {
+        return false
+      }
+      if (permissions.includes('*:*:*')) {
+        return true
+      }
+      return [
+        'bpm:process-definition:query',
+        'bpm:model:export',
+        'bpm:process-instance:manager-query',
+        'bpm:model:update',
+        'bpm:model:clean',
+        'bpm:model:delete'
+      ].some((permission) => permissions.includes(permission))
+    },
+    currentUserId() {
+      return this.$store.getters && this.$store.getters.userId
     }
   },
   created() {
@@ -419,7 +448,28 @@ export default {
         : { name: type === 'copy' ? 'BpmModelCopy' : 'BpmModelUpdate', params: { type, id }}
       this.$router.push(route)
     },
+    openImportDialog() {
+      const form = this.$refs.modelImportForm
+      if (form && form.open) {
+        form.open()
+      }
+    },
+    async handleExport(row) {
+      try {
+        const response = await exportModel(row.id)
+        const data = response && response.data !== undefined ? response.data : response
+        const fileName = `${row.key || row.name || 'model'}.json`
+        this.$download.json(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), fileName)
+        this.$modal.msgSuccess('导出成功')
+      } catch (e) {
+        // request interceptor already displays the backend error
+      }
+    },
     async startModelSort(category) {
+      if (!this.canManageModels(category)) {
+        this.$message.warning('当前用户不是该分类下全部流程模型的负责人，无法排序')
+        return
+      }
       category.originalModelList = deepClone(category.modelList)
       category.isModelSorting = true
       await this.$nextTick()
@@ -448,6 +498,10 @@ export default {
       category.isModelSorting = false
     },
     async saveModelSort(category) {
+      if (!this.canManageModels(category)) {
+        this.$message.warning('当前用户不是该分类下全部流程模型的负责人，无法保存排序')
+        return
+      }
       const ids = category.modelList.map((item) => item.id)
       await updateModelSortBatch(ids)
       this.$modal.msgSuccess('排序模型成功')
@@ -456,12 +510,20 @@ export default {
       this.getList()
     },
     async handleDeploy(row) {
+      if (!this.isModelManager(row)) {
+        this.$message.warning('当前用户不是该流程模型的负责人')
+        return
+      }
       await this.$modal.confirm(`确认发布流程模型「${row.name}」？`)
       await deployModel(row.id)
       this.$modal.msgSuccess('发布成功')
       this.getList()
     },
     async handleChangeState(row) {
+      if (!this.isModelManager(row)) {
+        this.$message.warning('当前用户不是该流程模型的负责人')
+        return
+      }
       const state = row.processDefinition.suspensionState
       const newState = state === 1 ? 2 : 1
       const text = state === 1 ? '停用' : '启用'
@@ -494,6 +556,8 @@ export default {
         this.handleDefinitionList(row)
       } else if (command === 'report') {
         this.handleReport(row)
+      } else if (command === 'export') {
+        this.handleExport(row)
       } else if (command === 'state') {
         this.handleChangeState(row)
       } else if (command === 'clean') {
@@ -509,40 +573,20 @@ export default {
         this.handleDeleteCategory(category)
       }
     },
-    async openCategoryForm(mode, category) {
-      this.categoryFormMode = mode
-      this.categoryDialogTitle = mode === 'create' ? '添加流程分类' : '重命名分类'
-      if (mode === 'create') {
-        this.categoryForm = {
-          id: undefined,
-          name: undefined,
-          code: undefined,
-          description: undefined,
-          status: CommonStatusEnum.ENABLE,
-          sort: 0
-        }
-      } else {
-        const response = await getCategory(category.id)
-        this.categoryForm = response.data || {}
+    openCategoryForm(mode, category) {
+      const form = this.$refs.categoryForm
+      if (!form || !form.open) {
+        return
       }
-      this.categoryDialogVisible = true
-      this.$nextTick(() => this.$refs.categoryForm && this.$refs.categoryForm.clearValidate())
-    },
-    submitCategoryForm () {
-      this.$refs.categoryForm.validate(async (valid) => {
-        if (!valid) {
-          return
-        }
-        if (this.categoryFormMode === 'create') {
-          await createCategory(this.categoryForm)
-          this.$modal.msgSuccess('新增成功')
-        } else {
-          await updateCategory(this.categoryForm)
-          this.$modal.msgSuccess('重命名成功')
-        }
-        this.categoryDialogVisible = false
-        this.getList()
-      })
+      if (mode === 'create') {
+        form.open('create')
+      } else if (category && category.id !== '__empty__') {
+        // 模型页的分类操作只允许修改名称，复用完整分类表单的紧凑模式。
+        form.open('update', category.id, {
+          compact: true,
+          title: '重命名分类'
+        })
+      }
     },
     async handleDeleteCategory(category) {
       if (category.modelList.length > 0) {
@@ -589,13 +633,19 @@ export default {
       this.bpmnXML = ''
       this.simpleModel = null
       if (row.type === BpmModelType.SIMPLE && row.simpleModel) {
-        this.simpleModel = typeof row.simpleModel === 'string' ? JSON.parse(row.simpleModel) : row.simpleModel
+        try {
+          this.simpleModel = typeof row.simpleModel === 'string' ? JSON.parse(row.simpleModel) : row.simpleModel
+        } catch (e) {
+          this.$message.warning('流程模型数据不是有效的 JSON，无法预览')
+          return
+        }
         this.bpmnVisible = true
         return
       }
       if (row.processDefinition && row.processDefinition.id) {
-        const response = await getProcessDefinitionBpmnXML(row.processDefinition.id)
-        this.bpmnXML = response.data
+        const response = await getProcessDefinition(row.processDefinition.id)
+        const definition = response.data || {}
+        this.bpmnXML = definition.bpmnXml || definition.bpmnXML || ''
         this.bpmnVisible = true
       } else if (row.bpmnXml) {
         this.bpmnXML = row.bpmnXml
@@ -605,16 +655,35 @@ export default {
       }
     },
     async handleClean(row) {
+      if (!this.isModelManager(row)) {
+        this.$message.warning('当前用户不是该流程模型的负责人')
+        return
+      }
       await this.$modal.confirm(`确认清理流程模型「${row.name}」的历史定义？`)
       await cleanModel(row.id)
       this.$modal.msgSuccess('清理成功')
       this.getList()
     },
     async handleDelete(row) {
+      if (!this.isModelManager(row)) {
+        this.$message.warning('当前用户不是该流程模型的负责人')
+        return
+      }
       await this.$modal.confirm(`确认删除流程模型「${row.name}」？`)
       await deleteModel(row.id)
       this.$modal.msgSuccess('删除成功')
       this.getList()
+    },
+    isModelManager(row) {
+      const managerIds = row && row.managerUserIds
+      if (!Array.isArray(managerIds)) {
+        return false
+      }
+      return managerIds.some((id) => String(id) === String(this.currentUserId))
+    },
+    canManageModels(category) {
+      const models = category && Array.isArray(category.modelList) ? category.modelList : []
+      return models.length > 0 && models.every((model) => this.isModelManager(model))
     }
   }
 }

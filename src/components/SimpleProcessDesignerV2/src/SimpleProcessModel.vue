@@ -63,6 +63,7 @@ import { NodeType, NODE_DEFAULT_TEXT } from './consts'
 import { useWatchNode } from './node'
 import { isString } from '@/utils/is'
 import download from '@/plugins/download'
+import { normalizeNodeTree } from './nodes-config/node-config-schema'
 
 const props = defineProps({
   flowNode: {
@@ -166,7 +167,12 @@ const validateNode = (node, errorNodes) => {
     if (
       type === NodeType.USER_TASK_NODE ||
       type === NodeType.COPY_TASK_NODE ||
-      type === NodeType.CONDITION_NODE
+      type === NodeType.TRANSACTOR_NODE ||
+      type === NodeType.DELAY_TIMER_NODE ||
+      type === NodeType.TRIGGER_NODE ||
+      type === NodeType.CHILD_PROCESS_NODE ||
+      type === NodeType.CONDITION_NODE ||
+      type === NodeType.ROUTER_BRANCH_NODE
     ) {
       if (!showText) {
         errorNodes.push(node)
@@ -199,6 +205,10 @@ const getCurrentFlowData = async() => {
       errorDialogVisible.value = true
       return undefined
     }
+    // Normalize every nested node, not only the drawer currently being edited.
+    // Imported models may contain legacy delay/trigger/child-process shapes in
+    // untouched branches; the backend validates the complete tree on save.
+    normalizeNodeTree(processNodeTree.value)
     return processNodeTree.value
   } catch (error) {
     console.error('获取流程数据失败:', error)
@@ -231,9 +241,19 @@ const importLocalFile = () => {
   reader.readAsText(file)
   reader.onload = function() {
     if (isString(this.result)) {
-      processNodeTree.value = JSON.parse(this.result)
-      importKey.value++
-      emits('save', processNodeTree.value)
+      try {
+        const parsed = JSON.parse(this.result)
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          throw new Error('流程模型必须是 JSON 对象')
+        }
+        processNodeTree.value = parsed
+        importKey.value++
+        emits('save', processNodeTree.value)
+      } catch (error) {
+        // A malformed local file must not tear down the async FileReader
+        // callback. Keep the current flow and surface a recoverable warning.
+        console.error('导入流程模型失败:', error)
+      }
     }
   }
 }

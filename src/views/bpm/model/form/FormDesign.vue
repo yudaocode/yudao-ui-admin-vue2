@@ -92,8 +92,14 @@ export default {
         return
       }
       const response = await getForm(formId)
-      const data = response.data
+      const data = response.data || {}
       setConfAndFields2(this.formPreview, data.conf, data.fields)
+      // The form shown in the model wizard is a preview only. Keep all
+      // controls disabled just like the Vue3 implementation so editing here
+      // cannot be mistaken for modifying the persisted process form.
+      this.formPreview.rule.forEach(item => {
+        item.props = { ...(item.props || {}), disabled: true }
+      })
       this.formPreview.option.submitBtn = false
       this.formPreview.option.resetBtn = false
     },

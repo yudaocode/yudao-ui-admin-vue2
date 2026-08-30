@@ -46,7 +46,12 @@
       <el-col :span="8">
         <el-card shadow="never">
           <div slot="header">审批流程</div>
-          <ProcessInstanceTimeline :activity-nodes="activityNodes" />
+              <ProcessInstanceTimeline
+                ref="timeline"
+                :activity-nodes="activityNodes"
+                :show-status-icon="false"
+                @select-user-confirm="selectUserConfirm"
+              />
         </el-card>
       </el-col>
     </el-row>
@@ -73,6 +78,12 @@ export default {
       activityNodes: [],
       startUserSelectTasks: [],
       startUserSelectAssignees: {},
+      // Keep the user's choices while approval nodes are re-evaluated after a
+      // form field change. The approval-detail endpoint returns a fresh node
+      // array on every request, so storing only the current array would lose
+      // selections made in the timeline.
+      tempStartUserSelectAssignees: {},
+      tempStartUserSelectUsers: {},
       form: {
         startTime: undefined,
         endTime: undefined,
@@ -110,6 +121,12 @@ export default {
         return
       }
       this.processDefinitionId = definition.id
+      // Some backend versions expose the selectable tasks on the definition
+      // itself. Keep that information until the approval-detail response is
+      // loaded, which is the authoritative source on current backends.
+      if (Array.isArray(definition.startUserSelectTasks)) {
+        this.startUserSelectTasks = definition.startUserSelectTasks
+      }
       if (this.$route.query.id) {
         await this.loadLeave(this.$route.query.id)
       }
@@ -137,6 +154,14 @@ export default {
       return Math.floor(Math.abs(Number(this.form.endTime) - Number(this.form.startTime)) / (24 * 60 * 60 * 1000))
     },
     async getApprovalDetail() {
+      // Preserve selected users before replacing the node list. This mirrors
+      // the generic process-create page and prevents a date/reason edit from
+      // silently clearing START_USER_SELECT choices.
+      this.tempStartUserSelectAssignees = { ...this.startUserSelectAssignees }
+      const timelineUsers = this.$refs.timeline && this.$refs.timeline.customApproveUsers
+      if (timelineUsers) {
+        this.tempStartUserSelectUsers = { ...timelineUsers }
+      }
       try {
         const response = await getApprovalDetail({
           processDefinitionId: this.processDefinitionId,
@@ -146,21 +171,80 @@ export default {
         const data = response.data || {}
         this.activityNodes = data.activityNodes || []
         this.startUserSelectTasks = this.activityNodes.filter((node) => CandidateStrategy.START_USER_SELECT === node.candidateStrategy)
+        const nextAssignees = {}
+        this.startUserSelectTasks.forEach((node) => {
+          const previous = this.tempStartUserSelectAssignees[node.id]
+          nextAssignees[node.id] = Array.isArray(previous) ? previous : []
+        })
+        this.startUserSelectAssignees = nextAssignees
+        // Rehydrate the timeline's visual chips from the retained ids. The
+        // timeline emits complete user objects, while the API accepts ids.
+        this.$nextTick(() => {
+          const usersByActivity = {}
+          this.startUserSelectTasks.forEach((node) => {
+            const selectedIds = this.startUserSelectAssignees[node.id] || []
+            const usersFromNode = (node.candidateUsers || []).filter((user) => {
+              return selectedIds.map(String).includes(String(user.id))
+            })
+            // START_USER_SELECT nodes do not always echo the selected users in
+            // candidateUsers. Reuse the complete objects from the selection
+            // dialog so the visual chips survive a preview refresh.
+            usersByActivity[node.id] = usersFromNode.length > 0
+              ? usersFromNode
+              : (this.tempStartUserSelectUsers[node.id] || []).filter((user) => {
+                return selectedIds.map(String).includes(String(user.id))
+              })
+          })
+          if (this.$refs.timeline && this.$refs.timeline.batchSetCustomApproveUsers) {
+            this.$refs.timeline.batchSetCustomApproveUsers(usersByActivity)
+          }
+        })
       } catch (e) {
         this.activityNodes = []
+        this.startUserSelectTasks = []
+        this.startUserSelectAssignees = {}
+        this.tempStartUserSelectUsers = {}
       }
     },
+    /** Receive the complete user objects selected in the timeline. */
+    selectUserConfirm(activityId, userList) {
+      this.$set(this.startUserSelectAssignees, activityId, (userList || []).map((user) => user.id))
+      this.$set(this.tempStartUserSelectUsers, activityId, userList || [])
+    },
+    /** The backend requires at least one assignee for each start-user-select node. */
+    validateStartUserSelectAssignees() {
+      for (const task of this.startUserSelectTasks) {
+        const assignees = this.startUserSelectAssignees[task.id]
+        if (!Array.isArray(assignees) || assignees.length === 0) {
+          this.$message.warning(`请选择${task.name}的候选人`)
+          return false
+        }
+      }
+      return true
+    },
     submitForm() {
+      if (this.formLoading) {
+        return
+      }
       this.$refs.form.validate(async (valid) => {
         if (!valid) {
           return
         }
+        if (!this.validateStartUserSelectAssignees()) {
+          return
+        }
         this.formLoading = true
         try {
-          await createLeave({
+          // Keep the payload aligned with the Vue3 page: only send the
+          // optional map when the approval definition actually contains a
+          // START_USER_SELECT task.
+          const data = {
             ...this.form,
-            startUserSelectAssignees: this.startUserSelectAssignees
-          })
+            ...(this.startUserSelectTasks.length > 0
+              ? { startUserSelectAssignees: this.startUserSelectAssignees }
+              : {})
+          }
+          await createLeave(data)
           this.$modal.msgSuccess('发起成功')
           this.$tab.closeOpenPage({ name: 'BpmOALeave' })
         } finally {
