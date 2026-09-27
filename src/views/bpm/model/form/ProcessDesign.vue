@@ -8,7 +8,7 @@
       show-icon
     />
 
-    <template v-else-if="modelData.type === BpmModelType.SIMPLE">
+    <template v-else-if="Number(modelData.type) === Number(BpmModelType.SIMPLE)">
       <SimpleProcessDesigner
         ref="simpleDesigner"
         v-model="modelData.simpleModel"
@@ -184,40 +184,42 @@ export default {
         this.formFieldsRef.value = []
         return
       }
-      try {
-        const response = await getForm(formId)
-        const data = response && response.data ? response.data : response
-        this.formFieldsRef.value = data && Array.isArray(data.fields) ? data.fields : []
-      } catch (e) {
-        this.formFieldsRef.value = []
-      }
+      const response = await getForm(formId)
+      this.formFieldsRef.value = response.data.fields
     },
     initProcessData() {
-      if (this.modelData.type === BpmModelType.BPMN && this.modelData.bpmnXml === undefined && this.modelData.key && this.modelData.name) {
+      if (Number(this.modelData.type) === Number(BpmModelType.BPMN) && this.modelData.bpmnXml === undefined && this.modelData.key && this.modelData.name) {
         this.$set(this.modelData, 'bpmnXml', createDefaultBpmnXml(this.modelData.key, this.modelData.name))
       }
-      if (this.modelData.type === BpmModelType.SIMPLE && !this.modelData.simpleModel) {
+      if (Number(this.modelData.type) === Number(BpmModelType.SIMPLE) && !this.modelData.simpleModel) {
         this.$set(this.modelData, 'simpleModel', undefined)
       }
     },
     initModeler(modeler) {
       const token = this.modelerInitToken
       setTimeout(() => {
-        if (token !== this.modelerInitToken || this.modelData.type !== BpmModelType.BPMN || !this.$refs.processDesigner) {
+        if (token !== this.modelerInitToken || Number(this.modelData.type) !== Number(BpmModelType.BPMN) || !this.$refs.processDesigner) {
           return
         }
         this.modeler = modeler
+        this.$emit('init-finished', modeler)
       }, 10)
     },
     handleBpmnSave(bpmnXml) {
+      const nextModelData = { ...this.modelData, bpmnXml }
+      this.$emit('input', nextModelData)
       this.$set(this.modelData, 'bpmnXml', bpmnXml)
+      this.$emit('success', bpmnXml)
       this.$message.success('BPMN 流程图已保存到当前模型')
     },
     handleSimpleSave(simpleModel) {
+      const nextModelData = { ...this.modelData, simpleModel }
+      this.$emit('input', nextModelData)
       this.$set(this.modelData, 'simpleModel', simpleModel)
+      this.$emit('success', simpleModel)
     },
     async validate() {
-      if (this.modelData.type === BpmModelType.SIMPLE) {
+      if (Number(this.modelData.type) === Number(BpmModelType.SIMPLE)) {
         if (this.$refs.simpleDesigner) {
           const data = await this.$refs.simpleDesigner.getCurrentFlowData()
           if (data) {

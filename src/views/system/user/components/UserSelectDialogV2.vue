@@ -88,7 +88,7 @@
 
 <script>
 import { CommonStatusEnum } from '@/utils/constants'
-import { listUser } from '@/api/system/user'
+import { getUserPage } from '@/api/system/user'
 import DeptTreeSelect from '@/views/system/dept/components/DeptTreeSelect.vue'
 
 export default {
@@ -136,8 +136,8 @@ export default {
     async getList() {
       this.loading = true
       try {
-        const response = await listUser(this.queryParams)
-        const data = response.data || {}
+        const response = await getUserPage(this.queryParams)
+        const data = response.data
         this.list = (data.list || []).map((row) => ({
           ...row,
           deptName: row.deptName || (row.dept && row.dept.name),

@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import * as Demo02CategoryApi from '@/api/infra/demo02';
+import * as Demo02CategoryApi from '@/api/infra/demo/demo02';
 import Demo02CategoryForm from './Demo02CategoryForm.vue';
 export default {
   name: "Demo02Category",
@@ -159,7 +159,7 @@ export default {
       await this.$modal.confirm('是否确认导出所有示例分类数据项?');
       try {
         this.exportLoading = true;
-        const res = await Demo02CategoryApi.exportDemo02CategoryExcel(this.queryParams);
+        const res = await Demo02CategoryApi.exportDemo02Category(this.queryParams);
         this.$download.excel(res.data, '示例分类.xls');
       } catch {
       } finally {
@@ -180,7 +180,7 @@ export default {
     handleDeleteBatch() {
       this.$modal.confirm('是否确认删除选中的示例分类数据项?').then(async () => {
         try {
-          await Demo02CategoryApi.deleteDemo02CategoryList(this.checkedIds);
+          await Promise.all(this.checkedIds.map((id) => Demo02CategoryApi.deleteDemo02Category(id)));
           this.checkedIds = [];
           await this.getList();
           this.$modal.msgSuccess("删除成功");

@@ -81,7 +81,7 @@
       <div class="my-process-designer__canvas" ref="bpmn-canvas"></div>
     </div>
     <el-dialog title="预览" width="80%" :visible.sync="previewModelVisible" append-to-body destroy-on-close>
-      <pre><code class="hljs" v-html="highlightedCode(previewType, previewResult)"></code></pre>
+      <pre><code class="hljs" v-dompurify-html="highlightedCode(previewType, previewResult)"></code></pre>
     </el-dialog>
   </div>
 </template>

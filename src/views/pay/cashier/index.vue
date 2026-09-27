@@ -6,7 +6,7 @@
         <el-descriptions-item label="支付单号">{{ payOrder.id }}</el-descriptions-item>
         <el-descriptions-item label="商品标题">{{ payOrder.subject }}</el-descriptions-item>
         <el-descriptions-item label="商品内容">{{ payOrder.body }}</el-descriptions-item>
-        <el-descriptions-item label="支付金额">￥{{ (payOrder.price / 100.0).toFixed(2) }}</el-descriptions-item>
+        <el-descriptions-item label="支付金额">￥{{ formatPrice(payOrder.price) }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ parseTime(payOrder.createTime) }}</el-descriptions-item>
         <el-descriptions-item label="过期时间">{{ parseTime(payOrder.expireTime) }}</el-descriptions-item>
       </el-descriptions>
@@ -138,7 +138,7 @@ export default {
         code: "mock"
       }, {
           name: '钱包支付',
-          icon: require("@/assets/images/pay/icon/mock.svg"),
+          icon: require("@/assets/images/pay/icon/wallet.svg"),
           code: "wallet"
       }],
       submitLoading: false, // 提交支付的 loading
@@ -157,8 +157,10 @@ export default {
     };
   },
   created() {
-    this.id = this.$route.query.id;
-    if (this.$route.query.returnUrl) {
+    if (typeof this.$route.query.id === 'string') {
+      this.id = Number(this.$route.query.id)
+    }
+    if (typeof this.$route.query.returnUrl === 'string') {
       this.returnUrl = decodeURIComponent(this.$route.query.returnUrl)
     }
     this.getDetail();
@@ -172,26 +174,31 @@ export default {
         this.goReturnUrl('cancel');
         return;
       }
-      getOrder(this.id).then(response => {
+      this.loading = true
+      // 收银台需要同步渠道状态，避免页面展示已在渠道侧完成但本地尚未回写的订单。
+      return getOrder(this.id, true).then(response => {
+        const data = response.data
         // 1.2 无法查询到支付信息
-        if (!response.data) {
+        if (!data) {
           this.$message.error('支付订单不存在，请检查！');
           this.goReturnUrl('cancel');
           return;
         }
         // 1.3 如果已支付、或者已关闭，则直接跳转
-        if (response.data.status === PayOrderStatusEnum.SUCCESS.status) {
+        if (data.status === PayOrderStatusEnum.SUCCESS.status) {
           this.$message.success('支付成功');
           this.goReturnUrl('success');
           return;
-        } else if (response.data.status === PayOrderStatusEnum.CLOSED.status) {
+        } else if (data.status === PayOrderStatusEnum.CLOSED.status) {
           this.$message.error('无法支付，原因：订单已关闭');
           this.goReturnUrl('close');
           return;
         }
 
         // 2. 可以展示
-        this.payOrder = response.data;
+        this.payOrder = data;
+      }).finally(() => {
+        this.loading = false;
       });
     },
     /** 提交支付 */
@@ -257,7 +264,7 @@ export default {
 
         // 打开轮询任务
         this.createQueryInterval()
-      }).catch(() => {
+      }).finally(() => {
         this.submitLoading = false
       });
     },
@@ -321,20 +328,25 @@ export default {
       }
       this.interval = setInterval(() => {
         getOrder(this.id).then(response => {
+          const data = response.data
           // 已支付
-          if (response.data.status === PayOrderStatusEnum.SUCCESS.status) {
+          if (data.status === PayOrderStatusEnum.SUCCESS.status) {
             this.clearQueryInterval();
             this.$message.success('支付成功！');
             this.goReturnUrl('success');
           }
           // 已取消
-          if (response.data.status === PayOrderStatusEnum.CLOSED.status) {
+          if (data.status === PayOrderStatusEnum.CLOSED.status) {
             this.clearQueryInterval();
             this.$message.error('支付已关闭！');
             this.goReturnUrl('close');
           }
         })
       }, 1000 * 2)
+    },
+    formatPrice(value) {
+      const number = Number(value)
+      return (Number.isFinite(number) ? number / 100 : 0).toFixed(2)
     },
     /** 清空查询任务 */
     clearQueryInterval() {
@@ -380,6 +392,9 @@ export default {
         });
       }
     }
+  },
+  beforeDestroy() {
+    this.clearQueryInterval()
   }
 };
 </script>

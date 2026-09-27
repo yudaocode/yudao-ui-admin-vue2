@@ -20,9 +20,7 @@
       <el-button v-if="isShowButton(OperationButtonType.TRANSFER)" icon="el-icon-position" size="small" @click="openAction('transfer')">{{ getButtonDisplayName(OperationButtonType.TRANSFER) }}</el-button>
       <el-button v-if="isShowButton(OperationButtonType.DELEGATE)" icon="el-icon-user" size="small" @click="openAction('delegate')">{{ getButtonDisplayName(OperationButtonType.DELEGATE) }}</el-button>
       <el-button v-if="isShowButton(OperationButtonType.ADD_SIGN)" icon="el-icon-plus" size="small" @click="openAction('addSign')">{{ getButtonDisplayName(OperationButtonType.ADD_SIGN) }}</el-button>
-      <el-button icon="el-icon-minus" size="small" @click="openAction('deleteSign')">减签</el-button>
       <el-button v-if="isShowButton(OperationButtonType.COPY)" icon="el-icon-message" size="small" @click="openAction('copy')">{{ getButtonDisplayName(OperationButtonType.COPY) }}</el-button>
-      <el-button icon="el-icon-refresh-left" size="small" @click="handleWithdraw">撤回</el-button>
     </template>
     <template v-else>
       <el-button
@@ -41,6 +39,13 @@
         @click="handleReCreate"
       >重新发起</el-button>
     </template>
+
+    <el-button
+      v-if="canDeleteSignTask"
+      icon="el-icon-minus"
+      size="small"
+      @click="openAction('deleteSign')"
+    >减签</el-button>
 
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="760px" append-to-body @close="handleDialogClose">
       <form-create
@@ -163,8 +168,7 @@ import {
   signCreateTask,
   signDeleteTask,
   TaskStatusEnum,
-  transferTask,
-  withdrawTask
+  transferTask
 } from '@/api/bpm/task'
 import { createComment } from '@/api/bpm/comment'
 import {
@@ -242,6 +246,7 @@ export default {
       nextApprovalRequestId: 0,
       pendingNextNodesTask: null,
       approvalRefreshTimer: null,
+      resolveApprovalRefresh: null,
       reasonRequire: false,
       nodeTypeName: '审批',
       approvalAttachmentFileTypes: [
@@ -317,14 +322,18 @@ export default {
       return startUserId !== undefined && startUserId !== null && currentUserId !== undefined && currentUserId !== null && String(startUserId) === String(currentUserId)
     },
     canCancel() {
-      return this.isStartUser && Number(this.processInstance && this.processInstance.status) === TaskStatusEnum.RUNNING
+      // Vue3 exposes cancellation for every non-terminal instance state. The
+      // backend applies the same non-terminal/start-user rule, so do not hide
+      // the action while an instance is still being prepared or approved.
+      return this.isStartUser && !this.isEndProcessStatus(this.processInstance && this.processInstance.status)
     },
-    // A task may be returned by the detail API in WAIT/APPROVING state (for
-    // example while another sign task is pending). Keep task operations
-    // disabled until Flowable marks the task RUNNING, matching the Vue3
-    // `isHandleTaskStatus` guard and preventing invalid state transitions.
+    // Regular task actions require RUNNING. Removing a sign task uses its
+    // own child-task guard because a before-sign parent can be WAIT.
     canHandleTask() {
       return !!(this.todoTask && this.todoTask.id && Number(this.todoTask.status) === TaskStatusEnum.RUNNING)
+    },
+    canDeleteSignTask() {
+      return !!(this.todoTask && this.todoTask.id && this.todoTask.children && this.todoTask.children.length > 0)
     },
     canReCreate() {
       if (!this.isStartUser || !this.isEndProcessStatus(this.processInstance.status)) {
@@ -349,9 +358,7 @@ export default {
     }
   },
   beforeDestroy() {
-    if (this.approvalRefreshTimer) {
-      clearTimeout(this.approvalRefreshTimer)
-    }
+    this.cancelApprovalRefresh()
   },
   methods: {
     defaultForm() {
@@ -378,8 +385,7 @@ export default {
         },
         value: {}
       }
-      this.nextApprovalRequestId += 1
-      this.pendingNextNodesTask = null
+      this.cancelApprovalRefresh()
       this.reasonRequire = todoTask && todoTask.reasonRequire !== undefined ? todoTask.reasonRequire : false
       this.nodeTypeName = todoTask && todoTask.nodeType === NodeType.TRANSACTOR_NODE ? '办理' : '审批'
       if (todoTask && todoTask.formId && todoTask.formConf) {
@@ -404,7 +410,9 @@ export default {
       })
     },
     async openAction(type) {
-      if ((type === 'cancel' && !this.canCancel) || (type !== 'cancel' && !this.canHandleTask)) {
+      const canOpen = type === 'cancel' ? this.canCancel
+        : type === 'deleteSign' ? this.canDeleteSignTask : this.canHandleTask
+      if (!canOpen) {
         return
       }
       this.actionType = type
@@ -418,7 +426,7 @@ export default {
       }
       if (type === 'return' && this.todoTask) {
         const response = await getTaskListByReturn(this.todoTask.id)
-        this.returnNodeList = response.data || []
+        this.returnNodeList = response.data
         if (this.returnNodeList.length === 0) {
           this.$message.warning('当前没有可退回的节点')
           return
@@ -427,7 +435,7 @@ export default {
       if (type === 'deleteSign' && this.todoTask) {
         try {
           const response = await getChildrenTaskList(this.todoTask.id)
-          const children = response.data || []
+          const children = response.data
           this.deleteSignTaskList = children
           if (children.length === 0) {
             this.$message.warning('当前没有可减签的任务')
@@ -457,69 +465,73 @@ export default {
     },
     handleDialogClose() {
       this.nextAssigneesActivityNode = []
+      this.cancelApprovalRefresh()
+    },
+    cancelApprovalRefresh() {
+      this.nextApprovalRequestId += 1
       this.pendingNextNodesTask = null
       if (this.approvalRefreshTimer) {
         clearTimeout(this.approvalRefreshTimer)
         this.approvalRefreshTimer = null
       }
+      if (this.resolveApprovalRefresh) {
+        this.resolveApprovalRefresh()
+        this.resolveApprovalRefresh = null
+      }
     },
     isReasonRequired() {
+      if (this.actionType === 'copy') {
+        return false
+      }
       if (this.actionType === 'approve' || this.actionType === 'reject') {
         return !!this.reasonRequire
       }
       return true
     },
-    /**
-     * Task responses carry button settings as a map keyed by the numeric
-     * OperationButtonType. Keep the old default (visible) when an older task
-     * response does not contain the map, while honoring explicit false.
-     */
+    /** 按 OperationButtonType 读取按钮配置，未配置的按钮使用默认值。 */
     isShowButton(btnType) {
       const settings = this.todoTask && this.todoTask.buttonsSetting
-      if (!settings) {
-        return true
-      }
-      const setting = Array.isArray(settings)
-        ? settings.find((item) => Number(item && item.id) === Number(btnType))
-        : settings[btnType] || settings[String(btnType)]
-      return !setting || setting.enable === undefined ? true : !!setting.enable
+      const setting = settings && settings[btnType]
+      return setting ? setting.enable : true
     },
     getButtonDisplayName(btnType) {
       const settings = this.todoTask && this.todoTask.buttonsSetting
-      const defaultName = OPERATION_BUTTON_NAME.get(btnType) || ''
-      const setting = Array.isArray(settings)
-        ? settings.find((item) => Number(item && item.id) === Number(btnType))
-        : settings && (settings[btnType] || settings[String(btnType)])
-      return setting && setting.displayName ? setting.displayName : defaultName
+      const setting = settings && settings[btnType]
+      return setting ? setting.displayName : OPERATION_BUTTON_NAME.get(btnType)
     },
-    validateNormalForm() {
+    async validateNormalForm() {
       if (!this.processDefinition || Number(this.processDefinition.formType) !== Number(BpmModelFormType.NORMAL)) {
         return Promise.resolve(true)
       }
       if (!this.normalFormApi || !this.normalFormApi.validate) {
         return Promise.resolve(true)
       }
-      return new Promise((resolve) => {
-        try {
-          const result = this.normalFormApi.validate((valid) => resolve(valid !== false))
-          if (result && result.then) {
-            result.then(() => resolve(true)).catch(() => resolve(false))
-          }
-        } catch (e) {
-          resolve(false)
-        }
-      })
+      try {
+        await this.normalFormApi.validate()
+        return true
+      } catch (error) {
+        return false
+      }
     },
     handleApproveFormChange() {
       if (this.actionType !== 'approve' || !this.dialogVisible) {
         return
       }
-      if (this.approvalRefreshTimer) {
-        clearTimeout(this.approvalRefreshTimer)
-      }
-      this.approvalRefreshTimer = setTimeout(() => {
-        this.pendingNextNodesTask = this.initNextAssigneesFormField().catch(() => {})
-      }, 300)
+      this.cancelApprovalRefresh()
+      this.pendingNextNodesTask = new Promise(resolve => {
+        this.resolveApprovalRefresh = resolve
+        this.approvalRefreshTimer = setTimeout(async () => {
+          this.approvalRefreshTimer = null
+          this.resolveApprovalRefresh = null
+          try {
+            await this.initNextAssigneesFormField()
+          } catch (error) {
+            // 与源端一致，由请求层处理重算失败。
+          } finally {
+            resolve()
+          }
+        }, 300)
+      })
     },
     async initNextAssigneesFormField() {
       if (!this.todoTask || !this.todoTask.id || !this.processInstance || !this.processInstance.id) {
@@ -597,48 +609,42 @@ export default {
       const nickname = user && (user.nickname || user.name || user.username)
       return deptName ? `${nickname || task.id}（所属部门：${deptName}）` : (nickname || task.id)
     },
-    validateApproveForm() {
+    async validateApproveForm() {
       if (!this.approveFormApi || !this.approveFormApi.validate) {
         return Promise.resolve(true)
       }
-      return new Promise((resolve, reject) => {
-        try {
-          const result = this.approveFormApi.validate((valid) => valid === false ? reject(new Error('invalid')) : resolve(true))
-          if (result && result.then) {
-            result.then(() => resolve(true)).catch(reject)
-          }
-        } catch (e) {
-          reject(e)
-        }
-      })
+      await this.approveFormApi.validate()
+      return true
     },
     parseAttachments(value) {
       if (!value) return []
       if (Array.isArray(value)) return value
       return String(value).split(',').map((item) => item.trim()).filter(Boolean)
     },
-    submitAction() {
-      this.$refs.form.validate(async valid => {
-        if (!valid) {
-          return
-        }
-        this.formLoading = true
-        try {
-          const result = await this.dispatchAction()
-          if (result === false) {
-            return
-          }
-          this.dialogVisible = false
-          this.$modal.msgSuccess('操作成功')
-          this.$emit('success')
-        } finally {
-          this.formLoading = false
-        }
-      })
+    async submitAction() {
+      const valid = await new Promise(resolve => this.$refs.form.validate(resolve))
+      if (!valid) return
+      this.formLoading = true
+      try {
+        const result = await this.dispatchAction()
+        if (result === false) return
+        this.dialogVisible = false
+        this.$modal.msgSuccess('操作成功')
+        this.$emit('success')
+      } finally {
+        this.formLoading = false
+      }
     },
     async dispatchAction() {
       const taskId = this.todoTask && this.todoTask.id
       const reason = (this.form.reason || '').trim()
+      if (this.actionType === 'approve' || this.actionType === 'reject') {
+        const valid = await this.validateNormalForm()
+        if (!valid) {
+          this.$message.warning('表单校验不通过，请先完善表单!!')
+          return false
+        }
+      }
       if (this.actionType === 'comment') {
         if (!reason) {
           this.$message.warning('评论内容不能为空')
@@ -647,8 +653,14 @@ export default {
         return createComment(taskId, reason)
       }
       if (this.actionType === 'approve') {
-        if (this.pendingNextNodesTask) {
-          await this.pendingNextNodesTask
+        let pending = this.pendingNextNodesTask
+        while (pending) {
+          await pending
+          if (!this.dialogVisible || !this.todoTask || this.todoTask.id !== taskId || this.actionType !== 'approve') {
+            return false
+          }
+          if (pending === this.pendingNextNodesTask) break
+          pending = this.pendingNextNodesTask
         }
         if (!this.validateNextAssignees()) {
           return false
@@ -699,15 +711,6 @@ export default {
         cancel: () => cancelProcessInstanceByStartUser(this.processInstance.id, reason)
       }
       return map[this.actionType]()
-    },
-    async handleWithdraw() {
-      if (!this.canHandleTask) {
-        return
-      }
-      await this.$modal.confirm('确认撤回当前任务？')
-      await withdrawTask(this.todoTask.id)
-      this.$modal.msgSuccess('撤回成功')
-      this.$emit('success')
     },
     handleReCreate() {
       if (!this.canReCreate) {

@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-inner';
+import * as Demo03StudentApi from '@/api/infra/demo/demo03/inner';
 
 export default {
   name: "Demo03GradeForm",

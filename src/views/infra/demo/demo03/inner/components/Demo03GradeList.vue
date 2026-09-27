@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-inner';
+import * as Demo03StudentApi from '@/api/infra/demo/demo03/inner';
 
 export default {
   name: "Demo03GradeList",
@@ -46,18 +46,6 @@ export default {
   },
   created() {
     this.getList();
-  },
-  watch: {
-    /** 监听主表的关联字段的变化，加载对应的子表数据 */
-    studentId: {
-      handler(val) {
-        this.queryParams.studentId = val;
-        if (val) {
-          this.handleQuery();
-        }
-      },
-      immediate: true
-    }
   },
   methods: {
     /** 查询列表 */

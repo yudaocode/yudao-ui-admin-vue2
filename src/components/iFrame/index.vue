@@ -1,10 +1,14 @@
 <template>
-  <div v-loading="loading" :style="'height:' + height">
+  <div v-loading="loading" style="height: calc(100vh - 94.5px)">
     <iframe
+      ref="frameRef"
       :src="src"
       frameborder="no"
       style="width: 100%; height: 100%"
       scrolling="auto"
+      allowfullscreen="true"
+      webkitallowfullscreen="true"
+      mozallowfullscreen="true"
     />
   </div>
 </template>
@@ -18,19 +22,34 @@ export default {
   },
   data() {
     return {
-      height: document.documentElement.clientHeight - 94.5 + "px;",
-      loading: true,
-      url: this.src
+      loading: true
     };
   },
-  mounted: function () {
-    setTimeout(() => {
-      this.loading = false;
-    }, 300);
-    const that = this;
-    window.onresize = function temp() {
-      that.height = document.documentElement.clientHeight - 94.5 + "px;";
-    };
+  watch: {
+    src() {
+      this.init();
+    }
+  },
+  mounted() {
+    this.init();
+  },
+  beforeDestroy() {
+    const frame = this.$refs.frameRef;
+    if (!frame) return;
+    frame.onload = null;
+    frame.src = 'about:blank';
+  },
+  methods: {
+    init() {
+      this.$nextTick(() => {
+        this.loading = true;
+        const frame = this.$refs.frameRef;
+        if (!frame) return;
+        frame.onload = () => {
+          this.loading = false;
+        };
+      });
+    }
   }
 };
 </script>

@@ -38,12 +38,6 @@
           <span class="suffix">后进入下一节点</span>
         </el-form-item>
       </el-form>
-      <el-alert
-        title="延迟配置会写入 delaySetting.delayType/delayTime，兼容后端仿真模型契约。"
-        type="info"
-        :closable="false"
-        show-icon
-      />
     </div>
     <div class="drawer-footer">
       <el-button @click="cancelConfig">取 消</el-button>
@@ -88,10 +82,8 @@ export default {
   },
   methods: {
     createDraft(node) {
-      // Imported models may still carry the pre-Vue3 flat names
-      // (timeDuration/timeUnit/dateTime). Normalize a cloned value before
-      // reading it so merely opening the drawer cannot silently reset the
-      // legacy delay to the default one-hour duration.
+      // Normalize imported flat delay fields before reading them so merely
+      // opening the drawer cannot silently reset a saved duration.
       const rawSetting = node && node.delaySetting ? clone(node.delaySetting) : {}
       const setting = normalizeDelaySetting(rawSetting) || {}
       const type = Number(setting.delayType) || DelayTypeEnum.FIXED_TIME_DURATION
@@ -101,7 +93,17 @@ export default {
         delayType: type,
         timeDuration: parsed.duration,
         timeUnit: parsed.unit,
-        dateTime: type === DelayTypeEnum.FIXED_DATE_TIME ? normalizeDateTime(setting.delayTime) : ''
+        dateTime: type === DelayTypeEnum.FIXED_DATE_TIME ? normalizeDateTime(setting.delayTime) : '',
+        // Keep the exact imported expression until a visible control changes.
+        // parseIsoDuration intentionally collapses compound/unsupported ISO
+        // values to the minute/hour controls; without this snapshot an
+        // untouched open -> save rewrites PT1H30M (or P1Y) to a different value.
+        rawDelayTime: setting.delayTime || '',
+        rawDelayType: type,
+        rawDuration: parsed.duration,
+        rawUnit: parsed.unit,
+        rawDateTime: type === DelayTypeEnum.FIXED_DATE_TIME ? normalizeDateTime(setting.delayTime) : '',
+        preserveRawDelayTime: true
       }
     },
     showDelayTimerNodeConfig(node) {
@@ -110,6 +112,9 @@ export default {
     },
     openDrawer() { this.visible = true },
     changeDelayType(type) {
+      // A type toggle is an explicit edit.  Do not restore the old raw
+      // expression if the user changes type and then saves.
+      this.$set(this.draft, 'preserveRawDelayTime', false)
       if (Number(type) === DelayTypeEnum.FIXED_TIME_DURATION && !this.draft.timeDuration) this.draft.timeDuration = 1
       if (Number(type) === DelayTypeEnum.FIXED_DATE_TIME && !this.draft.dateTime) this.draft.dateTime = ''
       this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
@@ -131,15 +136,26 @@ export default {
         return false
       }
       const type = Number(this.draft.delayType)
-      const delayTime = type === DelayTypeEnum.FIXED_TIME_DURATION
-        ? durationToIso(this.draft.timeDuration, this.draft.timeUnit)
-        : normalizeDateTime(this.draft.dateTime)
+      const durationUnchanged = type === DelayTypeEnum.FIXED_TIME_DURATION &&
+        Number(this.draft.timeDuration) === Number(this.draft.rawDuration) &&
+        Number(this.draft.timeUnit) === Number(this.draft.rawUnit)
+      const dateUnchanged = type === DelayTypeEnum.FIXED_DATE_TIME &&
+        normalizeDateTime(this.draft.dateTime) === String(this.draft.rawDateTime || '')
+      const preserveRaw = this.draft.preserveRawDelayTime &&
+        type === Number(this.draft.rawDelayType) &&
+        (durationUnchanged || dateUnchanged) &&
+        String(this.draft.rawDelayTime || '').trim()
+      const delayTime = preserveRaw
+        ? this.draft.rawDelayTime
+        : (type === DelayTypeEnum.FIXED_TIME_DURATION
+          ? durationToIso(this.draft.timeDuration, this.draft.timeUnit)
+          : normalizeDateTime(this.draft.dateTime))
       this.$set(this.flowNode, 'name', String(this.draft.name).trim())
       this.$set(this.flowNode, 'delaySetting', { delayType: type, delayTime })
       const unit = this.timeUnitTypes.find((item) => Number(item.value) === Number(this.draft.timeUnit))
       this.$set(this.flowNode, 'showText', type === DelayTypeEnum.FIXED_TIME_DURATION
         ? `延迟${this.draft.timeDuration}${unit ? unit.label : ''}`
-        : `延迟至${delayTime.replace('T', ' ')}`)
+        : `延迟至${String(delayTime || '').replace('T', ' ')}`)
       this.visible = false
       return true
     },
@@ -151,7 +167,13 @@ export default {
     getDraftSetting() {
       const type = Number(this.draft.delayType)
       return clone({ delayType: type, delayTime: type === DelayTypeEnum.FIXED_TIME_DURATION
-        ? durationToIso(this.draft.timeDuration, this.draft.timeUnit) : normalizeDateTime(this.draft.dateTime) })
+        ? (this.draft.preserveRawDelayTime && Number(this.draft.rawDelayType) === type &&
+          Number(this.draft.timeDuration) === Number(this.draft.rawDuration) &&
+          Number(this.draft.timeUnit) === Number(this.draft.rawUnit) && this.draft.rawDelayTime
+          ? this.draft.rawDelayTime : durationToIso(this.draft.timeDuration, this.draft.timeUnit))
+        : (this.draft.preserveRawDelayTime && Number(this.draft.rawDelayType) === type &&
+          normalizeDateTime(this.draft.dateTime) === String(this.draft.rawDateTime || '') && this.draft.rawDelayTime
+          ? this.draft.rawDelayTime : normalizeDateTime(this.draft.dateTime)) })
     }
   }
 }

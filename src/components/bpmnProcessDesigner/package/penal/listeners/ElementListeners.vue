@@ -224,16 +224,27 @@ export default {
       const listenerObject = createListenerObject(listenerForm, false, this.prefix)
       this.bpmnElementListeners.push(listenerObject)
       this.elementListenersList.push(initListenerType(listenerObject))
-      this.otherExtensionList = this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type !== `${this.prefix}:ExecutionListener`) || []
+      const extensionValues = this.bpmnElement.businessObject?.extensionElements?.values || []
+      this.otherExtensionList = extensionValues.filter(
+        ex => ex && ex.$type !== `${this.prefix}:ExecutionListener`
+      )
       updateElementExtensions(this.bpmnElement, this.otherExtensionList.concat(this.bpmnElementListeners))
     },
     resetListenersList() {
       const instances = typeof window !== 'undefined' ? window.bpmnInstances : null
       if (!instances || !instances.bpmnElement) return
       this.bpmnElement = instances.bpmnElement;
-      this.otherExtensionList = [];
-      this.bpmnElementListeners =
-        this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type === `${this.prefix}:ExecutionListener`) ?? [];
+      // Keep every extension that is not an execution listener.  Listener
+      // edits/removals rebuild extensionElements from this list; clearing it
+      // here would silently drop candidate strategies and other custom
+      // extensions whenever the properties panel is reopened.
+      const extensionValues = this.bpmnElement.businessObject?.extensionElements?.values || [];
+      this.otherExtensionList = extensionValues.filter(
+        ex => ex && ex.$type !== `${this.prefix}:ExecutionListener`
+      );
+      this.bpmnElementListeners = extensionValues.filter(
+        ex => ex && ex.$type === `${this.prefix}:ExecutionListener`
+      );
       this.elementListenersList = this.bpmnElementListeners.map(listener => initListenerType(listener));
     },
     // 打开 监听器详情 侧边栏
@@ -246,7 +257,9 @@ export default {
         this.editingListenerIndex = -1; // 标记为新增
       }
       if (listener && listener.fields) {
-        this.fieldsListOfListener = listener.fields.map(field => ({ ...field, fieldType: field.string ? "string" : "expression" }));
+        this.fieldsListOfListener = (Array.isArray(listener.fields) ? listener.fields : [])
+          .filter(Boolean)
+          .map(field => ({ ...field, fieldType: field.string ? "string" : "expression" }));
       } else {
         this.fieldsListOfListener = [];
         this.$set(this.listenerForm, "fields", []);
@@ -318,7 +331,10 @@ export default {
         this.elementListenersList.splice(this.editingListenerIndex, 1, this.listenerForm);
       }
       // 保存其他配置
-      this.otherExtensionList = this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type !== `${this.prefix}:ExecutionListener`) ?? [];
+      const extensionValues = this.bpmnElement.businessObject?.extensionElements?.values || [];
+      this.otherExtensionList = extensionValues.filter(
+        ex => ex && ex.$type !== `${this.prefix}:ExecutionListener`
+      );
       updateElementExtensions(this.bpmnElement, this.otherExtensionList.concat(this.bpmnElementListeners));
       // 4. 隐藏侧边栏
       this.listenerFormModelVisible = false;

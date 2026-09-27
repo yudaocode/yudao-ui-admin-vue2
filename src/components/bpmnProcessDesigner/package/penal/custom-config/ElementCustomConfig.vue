@@ -1,6 +1,20 @@
 <template>
   <div class="panel-tab__content element-custom-config">
-    <component v-if="customConfigComponent" :is="customConfigComponent" v-bind="$props" />
+    <!--
+      Element Plus resolves an el-form-item without an ancestor form, while
+      Element UI reads the injected form during render. Provide the small form
+      context that the custom-config implementations expect; without it merely selecting
+      a UserTask/CallActivity produces an `$options` render error.
+    -->
+    <el-form
+      v-if="customConfigComponent"
+      :model="businessObject"
+      size="mini"
+      label-width="90px"
+      @submit.native.prevent
+    >
+      <component :is="customConfigComponent" v-bind="$props" />
+    </el-form>
     <div v-else class="empty-custom-config">当前元素暂无自定义配置</div>
   </div>
 </template>
@@ -54,7 +68,7 @@ export default {
       }
       const key = `${this.type}${eventTypeSuffix(this.businessObject)}`
       const config = CustomConfigMap[key] || CustomConfigMap[this.type]
-      this.customConfigComponent = config && (config.component || config.componet) || null
+      this.customConfigComponent = config && config.componet || null
     }
   }
 }

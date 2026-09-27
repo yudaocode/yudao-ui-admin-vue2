@@ -1,4 +1,4 @@
-import {decrypt, encrypt} from "@/utils/jsencrypt";
+import { decrypt, encrypt } from '@/utils/jsencrypt'
 
 const AccessTokenKey = 'ACCESS_TOKEN'
 const RefreshTokenKey = 'REFRESH_TOKEN'
@@ -52,6 +52,12 @@ export function setPassword(password) {
 
 export function removePassword() {
   localStorage.removeItem(PasswordKey)
+}
+
+/** 获取当前登录用户编号。Vuex 延迟加载，避免 auth 与 request 初始化时形成循环依赖。 */
+export function getCurrentUserId() {
+  const currentStore = require('@/store').default
+  return Number(currentStore.getters && currentStore.getters.userId) || 0
 }
 
 export function getRememberMe() {

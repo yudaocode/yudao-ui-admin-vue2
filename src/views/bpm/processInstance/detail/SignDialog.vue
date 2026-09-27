@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import { uploadFile } from '@/api/infra/file'
+import { updateFile } from '@/api/infra/file'
 
 export default {
   name: 'SignDialog',
@@ -212,22 +212,6 @@ export default {
       blob.name = 'sign.png'
       return blob
     },
-    getUploadUrl(response) {
-      const data = response && response.data !== undefined ? response.data : response
-      if (typeof data === 'string') {
-        return data
-      }
-      if (data && typeof data.url === 'string') {
-        return data.url
-      }
-      if (data && typeof data.path === 'string') {
-        return data.path
-      }
-      if (data && typeof data.data === 'string') {
-        return data.data
-      }
-      return ''
-    },
     async submit() {
       if (this.uploading) {
         return
@@ -245,8 +229,8 @@ export default {
       this.uploading = true
       this.$message.info('签名上传中请稍等。。。')
       try {
-        const response = await uploadFile(this.createSignFile())
-        const url = this.getUploadUrl(response)
+        const response = await updateFile({ file: this.createSignFile() })
+        const url = response.data
         if (!url) {
           throw new Error('上传接口未返回文件地址')
         }

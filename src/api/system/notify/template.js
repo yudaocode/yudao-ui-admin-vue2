@@ -51,7 +51,7 @@ export function getNotifyTemplatePage(query) {
   })
 }
 
-// 创建站内信模板
+// 发送站内信
 export function sendNotify(data) {
   return request({
     url: '/system/notify-template/send-notify',
@@ -60,12 +60,11 @@ export function sendNotify(data) {
   })
 }
 
-// 导出站内信模板 Excel
-export function exportNotifyTemplateExcel(query) {
+// 批量删除站内信模板
+export function deleteNotifyTemplateList(ids) {
   return request({
-    url: '/system/notify-template/export-excel',
-    method: 'get',
-    params: query,
-    responseType: 'blob'
+    url: '/system/notify-template/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }

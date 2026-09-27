@@ -10,7 +10,7 @@ export function getSmsLogPage(query) {
 }
 
 // 导出短信日志 Excel
-export function exportSmsLogExcel(query) {
+export function exportSmsLog(query) {
   return request({
     url: '/system/sms-log/export-excel',
     method: 'get',

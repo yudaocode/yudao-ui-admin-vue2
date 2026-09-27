@@ -35,6 +35,19 @@ export default {
     this.download0(data, fileName, 'text/plain;charset=utf-8')
   },
 
+  // 下载远程图片，供 AI 绘画卡片使用
+  image({ url, fileName = 'image.png' } = {}) {
+    if (!url) return
+    const link = document.createElement('a')
+    link.href = url
+    link.target = '_blank'
+    link.rel = 'noopener'
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  },
+
   download0(data, fileName, mineType) {
     // 创建 blob
     let blob = data instanceof Blob ? data : new Blob([data], {type: mineType});

@@ -64,7 +64,7 @@
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.INFRA_JOB_STATUS" :value="scope.row.status" />
         </template>
-      </el-table-column>>
+      </el-table-column>
       <el-table-column label="处理器的名字" align="center" prop="handlerName" />
       <el-table-column label="处理器的参数" align="center" prop="handlerParam" />
       <el-table-column label="CRON 表达式" align="center" prop="cronExpression" />
@@ -97,82 +97,19 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
 
-    <!-- 添加或修改定时任务对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="任务名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入任务名称" />
-        </el-form-item>
-        <el-form-item label="处理器的名字" prop="handlerName">
-          <el-input v-model="form.handlerName" placeholder="请输入处理器的名字" v-bind:readonly="form.id !== undefined" />
-        </el-form-item>
-        <el-form-item label="处理器的参数" prop="handlerParam">
-          <el-input v-model="form.handlerParam" placeholder="请输入处理器的参数" />
-        </el-form-item>
-        <el-form-item label="CRON 表达式" prop="cronExpression">
-          <el-input v-model="form.cronExpression" placeholder="请输入CRON 表达式">
-            <template slot="append">
-              <el-button type="primary" @click="handleShowCron">
-                生成表达式
-                <i class="el-icon-time el-icon--right"></i>
-              </el-button>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="重试次数" prop="retryCount">
-          <el-input v-model="form.retryCount" placeholder="请输入重试次数。设置为 0 时，不进行重试" />
-        </el-form-item>
-        <el-form-item label="重试间隔" prop="retryInterval">
-          <el-input v-model="form.retryInterval" placeholder="请输入重试间隔，单位：毫秒。设置为 0 时，无需间隔" />
-        </el-form-item>
-        <el-form-item label="监控超时时间" prop="monitorTimeout">
-          <el-input v-model="form.monitorTimeout" placeholder="请输入监控超时时间，单位：毫秒" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
-
-    <el-dialog title="Cron表达式生成器" :visible.sync="openCron" append-to-body class="scrollbar" destroy-on-close>
-      <crontab @hide="openCron=false" @fill="crontabFill" :expression="expression"></crontab>
-    </el-dialog>
-
-    <!-- 任务详细 -->
-    <el-dialog title="任务详细" :visible.sync="openView" width="700px" append-to-body>
-      <el-form ref="form" :model="form" label-width="200px" size="mini">
-        <el-row>
-          <el-col :span="24">
-            <el-form-item label="任务编号：">{{ form.id }}</el-form-item>
-            <el-form-item label="任务名称：">{{ form.name }}</el-form-item>
-            <el-form-item label="任务名称：">
-              <dict-tag :type="DICT_TYPE.INFRA_JOB_STATUS" :value="form.status" />
-            </el-form-item>
-            <el-form-item label="处理器的名字：">{{ form.handlerName }}</el-form-item>
-            <el-form-item label="处理器的参数：">{{ form.handlerParam }}</el-form-item>
-            <el-form-item label="cron表达式：">{{ form.cronExpression }}</el-form-item>
-            <el-form-item label="重试次数：">{{ form.retryCount }}</el-form-item>
-            <el-form-item label="重试间隔：">{{ form.retryInterval + " 毫秒" }}</el-form-item>
-            <el-form-item label="监控超时时间：">{{ form.monitorTimeout > 0 ? form.monitorTimeout + " 毫秒" : "未开启" }}</el-form-item>
-            <el-form-item label="后续执行时间：">{{ Array.from(nextTimes, x => parseTime(x)).join('; ')}}</el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="openView = false">关 闭</el-button>
-      </div>
-    </el-dialog>
+    <job-form ref="formRef" @success="getList" />
+    <job-detail ref="detailRef" />
   </div>
 </template>
 
 <script>
-import { listJob, getJob, delJob, addJob, updateJob, exportJob, runJob, updateJobStatus, getJobNextTimes, delJobList, syncJob } from "@/api/infra/job";
+import { getJobPage, deleteJob, exportJob, runJob, updateJobStatus, deleteJobList, syncJob } from "@/api/infra/job";
 import { InfraJobStatusEnum } from "@/utils/constants";
-import Crontab from '@/components/Crontab'
+import JobForm from './JobForm.vue'
+import JobDetail from './JobDetail.vue'
 
 export default {
-  components: { Crontab },
+  components: { JobForm, JobDetail },
   name: "InfraJob",
   data() {
     return {
@@ -188,18 +125,6 @@ export default {
       total: 0,
       // 定时任务表格数据
       jobList: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
-      // 是否显示详细弹出层
-      openView: false,
-      // 是否显示Cron表达式弹出层
-      openCron: false,
-      // 传入的表达式
-      expression: "",
-      // 状态字典
-      statusOptions: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -208,17 +133,6 @@ export default {
         status: undefined,
         handlerName: undefined
       },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        name: [{ required: true, message: "任务名称不能为空", trigger: "blur" }],
-        handlerName: [{ required: true, message: "处理器的名字不能为空", trigger: "blur" }],
-        cronExpression: [{ required: true, message: "CRON 表达式不能为空", trigger: "blur" }],
-        retryCount: [{ required: true, message: "重试次数不能为空", trigger: "blur" }],
-        retryInterval: [{ required: true, message: "重试间隔不能为空", trigger: "blur" }],
-      },
-      nextTimes: [], // 后续执行时间
       checkedIds: [], // 批量删除时使用的变量
 
       // 枚举
@@ -232,31 +146,11 @@ export default {
     /** 查询定时任务列表 */
     getList() {
       this.loading = true;
-      listJob(this.queryParams).then(response => {
+      getJobPage(this.queryParams).then(response => {
         this.jobList = response.data.list;
         this.total = response.data.total;
         this.loading = false;
       });
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        id: undefined,
-        name: undefined,
-        handlerName: undefined,
-        handlerParam: undefined,
-        cronExpression: undefined,
-        retryCount: undefined,
-        retryInterval: undefined,
-        monitorTimeout: undefined,
-      };
-      this.nextTimes = [];
-      this.resetForm("form");
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -273,83 +167,38 @@ export default {
       this.$modal.confirm('确认要立即执行一次"' + row.name + '"任务吗?').then(function() {
           return runJob(row.id);
         }).then(() => {
+          this.getList();
           this.$modal.msgSuccess("执行成功");
       }).catch(() => {});
     },
     /** 任务详细信息 */
     handleView(row) {
-      getJob(row.id).then(response => {
-        this.form = response.data;
-        this.openView = true;
-      });
-      // 获取下一次执行时间
-      getJobNextTimes(row.id).then(response => {
-        this.nextTimes = response.data;
-      });
-    },
-    /** cron表达式按钮操作 */
-    handleShowCron() {
-      this.expression = this.form.cronExpression;
-      this.openCron = true;
-    },
-    /** 确定后回传值 */
-    crontabFill(value) {
-      this.form.cronExpression = value;
+      this.$refs.detailRef.open(row.id);
     },
     /** 任务日志列表查询 */
     handleJobLog(row) {
-      if (row.id) {
+      if (row && row.id) {
         this.$router.push({
-          path:"/job/log",
-          query:{
-            jobId: row.id
-          }
+          path:"/job/job-log",
+          query:{ id: row.id }
         });
       } else {
-        this.$router.push("/job/log");
+        this.$router.push("/job/job-log");
       }
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加任务";
+      this.$refs.formRef.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getJob(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改任务";
-      });
-    },
-    /** 提交按钮 */
-    submitForm: function() {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.id !== undefined) {
-            updateJob(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addJob(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
-          }
-        }
-      });
+      this.$refs.formRef.open('update', row.id);
     },
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id;
       this.$modal.confirm('是否确认删除定时任务编号为"' + ids + '"的数据项?').then(function() {
-          return delJob(ids);
+          return deleteJob(ids);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
@@ -410,8 +259,8 @@ export default {
     // 批量删除操作
     handleDeleteBatch() {
       const ids = this.checkedIds.join(',');
-      this.$modal.confirm('是否确认删除定时任务编号为"' + ids + '"的数据项?').then(function() {
-        return delJobList(ids);
+      this.$modal.confirm('是否确认删除定时任务编号为"' + ids + '"的数据项?').then(() => {
+          return deleteJobList(this.checkedIds);
       }).then(() => {
         this.checkedIds = [];
         this.getList();

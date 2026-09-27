@@ -29,8 +29,9 @@ export function deleteOAuth2Client(id) {
 // 批量删除 OAuth2 客户端
 export function deleteOAuth2ClientList(ids) {
   return request({
-    url: `/system/oauth2-client/delete-batch?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/oauth2-client/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 

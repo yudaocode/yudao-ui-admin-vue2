@@ -1,0 +1,160 @@
+.iot-content-wrap {
+  padding: 20px;
+  margin-bottom: 20px;
+  background: #fff;
+  border-radius: 4px;
+}
+
+.iot-text-danger {
+  color: #f56c6c !important;
+}
+
+.iot-text-warning { color: #e6a23c !important; }
+.iot-text-success { color: #67c23a !important; }
+
+.iot-vue2-root .flex { display: flex; }
+.iot-vue2-root .inline-flex { display: inline-flex; }
+.iot-vue2-root .block { display: block; }
+.iot-vue2-root .inline-block { display: inline-block; }
+.iot-vue2-root .flex-1 { flex: 1 1 0%; }
+.iot-vue2-root .flex-col { flex-direction: column; }
+.iot-vue2-root .flex-wrap { flex-wrap: wrap; }
+.iot-vue2-root .flex-shrink-0 { flex-shrink: 0; }
+.iot-vue2-root .items-center { align-items: center; }
+.iot-vue2-root .items-start { align-items: flex-start; }
+.iot-vue2-root .justify-between { justify-content: space-between; }
+.iot-vue2-root .justify-center { justify-content: center; }
+.iot-vue2-root .justify-end { justify-content: flex-end; }
+.iot-vue2-root .justify-start { justify-content: flex-start; }
+.iot-vue2-root .relative { position: relative; }
+.iot-vue2-root .absolute { position: absolute; }
+.iot-vue2-root .top-0 { top: 0; }
+.iot-vue2-root .left-0 { left: 0; }
+.iot-vue2-root .right-0 { right: 0; }
+.iot-vue2-root .float-right { float: right; }
+.iot-vue2-root .overflow-hidden { overflow: hidden; }
+.iot-vue2-root .overflow-x-auto { overflow-x: auto; }
+.iot-vue2-root .cursor-pointer { cursor: pointer; }
+.iot-vue2-root .cursor-help { cursor: help; }
+.iot-vue2-root .pointer-events-none { pointer-events: none; }
+.iot-vue2-root .whitespace-nowrap { white-space: nowrap; }
+.iot-vue2-root .truncate,
+.iot-vue2-root .text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iot-vue2-root .text-center { text-align: center; }
+.iot-vue2-root .align-middle { vertical-align: middle; }
+.iot-vue2-root .font-medium,
+.iot-vue2-root .font-500 { font-weight: 500; }
+.iot-vue2-root .font-600 { font-weight: 600; }
+.iot-vue2-root .font-bold { font-weight: 700; }
+.iot-vue2-root .font-mono { font-family: monospace; }
+.iot-vue2-root .leading-none { line-height: 1; }
+.iot-vue2-root .leading-relaxed { line-height: 1.625; }
+.iot-vue2-root .rounded { border-radius: 4px; }
+.iot-vue2-root .rounded-full { border-radius: 9999px; }
+.iot-vue2-root .border { border: 1px solid #dcdfe6; }
+.iot-vue2-root .border-2 { border-width: 2px; }
+.iot-vue2-root .border-solid { border-style: solid; }
+.iot-vue2-root .border-dashed { border-style: dashed; }
+.iot-vue2-root .border-b { border-bottom: 1px solid #ebeef5; }
+.iot-vue2-root .shadow-sm { box-shadow: 0 1px 2px rgb(0 0 0 / 5%); }
+.iot-vue2-root .transition-all,
+.iot-vue2-root .transition-colors,
+.iot-vue2-root .transition-shadow { transition: all .2s ease; }
+.iot-vue2-root .bg-gray-50 { background-color: #f9fafb; }
+.iot-vue2-root .bg-blue-50 { background-color: #eff6ff; }
+.iot-vue2-root .bg-green-50 { background-color: #f0fdf4; }
+.iot-vue2-root .bg-orange-50 { background-color: #fff7ed; }
+.iot-vue2-root .bg-blue-500 { background-color: #3b82f6; }
+.iot-vue2-root .bg-green-500 { background-color: #22c55e; }
+.iot-vue2-root .bg-orange-500 { background-color: #f97316; }
+.iot-vue2-root .text-white { color: #fff; }
+.iot-vue2-root .text-red-500 { color: #ef4444; }
+.iot-vue2-root .text-blue-400 { color: #60a5fa; }
+.iot-vue2-root .text-blue-500 { color: #3b82f6; }
+.iot-vue2-root .text-blue-600 { color: #2563eb; }
+.iot-vue2-root .text-blue-700 { color: #1d4ed8; }
+.iot-vue2-root .text-green-500 { color: #22c55e; }
+.iot-vue2-root .text-green-700 { color: #15803d; }
+.iot-vue2-root .text-orange-400 { color: #fb923c; }
+.iot-vue2-root .text-orange-600 { color: #ea580c; }
+.iot-vue2-root .text-orange-700 { color: #c2410c; }
+.iot-vue2-root .text-yellow-500 { color: #eab308; }
+.iot-vue2-root .text-gray-400 { color: #9ca3af; }
+.iot-vue2-root .text-gray-500 { color: #6b7280; }
+.iot-vue2-root .text-gray-600 { color: #4b5563; }
+.iot-vue2-root .text-gray-700 { color: #374151; }
+.iot-vue2-root .text-xs { font-size: 12px; }
+.iot-vue2-root .text-sm { font-size: 14px; }
+.iot-vue2-root .text-base { font-size: 16px; }
+.iot-vue2-root .text-lg { font-size: 18px; }
+.iot-vue2-root .text-xl { font-size: 20px; }
+.iot-vue2-root .text-3xl { font-size: 30px; }
+.iot-vue2-root .w-full,
+.iot-vue2-root [class~="w-full!"],
+.iot-vue2-root [class~="!w-full"],
+.iot-vue2-root [class~="!w-100%"],
+.iot-vue2-root .w-1\/1 { width: 100% !important; }
+.iot-vue2-root .h-full { height: 100%; }
+.iot-vue2-root .min-w-0 { min-width: 0; }
+.iot-vue2-root [class~="!w-120px"] { width: 120px !important; }
+.iot-vue2-root [class~="!w-150px"] { width: 150px !important; }
+.iot-vue2-root [class~="!w-160px"] { width: 160px !important; }
+.iot-vue2-root [class~="!w-200px"] { width: 200px !important; }
+.iot-vue2-root [class~="!w-220px"] { width: 220px !important; }
+.iot-vue2-root [class~="!w-240px"] { width: 240px !important; }
+.iot-vue2-root [class~="!w-360px"] { width: 360px !important; }
+.iot-vue2-root [class~="w-[100px]"] { width: 100px; }
+.iot-vue2-root [class~="h-[100px]"] { height: 100px; }
+.iot-vue2-root [class~="h-[160px]"] { height: 160px; }
+.iot-vue2-root [class~="h-[240px]"] { height: 240px; }
+.iot-vue2-root [class~="h-[300px]"] { height: 300px; }
+.iot-vue2-root [class~="h-[500px]"] { height: 500px; }
+.iot-vue2-root .gap-1 { gap: 4px; }
+.iot-vue2-root .gap-2 { gap: 8px; }
+.iot-vue2-root .gap-4 { gap: 16px; }
+.iot-vue2-root [class~="gap-4px"] { gap: 4px; }
+.iot-vue2-root [class~="gap-6px"] { gap: 6px; }
+.iot-vue2-root [class~="gap-8px"] { gap: 8px; }
+.iot-vue2-root [class~="gap-12px"] { gap: 12px; }
+.iot-vue2-root [class~="gap-16px"] { gap: 16px; }
+.iot-vue2-root .m-0 { margin: 0; }
+.iot-vue2-root .mb-0,
+.iot-vue2-root [class~="!mb-0"] { margin-bottom: 0 !important; }
+.iot-vue2-root .mb-1 { margin-bottom: 4px; }
+.iot-vue2-root .mb-2 { margin-bottom: 8px; }
+.iot-vue2-root .mb-3 { margin-bottom: 12px; }
+.iot-vue2-root .mb-4 { margin-bottom: 16px; }
+.iot-vue2-root [class~="mb-10px"] { margin-bottom: 10px; }
+.iot-vue2-root [class~="mb-12px"] { margin-bottom: 12px; }
+.iot-vue2-root [class~="mb-16px"] { margin-bottom: 16px; }
+.iot-vue2-root [class~="mb-20px"] { margin-bottom: 20px; }
+.iot-vue2-root [class~="mb-24px"] { margin-bottom: 24px; }
+.iot-vue2-root .mt-2 { margin-top: 8px; }
+.iot-vue2-root .mt-3 { margin-top: 12px; }
+.iot-vue2-root .mt-4 { margin-top: 16px; }
+.iot-vue2-root [class~="mt-10px"] { margin-top: 10px; }
+.iot-vue2-root [class~="mt-12px"] { margin-top: 12px; }
+.iot-vue2-root [class~="mt-15px"] { margin-top: 15px; }
+.iot-vue2-root .ml-1 { margin-left: 4px; }
+.iot-vue2-root .ml-2 { margin-left: 8px; }
+.iot-vue2-root [class~="ml-10px"] { margin-left: 10px; }
+.iot-vue2-root [class~="ml-20px"] { margin-left: 20px; }
+.iot-vue2-root [class~="ml-24px"] { margin-left: 24px; }
+.iot-vue2-root .mr-1 { margin-right: 4px; }
+.iot-vue2-root .mr-2 { margin-right: 8px; }
+.iot-vue2-root [class~="mr-5px"] { margin-right: 5px; }
+.iot-vue2-root [class~="mr-10px"] { margin-right: 10px; }
+.iot-vue2-root [class~="mr-12px"] { margin-right: 12px; }
+.iot-vue2-root [class~="mr-16px"] { margin-right: 16px; }
+.iot-vue2-root .p-0 { padding: 0; }
+.iot-vue2-root .p-4 { padding: 16px; }
+.iot-vue2-root [class~="p-8px"] { padding: 8px; }
+.iot-vue2-root [class~="p-12px"] { padding: 12px; }
+.iot-vue2-root [class~="p-16px"] { padding: 16px; }
+.iot-vue2-root [class~="p-20px"] { padding: 20px; }
+.iot-vue2-root [class~="p-24px"] { padding: 24px; }
+
+@media (max-width: 992px) {
+  .iot-vue2-root > .el-row > .el-col { width: 100%; margin-bottom: 12px; }
+  .iot-vue2-root .iot-content-wrap { padding: 12px; }
+}

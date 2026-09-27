@@ -44,10 +44,10 @@ export function getTagPage(query) {
 }
 
 // 获取公众号标签精简信息列表
-export function getSimpleTags() {
+export function getSimpleTagList() {
   return request({
     url: '/mp/tag/list-all-simple',
-    method: 'get',
+    method: 'get'
   })
 }
 

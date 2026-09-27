@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 查询部门列表
-export function listDept(query) {
+export function getDeptList(query) {
   return request({
     url: '/system/dept/list',
     method: 'get',
@@ -9,11 +9,12 @@ export function listDept(query) {
   })
 }
 
-// 查询部门列表（排除节点）
-export function listDeptExcludeChild(deptId) {
+// 查询部门分页列表（部门列表接口通过 pageNo/pageSize 支持分页）
+export function getDeptPage(query) {
   return request({
-    url: '/system/dept/list/exclude/' + deptId,
-    method: 'get'
+    url: '/system/dept/list',
+    method: 'get',
+    params: query
   })
 }
 
@@ -26,7 +27,7 @@ export function getDept(deptId) {
 }
 
 // 获取部门精简信息列表
-export function listSimpleDepts() {
+export function getSimpleDeptList() {
   return request({
     url: '/system/dept/simple-list',
     method: 'get'
@@ -34,7 +35,7 @@ export function listSimpleDepts() {
 }
 
 // 新增部门
-export function addDept(data) {
+export function createDept(data) {
   return request({
     url: '/system/dept/create',
     method: 'post',
@@ -52,7 +53,7 @@ export function updateDept(data) {
 }
 
 // 删除部门
-export function delDept(id) {
+export function deleteDept(id) {
   return request({
     url: '/system/dept/delete?id=' + id,
     method: 'delete'
@@ -60,9 +61,10 @@ export function delDept(id) {
 }
 
 // 批量删除部门
-export function delDeptList(ids) {
+export function deleteDeptList(ids) {
   return request({
-    url: `/system/dept/delete-list?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/dept/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }

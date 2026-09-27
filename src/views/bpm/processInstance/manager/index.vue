@@ -124,7 +124,7 @@ import {
   cancelProcessInstanceByAdmin,
   getProcessInstanceManagerPage
 } from '@/api/bpm/processInstance'
-import { listSimpleUsers } from '@/api/system/user'
+import { getSimpleUserList } from '@/api/system/user'
 import { TaskStatusEnum } from '@/api/bpm/task'
 import { getCategorySimpleList } from '@/api/bpm/category'
 import { formatPast2 } from '@/utils'
@@ -160,18 +160,18 @@ export default {
     formatPast2,
     async loadOptions() {
       const [userResp, categoryResp] = await Promise.all([
-        listSimpleUsers(),
+        getSimpleUserList(),
         getCategorySimpleList()
       ])
-      this.userList = userResp.data || []
-      this.categoryList = categoryResp.data || []
+      this.userList = userResp.data
+      this.categoryList = categoryResp.data
     },
     async getList() {
       this.loading = true
       try {
         const response = await getProcessInstanceManagerPage(this.queryParams)
-        this.list = response.data.list || []
-        this.total = response.data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }

@@ -16,3 +16,13 @@ export function getMailLogPage(query) {
     params: query
   })
 }
+
+// 导出邮件日志 Excel
+export function exportMailLog(query) {
+  return request({
+    url: '/system/mail-log/export-excel',
+    method: 'get',
+    params: query,
+    responseType: 'blob'
+  })
+}

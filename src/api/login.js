@@ -2,6 +2,14 @@ import request from '@/utils/request'
 import { getRefreshToken } from '@/utils/auth'
 import service from '@/utils/request'
 
+// 使用租户名，获得租户编号
+export function getTenantIdByName(name) {
+  return request({
+    url: '/system/tenant/get-id-by-name?name=' + name,
+    method: 'get'
+  })
+}
+
 // 登录方法
 export function login(username, password, captchaVerification, socialType, socialCode, socialState) {
   const data = {
@@ -61,13 +69,14 @@ export function socialLogin(type, code, state) {
 }
 
 // 获取登录验证码
-export function sendSmsCode(mobile, scene) {
+export function sendSmsCode(mobile, scene, captchaVerification) {
   return request({
     url: '/system/auth/send-sms-code',
     method: 'post',
     data: {
       mobile,
-      scene
+      scene,
+      captchaVerification
     }
   })
 }
@@ -81,6 +90,24 @@ export function smsLogin(mobile, code) {
       mobile,
       code
     }
+  })
+}
+
+// 注册用户
+export function register(data) {
+  return request({
+    url: '/system/auth/register',
+    method: 'post',
+    data
+  })
+}
+
+// 通过短信重置密码
+export function smsResetPassword(data) {
+  return request({
+    url: '/system/auth/reset-password',
+    method: 'post',
+    data
   })
 }
 

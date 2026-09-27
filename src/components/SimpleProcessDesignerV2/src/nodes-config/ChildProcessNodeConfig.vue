@@ -23,7 +23,14 @@
               style="width: 100%"
               @change="handleCalledProcessChange"
             >
-              <el-option v-for="item in childProcessOptions" :key="item.key || item.id" :label="item.name || item.key" :value="item.key" />
+              <!--
+                A model list can contain several deployed versions with the
+                same process key.  The Vue3 drawer deliberately keys these
+                options by their stable list position; using the process key
+                here made Element UI emit duplicate-key warnings and could
+                reuse the wrong option after a refresh.
+              -->
+              <el-option v-for="(item, index) in childProcessOptions" :key="index" :label="item.name || item.key" :value="item.key" />
             </el-select>
           </el-form-item>
           <el-form-item label="子流程名称" prop="calledProcessDefinitionName">
@@ -157,6 +164,16 @@ import {
 } from '../consts'
 import { parseFields, parseIsoDuration, durationToIso, normalizeDateTime, clone } from './components/node-config-utils'
 
+// Jackson emits real booleans, but older exported simple-model JSON often
+// stores switch values as 0/1 or "true"/"false" strings.  Normalize those
+// representations while hydrating the drawer so reopening cannot silently
+// disable an existing setting.
+function asBoolean(value) {
+  if (value === true || value === 1 || value === '1') return true
+  if (typeof value === 'string') return value.toLowerCase() === 'true'
+  return false
+}
+
 export default {
   name: 'ChildProcessNodeConfig',
   props: { flowNode: { type: Object, required: true } },
@@ -215,7 +232,7 @@ export default {
   watch: {
     flowNode: { deep: true, handler(value) { if (!this.visible && value) this.draft = this.createDraft(value) } }
   },
-  created() { this.loadChildProcessOptions() },
+  async created() { await this.loadChildProcessOptions() },
   methods: {
     createDraft(node) {
       const setting = clone(node && node.childProcessSetting ? node.childProcessSetting : {})
@@ -226,26 +243,52 @@ export default {
         name: node && node.name ? node.name : NODE_DEFAULT_NAME.get(NodeType.CHILD_PROCESS_NODE),
         calledProcessDefinitionKey: setting.calledProcessDefinitionKey || '',
         calledProcessDefinitionName: setting.calledProcessDefinitionName || '',
-        async: setting.async === true,
-        skipStartUserNode: setting.skipStartUserNode === true,
-        inVariables: Array.isArray(setting.inVariables) ? setting.inVariables.map((item) => ({ source: item.source || '', target: item.target || '' })) : [],
-        outVariables: Array.isArray(setting.outVariables) ? setting.outVariables.map((item) => ({ source: item.source || '', target: item.target || '' })) : [],
+        async: asBoolean(setting.async),
+        skipStartUserNode: asBoolean(setting.skipStartUserNode),
+        // IOParameter has more fields than the two selectors currently shown
+        // by this drawer (for example sourceExpression/targetExpression).
+        // Preserve those advanced fields across an open -> cancel/save cycle
+        // instead of reducing every row to { source, target }.
+        inVariables: Array.isArray(setting.inVariables) ? setting.inVariables.map((item) => ({
+          ...(item && typeof item === 'object' ? clone(item) : {}),
+          source: item && item.source ? item.source : '',
+          target: item && item.target ? item.target : ''
+        })) : [],
+        outVariables: Array.isArray(setting.outVariables) ? setting.outVariables.map((item) => ({
+          ...(item && typeof item === 'object' ? clone(item) : {}),
+          source: item && item.source ? item.source : '',
+          target: item && item.target ? item.target : ''
+        })) : [],
         startUserSetting: {
           type: Number(setting.startUserSetting && setting.startUserSetting.type) || ChildProcessStartUserTypeEnum.MAIN_PROCESS_START_USER,
           formField: setting.startUserSetting && setting.startUserSetting.formField ? setting.startUserSetting.formField : '',
           emptyType: Number(setting.startUserSetting && setting.startUserSetting.emptyType) || ChildProcessStartUserEmptyTypeEnum.MAIN_PROCESS_START_USER
         },
         timeoutSetting: {
-          enable: timeout.enable === true,
+          enable: asBoolean(timeout.enable),
           type: Number(timeout.type) || DelayTypeEnum.FIXED_TIME_DURATION,
           timeExpression: timeout.timeExpression || ''
         },
         timeoutDuration: timeoutParsed.duration,
         timeoutUnit: timeoutParsed.unit,
-        timeoutDateTime: timeout.type === DelayTypeEnum.FIXED_DATE_TIME ? normalizeDateTime(timeout.timeExpression) : '',
+        // Backend/imported JSON may carry enum values as strings.  Normalize
+        // before deciding which timeout editor to hydrate, otherwise reopening
+        // a fixed-date timeout silently loses its date field.
+        timeoutDateTime: Number(timeout.type) === DelayTypeEnum.FIXED_DATE_TIME ? normalizeDateTime(timeout.timeExpression) : '',
+        // Keep the exact imported expression until a visible timeout control
+        // changes. parseIsoDuration collapses compound/unsupported ISO
+        // values, so without this snapshot an untouched reopen/save would
+        // rewrite e.g. PT1H30M or P1Y to a different duration.
+        timeoutRawExpression: timeout.timeExpression || '',
+        timeoutRawEnable: asBoolean(timeout.enable),
+        timeoutRawType: Number(timeout.type) || DelayTypeEnum.FIXED_TIME_DURATION,
+        timeoutRawDuration: timeoutParsed.duration,
+        timeoutRawUnit: timeoutParsed.unit,
+        timeoutRawDateTime: Number(timeout.type) === DelayTypeEnum.FIXED_DATE_TIME ? normalizeDateTime(timeout.timeExpression) : '',
+        preserveRawTimeout: true,
         multiInstanceSetting: {
-          enable: multi.enable === true,
-          sequential: multi.sequential === true,
+          enable: asBoolean(multi.enable),
+          sequential: asBoolean(multi.sequential),
           approveRatio: Number(multi.approveRatio) || 100,
           sourceType: Number(multi.sourceType) || ChildProcessMultiInstanceSourceTypeEnum.FIXED_QUANTITY,
           source: multi.source === undefined || multi.source === null ? '1' : String(multi.source)
@@ -253,31 +296,16 @@ export default {
       }
     },
     async loadChildProcessOptions() {
-      try {
-        const response = await getModelList()
-        const data = response && response.data !== undefined ? response.data : response
-        this.childProcessOptions = Array.isArray(data) ? data.filter((item) => item && item.key) : []
-        this.loadError = ''
-        this.loadChildFields()
-      } catch (e) {
-        this.loadError = '子流程列表加载失败，可直接填写流程标识和名称'
-        // eslint-disable-next-line no-console
-        console.error('[BPM] 加载子流程列表失败', e)
-      }
+      const response = await getModelList()
+      this.childProcessOptions = Array.isArray(response.data) ? response.data.filter((item) => item && item.key) : []
+      this.loadError = ''
+      await this.loadChildFields()
     },
     async loadChildFields() {
       const option = this.childProcessOptions.find((item) => String(item.key) === String(this.draft.calledProcessDefinitionKey))
       if (!option || !option.formId) { this.childFieldOptions = []; return }
-      try {
-        const response = await getForm(option.formId)
-        const data = response && response.data !== undefined ? response.data : response
-        this.childFieldOptions = parseFields(data && data.fields)
-      } catch (e) {
-        this.childFieldOptions = []
-        this.loadError = '子流程表单字段加载失败，变量可手工填写'
-        // eslint-disable-next-line no-console
-        console.error('[BPM] 加载子流程表单字段失败', e)
-      }
+      const response = await getForm(option.formId)
+      this.childFieldOptions = parseFields(response.data && response.data.fields)
     },
     showChildProcessNodeConfig(node) {
       this.draft = this.createDraft(node || this.flowNode)
@@ -294,8 +322,12 @@ export default {
     addVariable(list) { list.push({ source: '', target: '' }) },
     removeVariable(list, index) { list.splice(index, 1) },
     startUserTypeChanged(type) { if (Number(type) !== ChildProcessStartUserTypeEnum.FROM_FORM) this.draft.startUserSetting.formField = '' },
-    timeoutEnabledChanged(enabled) { if (enabled && !this.draft.timeoutSetting.type) this.draft.timeoutSetting.type = DelayTypeEnum.FIXED_TIME_DURATION },
+    timeoutEnabledChanged(enabled) {
+      if (Boolean(enabled) !== Boolean(this.draft.timeoutRawEnable)) this.$set(this.draft, 'preserveRawTimeout', false)
+      if (enabled && !this.draft.timeoutSetting.type) this.draft.timeoutSetting.type = DelayTypeEnum.FIXED_TIME_DURATION
+    },
     timeoutTypeChanged(type) {
+      if (Number(type) !== Number(this.draft.timeoutRawType)) this.$set(this.draft, 'preserveRawTimeout', false)
       if (Number(type) === DelayTypeEnum.FIXED_TIME_DURATION && !this.draft.timeoutDuration) this.draft.timeoutDuration = 1
       if (Number(type) === DelayTypeEnum.FIXED_DATE_TIME && !this.draft.timeoutDateTime) this.draft.timeoutDateTime = ''
     },
@@ -325,6 +357,18 @@ export default {
     saveConfig() {
       const error = this.validateDraft()
       if (error) { this.$message.warning(error); return false }
+      const timeoutType = Number(this.draft.timeoutSetting.type) || DelayTypeEnum.FIXED_TIME_DURATION
+      const timeoutDurationUnchanged = timeoutType === DelayTypeEnum.FIXED_TIME_DURATION &&
+        Number(this.draft.timeoutDuration) === Number(this.draft.timeoutRawDuration) &&
+        Number(this.draft.timeoutUnit) === Number(this.draft.timeoutRawUnit)
+      const timeoutDateUnchanged = timeoutType === DelayTypeEnum.FIXED_DATE_TIME &&
+        normalizeDateTime(this.draft.timeoutDateTime) === String(this.draft.timeoutRawDateTime || '')
+      const preserveRawTimeout = this.draft.timeoutSetting.enable &&
+        this.draft.preserveRawTimeout &&
+        Boolean(this.draft.timeoutRawEnable) &&
+        timeoutType === Number(this.draft.timeoutRawType) &&
+        (timeoutDurationUnchanged || timeoutDateUnchanged) &&
+        String(this.draft.timeoutRawExpression || '').trim()
       const setting = {
         calledProcessDefinitionKey: String(this.draft.calledProcessDefinitionKey).trim(),
         calledProcessDefinitionName: String(this.draft.calledProcessDefinitionName).trim(),
@@ -339,9 +383,11 @@ export default {
         },
         timeoutSetting: {
           enable: !!this.draft.timeoutSetting.enable,
-          type: Number(this.draft.timeoutSetting.type) || DelayTypeEnum.FIXED_TIME_DURATION,
+          type: timeoutType,
           timeExpression: this.draft.timeoutSetting.enable
-            ? (Number(this.draft.timeoutSetting.type) === DelayTypeEnum.FIXED_DATE_TIME ? normalizeDateTime(this.draft.timeoutDateTime) : durationToIso(this.draft.timeoutDuration, this.draft.timeoutUnit))
+            ? (preserveRawTimeout
+              ? this.draft.timeoutRawExpression
+              : (timeoutType === DelayTypeEnum.FIXED_DATE_TIME ? normalizeDateTime(this.draft.timeoutDateTime) : durationToIso(this.draft.timeoutDuration, this.draft.timeoutUnit)))
             : ''
         },
         multiInstanceSetting: {

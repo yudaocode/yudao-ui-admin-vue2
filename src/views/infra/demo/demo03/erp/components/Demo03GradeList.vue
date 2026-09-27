@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-erp';
+import * as Demo03StudentApi from '@/api/infra/demo/demo03/erp';
 import Demo03GradeForm from './Demo03GradeForm.vue';
 
 export default {

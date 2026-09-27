@@ -23,8 +23,8 @@
 <script>
 
 import {SystemUserSocialTypeEnum} from "@/utils/constants";
-import {socialAuthRedirect} from "@/api/login";
-import {socialBind, socialUnbind, getBindSocialUserList} from "@/api/system/socialUser";
+import { getBindSocialUserList } from "@/api/system/social/user";
+import { socialAuthRedirect, socialBind, socialUnbind } from "@/api/system/user/socialUser";
 
 export default {
   props: {
@@ -69,13 +69,14 @@ export default {
     async initSocial() {
       this.socialUsers = []; // 重置避免无限增长
       // 获取已绑定的社交用户列表
-      const bindSocialUserList = await getBindSocialUserList();
+      const response = await getBindSocialUserList();
+      const bindSocialUserList = response.data;
       // 检查该社交平台是否已绑定
       for (const i in SystemUserSocialTypeEnum) {
         const socialUser = { ...SystemUserSocialTypeEnum[i] };
         this.socialUsers.push(socialUser);
-        if (bindSocialUserList && bindSocialUserList.data && bindSocialUserList.data.length > 0) {
-          for (const bindUser of bindSocialUserList.data) {
+        if (bindSocialUserList.length > 0) {
+          for (const bindUser of bindSocialUserList) {
             if (socialUser.type === bindUser.type) {
               socialUser.openid = bindUser.openid;
               break;

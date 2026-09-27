@@ -39,15 +39,13 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="流程发起人" align="center" min-width="100">
-        <template v-slot="scope">{{ userName(scope.row.startUser) }}</template>
-      </el-table-column>
+      <el-table-column label="流程发起人" align="center" prop="startUser.nickname" min-width="100" />
       <el-table-column label="流程发起时间" align="center" prop="processInstanceStartTime" width="180">
         <template v-slot="scope">{{ parseTime(scope.row.processInstanceStartTime) }}</template>
       </el-table-column>
       <el-table-column label="抄送节点" align="center" prop="activityName" min-width="180" />
       <el-table-column label="抄送人" align="center" min-width="100">
-        <template v-slot="scope">{{ userName(scope.row.createUser) || '系统' }}</template>
+        <template v-slot="scope">{{ (scope.row.createUser && scope.row.createUser.nickname) || '系统' }}</template>
       </el-table-column>
       <el-table-column label="抄送意见" align="center" prop="reason" width="150" />
       <el-table-column label="抄送时间" align="center" prop="createTime" width="180">
@@ -94,15 +92,12 @@ export default {
     this.getList()
   },
   methods: {
-    userName(user) {
-      return user ? (user.nickname || user.name || user.id) : ''
-    },
     async getList() {
       this.loading = true
       try {
         const response = await getProcessInstanceCopyPage(this.queryParams)
-        this.list = response.data.list || []
-        this.total = response.data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }

@@ -37,8 +37,9 @@ export function deleteSmsTemplate(id) {
 // 批量删除短信模板
 export function deleteSmsTemplateList(ids) {
   return request({
-    url: `/system/sms-template/delete-batch?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/sms-template/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
@@ -69,7 +70,7 @@ export function sendSms(data) {
 }
 
 // 导出短信模板 Excel
-export function exportSmsTemplateExcel(query) {
+export function exportSmsTemplate(query) {
   return request({
     url: '/system/sms-template/export-excel',
     method: 'get',

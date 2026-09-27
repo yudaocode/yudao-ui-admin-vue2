@@ -22,10 +22,10 @@
       </el-table-column>
       <el-table-column label="表单信息" prop="formType" min-width="150">
         <template v-slot="scope">
-          <el-button v-if="scope.row.formType === BpmModelFormType.NORMAL" type="text" @click="handleFormDetail(scope.row)">
+          <el-button v-if="Number(scope.row.formType) === Number(BpmModelFormType.NORMAL)" type="text" @click="handleFormDetail(scope.row)">
             {{ scope.row.formName }}
           </el-button>
-          <el-button v-else-if="scope.row.formType === BpmModelFormType.CUSTOM" type="text" @click="handleFormDetail(scope.row)">
+          <el-button v-else-if="Number(scope.row.formType) === Number(BpmModelFormType.CUSTOM)" type="text" @click="handleFormDetail(scope.row)">
             {{ scope.row.formCustomCreatePath }}
           </el-button>
           <span v-else>暂无表单</span>
@@ -55,9 +55,9 @@
       @pagination="getList"
     />
 
-    <el-dialog title="表单详情" :visible.sync="formDetailVisible" width="800px" append-to-body>
-      <form-create v-if="formDetailVisible" :rule="formDetail.rule" :option="formDetail.option" />
-    </el-dialog>
+    <Dialog title="表单详情" v-model="formDetailVisible" width="800px">
+      <form-create :rule="formDetail.rule" :option="formDetail.option" />
+    </Dialog>
 
     <el-dialog title="流程图" :visible.sync="bpmnVisible" width="80%" append-to-body>
       <my-process-viewer v-if="bpmnXML" key="definition-viewer" v-model="bpmnXML" :prefix="'flowable'" />
@@ -66,12 +66,14 @@
 </template>
 
 <script>
+import Dialog from '@/components/Dialog'
 import { getProcessDefinition, getProcessDefinitionPage } from '@/api/bpm/definition'
 import { setConfAndFields2 } from '@/utils/formCreate'
 import { BpmModelFormType } from '@/utils/constants'
 
 export default {
-  name: 'BpmModelDefinition',
+  name: 'BpmProcessDefinition',
+  components: { Dialog },
   data() {
     return {
       loading: false,
@@ -100,56 +102,32 @@ export default {
       this.loading = true
       try {
         const response = await getProcessDefinitionPage(this.queryParams)
-        const data = response && response.data ? response.data : {}
-        this.list = data.list || []
-        this.total = data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }
     },
     handleFormDetail(row) {
-      if (row.formType === BpmModelFormType.NORMAL && row.formConf && row.formFields) {
+      if (row.formType === BpmModelFormType.NORMAL) {
         setConfAndFields2(this.formDetail, row.formConf, row.formFields)
-        this.formDetail.option.submitBtn = false
-        this.formDetail.option.resetBtn = false
         this.formDetailVisible = true
-      } else if (row.formCustomCreatePath) {
-        this.$router.push({ path: row.formCustomCreatePath })
       } else {
-        this.$message.info('该流程定义未配置表单')
+        this.$router.push({ path: row.formCustomCreatePath })
       }
     },
     visibleScopeText(row) {
       const users = Array.isArray(row.startUsers) ? row.startUsers : []
-      const depts = Array.isArray(row.startDepts) ? row.startDepts : []
-      if (users.length === 0 && depts.length === 0) {
-        // Definition responses from older BPM services expose only ids. Do
-        // not incorrectly claim "全部可见" when an explicit id list exists.
-        const userIds = Array.isArray(row.startUserIds) ? row.startUserIds : []
-        const deptIds = Array.isArray(row.startDeptIds) ? row.startDeptIds : []
-        if (userIds.length > 0) {
-          return `指定用户（${userIds.length} 人）`
-        }
-        if (deptIds.length > 0) {
-          return `指定部门（${deptIds.length} 个）`
-        }
-        return '全部可见'
-      }
+      if (users.length === 0) return '全部可见'
       if (users.length === 1) {
         return users[0].nickname || users[0].name
-      }
-      if (users.length === 0 && depts.length === 1) {
-        return depts[0].name
-      }
-      if (users.length === 0 && depts.length > 1) {
-        return `${depts[0].name}等 ${depts.length} 个部门可见`
       }
       return `${users[0].nickname || users[0].name}等 ${users.length} 人可见`
     },
     async handleBpmnDetail(row) {
       try {
         const response = await getProcessDefinition(row.id)
-        this.bpmnXML = response && response.data && (response.data.bpmnXml || response.data.bpmnXML)
+        this.bpmnXML = response.data.bpmnXml
         this.bpmnVisible = true
       } catch (e) {
         this.bpmnXML = ''
@@ -158,7 +136,7 @@ export default {
     },
     handleRestore(row) {
       this.$router.push({
-        name: 'BpmModelDefinitionRestore',
+        name: 'BpmModelUpdate',
         params: {
           type: 'definition',
           id: row.id

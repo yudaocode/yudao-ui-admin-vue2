@@ -22,7 +22,7 @@ export function getMyNotifyMessagePage(query) {
 // 批量标记已读
 export function updateNotifyMessageRead(ids) {
   return request({
-    url: '/system/notify-message/update-read?' + qs.stringify({ids: ids}, { indices: false }),
+    url: '/system/notify-message/update-read?' + qs.stringify({ ids: ids }, { indices: false }),
     method: 'put'
   })
 }

@@ -96,7 +96,7 @@ export default {
       try {
         const response = await getCommentListByProcessInstanceId(processInstanceId)
         if (requestId === this.listRequestId && processInstanceId === this.id) {
-          this.comments = response.data || []
+          this.comments = response.data
         }
       } finally {
         if (requestId === this.listRequestId) {

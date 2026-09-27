@@ -5,7 +5,7 @@
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="公众号" prop="accountId">
-        <el-select v-model="queryParams.accountId" placeholder="请选择公众号">
+        <el-select v-model="queryParams.accountId" placeholder="请选择公众号" @change="handleAccountChange">
           <el-option v-for="item in accounts" :key="parseInt(item.id)" :label="item.name" :value="parseInt(item.id)" />
         </el-select>
       </el-form-item>
@@ -90,9 +90,9 @@
 </template>
 
 <script>
-import { updateUser, getUser, getUserPage, syncUser } from "@/api/mp/mpuser";
-import { getSimpleAccounts } from "@/api/mp/account";
-import { getSimpleTags } from "@/api/mp/tag";
+import { updateUser, getUser, getUserPage, syncUser } from "@/api/mp/user";
+import { getSimpleAccountList } from "@/api/mp/account";
+import { getSimpleTagList } from "@/api/mp/tag";
 
 export default {
   name: "MpUser",
@@ -132,7 +132,7 @@ export default {
     };
   },
   created() {
-    getSimpleAccounts().then(response => {
+    getSimpleAccountList().then(response => {
       this.accounts = response.data;
       // 默认选中第一个
       if (this.accounts.length > 0) {
@@ -143,7 +143,7 @@ export default {
     })
 
     // 加载标签
-    getSimpleTags().then(response => {
+    getSimpleTagList().then(response => {
       this.tags = response.data;
     })
   },
@@ -186,14 +186,19 @@ export default {
       this.queryParams.pageNo = 1;
       this.getList();
     },
+    /** 公众号切换 */
+    handleAccountChange(accountId) {
+      this.queryParams.accountId = accountId
+      this.queryParams.pageNo = 1
+      this.getList()
+    },
     /** 重置按钮操作 */
     resetQuery() {
-      this.resetForm("queryForm");
-      // 默认选中第一个
-      if (this.accounts.length > 0) {
-        this.queryParams.accountId = this.accounts[0].id;
-      }
-      this.handleQuery();
+      // 保留当前选中的公众号，与源行为一致
+      const accountId = this.queryParams.accountId
+      this.resetForm("queryForm")
+      this.queryParams.accountId = accountId
+      this.handleQuery()
     },
     /** 修改按钮操作 */
     handleUpdate(row) {

@@ -7,13 +7,14 @@
 <script>
 import iFrame from "@/components/iFrame/index";
 import { getConfigKey } from "@/api/infra/config";
+import { getBackendBaseUrl } from "@/utils/backendUrl";
 export default {
   name: "InfraSwagger",
   components: { iFrame },
   data() {
     return {
-      url: process.env.VUE_APP_BASE_API + "/doc.html", // Knife4j UI
-      // url: process.env.VUE_APP_BASE_API + "/swagger-ui", // Swagger UI
+      url: getBackendBaseUrl() + "/doc.html", // Knife4j UI
+      // url: getBackendBaseUrl() + "/swagger-ui", // Swagger UI
       loading: true
     };
   },

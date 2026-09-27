@@ -18,7 +18,7 @@ export function getJobLogPage(query) {
 }
 
 // 导出定时任务 Excel
-export function exportJobLogExcel(query) {
+export function exportJobLog(query) {
   return request({
     url: '/infra/job-log/export-excel',
     method: 'get',

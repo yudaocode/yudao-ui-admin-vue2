@@ -137,8 +137,7 @@ export default {
         name: "BpmFormEditor",
         query: {
           type: 'copy',
-          id: row && row.id,
-          formId: row && row.id
+          id: row.id
         }
       });
     },
@@ -148,8 +147,7 @@ export default {
         name: "BpmFormEditor",
         query:{
           type: 'update',
-          id: row.id,
-          formId: row.id
+          id: row.id
         }
       });
     },

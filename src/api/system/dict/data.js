@@ -1,70 +1,45 @@
 import request from '@/utils/request'
 
-// 查询字典数据列表
-export function listData(query) {
-  return request({
-    url: '/system/dict-data/page',
-    method: 'get',
-    params: query
-  })
+export function getSimpleDictDataList() {
+  return request({ url: '/system/dict-data/simple-list', method: 'get' })
 }
 
-// 查询字典数据详细
-export function getData(dictCode) {
-  return request({
-    url: '/system/dict-data/get?id=' + dictCode,
-    method: 'get'
-  })
+export function getDictDataPage(params) {
+  return request({ url: '/system/dict-data/page', method: 'get', params })
 }
 
-// 根据字典类型查询字典数据信息
+export function getDictData(id) {
+  return request({ url: '/system/dict-data/get?id=' + id, method: 'get' })
+}
+
+export function getDictDataByType(dictType) {
+  return request({ url: '/system/dict-data/type?type=' + dictType, method: 'get' })
+}
+
 export function getDicts(dictType) {
+  return getDictDataByType(dictType)
+}
+
+export function createDictData(data) {
+  return request({ url: '/system/dict-data/create', method: 'post', data })
+}
+
+export function updateDictData(data) {
+  return request({ url: '/system/dict-data/update', method: 'put', data })
+}
+
+export function deleteDictData(id) {
+  return request({ url: '/system/dict-data/delete?id=' + id, method: 'delete' })
+}
+
+export function deleteDictDataList(ids) {
   return request({
-    url: '/system/dict-data/type/' + dictType,
-    method: 'get'
+    url: '/system/dict-data/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
-// 新增字典数据
-export function addData(data) {
-  return request({
-    url: '/system/dict-data/create',
-    method: 'post',
-    data: data
-  })
-}
-
-// 修改字典数据
-export function updateData(data) {
-  return request({
-    url: '/system/dict-data/update',
-    method: 'put',
-    data: data
-  })
-}
-
-// 删除字典数据
-export function delData(dictCode) {
-  return request({
-    url: '/system/dict-data/delete?id=' + dictCode,
-    method: 'delete'
-  })
-}
-
-// 导出字典数据
-export function exportData(query) {
-  return request({
-    url: '/system/dict-data/export-excel',
-    method: 'get',
-    params: query,
-    responseType: 'blob'
-  })
-}
-
-// 查询全部字典数据列表
-export function listSimpleDictDatas() {
-  return request({
-    url: '/system/dict-data/list-all-simple',
-    method: 'get',
-  })
+export function exportDictData(params) {
+  return request({ url: '/system/dict-data/export-excel', method: 'get', params, responseType: 'blob' })
 }

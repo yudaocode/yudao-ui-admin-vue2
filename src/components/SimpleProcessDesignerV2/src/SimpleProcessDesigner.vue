@@ -21,14 +21,24 @@
 import SimpleProcessModel from './SimpleProcessModel.vue'
 import { NodeId, NodeType } from './consts'
 import { getForm } from '@/api/bpm/form'
-import { listSimpleRoles } from '@/api/system/role'
-import { listSimplePosts } from '@/api/system/post'
-import { listSimpleUsers } from '@/api/system/user'
-import { listSimpleDepts } from '@/api/system/dept'
+import { getSimpleRoleList } from '@/api/system/role'
+import { getSimplePostList } from '@/api/system/post'
+import { getSimpleUserList } from '@/api/system/user'
+import { getSimpleDeptList } from '@/api/system/dept'
 import { getUserGroupSimpleList } from '@/api/bpm/userGroup'
 
 function clone(value) {
-  return JSON.parse(JSON.stringify(value || {}))
+  if (Array.isArray(value)) {
+    return value.map((item) => clone(item))
+  }
+  if (value && typeof value === 'object') {
+    const result = {}
+    Object.keys(value).forEach((key) => {
+      result[key] = clone(value[key])
+    })
+    return result
+  }
+  return value
 }
 
 function createDefaultModel() {
@@ -125,13 +135,13 @@ export default {
     },
     modelFormId: {
       immediate: true,
-      handler() {
-        this.loadFormFields()
+      async handler() {
+        await this.loadFormFields()
       }
     }
   },
-  created() {
-    this.loadOptions()
+  async created() {
+    await this.loadOptions()
   },
   methods: {
     async loadFormFields() {
@@ -139,33 +149,23 @@ export default {
         this.formFieldsRef.value = []
         return
       }
-      try {
-        const response = await getForm(this.modelFormId)
-        const data = response.data || response
-        this.formFieldsRef.value = data && data.fields ? data.fields : []
-      } catch (e) {
-        this.formFieldsRef.value = []
-      }
+      const response = await getForm(this.modelFormId)
+      this.formFieldsRef.value = response.data && Array.isArray(response.data.fields) ? response.data.fields : []
     },
     async loadOptions() {
-      const normalize = (response) => response && response.data ? response.data : response
-      try {
-        const responses = await Promise.all([
-          listSimpleRoles(),
-          listSimplePosts(),
-          listSimpleUsers(),
-          listSimpleDepts(),
-          getUserGroupSimpleList()
-        ])
-        this.roleListRef.value = normalize(responses[0]) || []
-        this.postListRef.value = normalize(responses[1]) || []
-        this.userListRef.value = normalize(responses[2]) || []
-        this.deptListRef.value = normalize(responses[3]) || []
-        this.deptTreeRef.value = this.deptListRef.value
-        this.userGroupListRef.value = normalize(responses[4]) || []
-      } catch (e) {
-        // 选项加载失败不阻塞流程设计，保存时仍会保留节点 JSON。
-      }
+      const responses = await Promise.all([
+        getSimpleRoleList(),
+        getSimplePostList(),
+        getSimpleUserList(),
+        getSimpleDeptList(),
+        getUserGroupSimpleList()
+      ])
+      this.roleListRef.value = Array.isArray(responses[0].data) ? responses[0].data : []
+      this.postListRef.value = Array.isArray(responses[1].data) ? responses[1].data : []
+      this.userListRef.value = Array.isArray(responses[2].data) ? responses[2].data : []
+      this.deptListRef.value = Array.isArray(responses[3].data) ? responses[3].data : []
+      this.deptTreeRef.value = this.deptListRef.value
+      this.userGroupListRef.value = Array.isArray(responses[4].data) ? responses[4].data : []
     },
     resetModel() {
       this.$confirm('确认重置当前仿真流程设计？', '提示', {

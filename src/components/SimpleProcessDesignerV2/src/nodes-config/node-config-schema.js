@@ -1,12 +1,12 @@
 /**
- * Convert the convenience values used by the Vue2 compatibility drawer to
- * the DTO shape consumed by BpmSimpleModelNodeVO.
+ * Convert the values used by the Element UI drawer to the DTO shape consumed
+ * by BpmSimpleModelNodeVO.
  *
- * The Vue3 designer writes the nested DTO directly.  Older Vue2 drawers used
- * flat/legacy names (for example delaySetting.timeDuration or a top-level
- * httpRequestSetting).  Keeping this adapter pure with respect to its input
- * contract lets the advanced JSON editor continue to carry newer fields while
- * making the common visual controls safe to submit to the current backend.
+ * Persisted/imported models can still contain flat fields (for example
+ * delaySetting.timeDuration or a top-level httpRequestSetting). Keep this
+ * normalization pure with respect to its input contract so the advanced JSON
+ * editor can carry newer fields while the visual controls submit the canonical
+ * backend DTO.
  */
 import { NodeType } from '../consts'
 
@@ -26,6 +26,16 @@ function clone(value) {
 
 function ensureArray(target, key) {
   if (!Array.isArray(target[key])) target[key] = []
+}
+
+function booleanValue(value, fallback) {
+  if (value === true || value === 1 || value === '1') return true
+  if (value === false || value === 0 || value === '0') return false
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') return true
+    if (value.toLowerCase() === 'false') return false
+  }
+  return fallback
 }
 
 function durationUnit(unit) {
@@ -65,7 +75,7 @@ export function normalizeDelaySetting(setting) {
       }
     }
   } else if (hasCanonicalType && !hasCanonicalTime && setting.timeDuration !== undefined) {
-    // A partially edited legacy object may retain delayType but lose delayTime.
+    // A partially edited imported object may retain delayType but lose delayTime.
     const number = Number(setting.timeDuration)
     if (Number(setting.delayType) === 1 && !Number.isNaN(number) && number > 0) {
       setting.delayTime = durationIso(number, setting.timeUnit)
@@ -96,8 +106,8 @@ function normalizeHttpRequestSetting(setting) {
     setting[key].forEach((item) => {
       if (!isObject(item)) return
       const type = Number(item.type)
-      // HttpRequestParam.type is @NotNull + @InEnum on the backend.  Older
-      // Vue2 payloads omitted it, so make the legacy default explicit while
+      // HttpRequestParam.type is @NotNull + @InEnum on the backend. Imported
+      // payloads may omit it, so make the default explicit while
       // preserving empty key/value values for the UI validator to report.
       item.type = type === 2 ? 2 : 1
       if (item.key === undefined || item.key === null) item.key = ''
@@ -127,9 +137,9 @@ function normalizeConditionSetting(setting) {
 }
 
 /**
- * Normalize trigger settings.  The compatibility drawer historically exposed
- * `node.httpRequestSetting`; the backend requires `node.triggerSetting` with a
- * trigger type and nested HTTP setting.
+ * Normalize trigger settings. The drawer may expose `node.httpRequestSetting`
+ * while the backend requires `node.triggerSetting` with a trigger type and
+ * nested HTTP setting.
  */
 export function normalizeTriggerSetting(node) {
   if (!isObject(node)) return node
@@ -156,12 +166,16 @@ export function normalizeTriggerSetting(node) {
       setting.type = 1
     } else if ((setting.type === undefined || setting.type === null) && setting.formSettings) {
       // Form update/delete are represented by 10/11 in BpmTriggerTypeEnum.
-      // Infer delete only when the legacy shape is unambiguous; otherwise use
+      // Infer delete only when the imported shape is unambiguous; otherwise use
       // the update variant and let the advanced editor override it.
       const firstFormSetting = Array.isArray(setting.formSettings) ? setting.formSettings[0] : undefined
       setting.type = firstFormSetting && firstFormSetting.deleteFields && !firstFormSetting.updateFormFields ? 11 : 10
     }
-    if (Number(setting.type) === 1 || Number(setting.type) === 2) {
+    // API/imported JSON may carry enum values as strings.  Normalize based on
+    // their numeric meaning so imported HTTP rows still receive the required
+    // parameter defaults instead of being misclassified as form settings.
+    const triggerType = Number(setting.type)
+    if (triggerType === 1 || triggerType === 2) {
       if (setting.httpRequestSetting) normalizeHttpRequestSetting(setting.httpRequestSetting)
     } else if (Array.isArray(setting.formSettings)) {
       setting.formSettings.forEach((formSetting) => {
@@ -191,7 +205,7 @@ function normalizeConditionGroups(groups) {
 }
 
 /** Keep router condition groups in the nested backend shape without touching
- * advanced fields that are not represented by the compatibility controls. */
+ * advanced fields that are not represented by the visual controls. */
 export function normalizeRouterGroups(node) {
   if (!isObject(node) || !Array.isArray(node.routerGroups)) return node
   node.routerGroups.forEach((route) => {
@@ -211,10 +225,8 @@ export function normalizeChildProcessSetting(setting) {
   // process configuration until the user has entered at least one setting or
   // supplied it through advanced JSON.
   if (Object.keys(setting).length === 0) return setting
-  if (setting.async === undefined || setting.async === null) setting.async = false
-  if (setting.skipStartUserNode === undefined || setting.skipStartUserNode === null) {
-    setting.skipStartUserNode = false
-  }
+  setting.async = booleanValue(setting.async, false)
+  setting.skipStartUserNode = booleanValue(setting.skipStartUserNode, false)
   if (!isObject(setting.startUserSetting)) {
     setting.startUserSetting = { type: 1, emptyType: 1 }
   } else {
@@ -232,9 +244,7 @@ export function normalizeChildProcessSetting(setting) {
   if (!isObject(setting.timeoutSetting)) {
     setting.timeoutSetting = { enable: false, type: 1, timeExpression: '' }
   } else {
-    if (setting.timeoutSetting.enable === undefined || setting.timeoutSetting.enable === null) {
-      setting.timeoutSetting.enable = false
-    }
+    setting.timeoutSetting.enable = booleanValue(setting.timeoutSetting.enable, false)
     if (setting.timeoutSetting.type === undefined || setting.timeoutSetting.type === null) {
       setting.timeoutSetting.type = 1
     }
@@ -251,12 +261,8 @@ export function normalizeChildProcessSetting(setting) {
       source: '1'
     }
   } else {
-    if (setting.multiInstanceSetting.enable === undefined || setting.multiInstanceSetting.enable === null) {
-      setting.multiInstanceSetting.enable = false
-    }
-    if (setting.multiInstanceSetting.sequential === undefined || setting.multiInstanceSetting.sequential === null) {
-      setting.multiInstanceSetting.sequential = false
-    }
+    setting.multiInstanceSetting.enable = booleanValue(setting.multiInstanceSetting.enable, false)
+    setting.multiInstanceSetting.sequential = booleanValue(setting.multiInstanceSetting.sequential, false)
     if (setting.multiInstanceSetting.approveRatio === undefined || setting.multiInstanceSetting.approveRatio === null) {
       setting.multiInstanceSetting.approveRatio = 100
     }
@@ -276,6 +282,13 @@ export function normalizeChildProcessSetting(setting) {
 export function normalizeNodeConfig(node) {
   if (!isObject(node)) return node
   const type = Number(node.type)
+  // API responses normally contain numeric enums, but imported exports and
+  // hand-edited JSON often carry them as strings.  Every renderer in the
+  // simple designer compares `node.type` strictly with NodeType constants;
+  // canonicalize only known values so those models render immediately while
+  // preserving any future/third-party node types we do not understand.
+  const knownTypes = Object.keys(NodeType).map((key) => Number(NodeType[key]))
+  if (knownTypes.indexOf(type) >= 0 && node.type !== type) node.type = type
   if (node.conditionSetting) normalizeConditionSetting(node.conditionSetting)
   if (type === NodeType.DELAY_TIMER_NODE) normalizeDelaySetting(node.delaySetting)
   if (type === NodeType.TRIGGER_NODE) normalizeTriggerSetting(node)
@@ -288,7 +301,7 @@ export function normalizeNodeConfig(node) {
  * Normalize an entire simple-model tree before it is sent to the backend.
  * Nodes are nested through both `childNode` and `conditionNodes`; handling
  * only the node whose drawer was last opened leaves imported/untouched child
- * nodes in legacy shapes and causes deployment validation failures.
+ * nodes in incomplete shapes and causes deployment validation failures.
  *
  * The editor owns the tree, so this intentionally mutates it in place and
  * returns the same root for a convenient save pipeline. A small visited list

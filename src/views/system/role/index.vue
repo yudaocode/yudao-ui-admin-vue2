@@ -64,7 +64,7 @@
       <el-table-column label="显示顺序" prop="sort" width="100" />
       <el-table-column label="状态" align="center" width="100">
         <template v-slot="scope">
-          <el-switch v-model="scope.row.status" :active-value="0" :inactive-value="1" @change="handleStatusChange(scope.row)"/>
+          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status"/>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -174,28 +174,34 @@
         <el-button @click="cancelMenu">取 消</el-button>
       </div>
     </el-dialog>
+    <RoleForm ref="roleForm" @success="getList" />
+    <RoleAssignMenuForm ref="roleAssignMenuForm" @success="getList" />
+    <RoleDataPermissionForm ref="roleDataPermissionForm" @success="getList" />
   </div>
 </template>
 
 <script>
+import RoleForm from './RoleForm.vue'
+import RoleAssignMenuForm from './RoleAssignMenuForm.vue'
+import RoleDataPermissionForm from './RoleDataPermissionForm.vue'
 import {
-  addRole,
-  changeRoleStatus,
-  delRole,
+  createRole,
+  deleteRole,
   exportRole,
   getRole,
-  listRole,
+  getRolePage,
   updateRole,
-  delRoleList
+  deleteRoleList
 } from "@/api/system/role";
-import {listSimpleMenus} from "@/api/system/menu";
-import {assignRoleMenu, listRoleMenus, assignRoleDataScope} from "@/api/system/permission";
-import {listSimpleDepts} from "@/api/system/dept";
+import { getSimpleMenusList } from '@/api/system/menu'
+import {assignRoleMenu, getRoleMenuList, assignRoleDataScope} from "@/api/system/permission";
+import {getSimpleDeptList} from "@/api/system/dept";
 import {CommonStatusEnum, SystemDataScopeEnum} from "@/utils/constants";
 import {DICT_TYPE, getDictDatas} from "@/utils/dict";
 
 export default {
   name: "SystemRole",
+  components: { RoleForm, RoleAssignMenuForm, RoleDataPermissionForm },
   data() {
     return {
       // 遮罩层
@@ -271,27 +277,13 @@ export default {
     /** 查询角色列表 */
     getList() {
       this.loading = true;
-      listRole(this.queryParams).then(
-        response => {
-          this.roleList = response.data.list;
-          this.total = response.data.total;
-          this.loading = false;
-        }
-      );
-    },
-    // 角色状态修改
-    handleStatusChange(row) {
-      // 此时，row 已经变成目标状态了，所以可以直接提交请求和提示
-      let text = row.status === CommonStatusEnum.ENABLE ? "启用" : "停用";
-      this.$modal.confirm('确认要"' + text + '""' + row.name + '"角色吗?').then(function() {
-          return changeRoleStatus(row.id, row.status);
-        }).then(() => {
-          this.$modal.msgSuccess(text + "成功");
-        }).catch(function() {
-          // 异常时，需要将 row.status 状态重置回之前的
-          row.status = row.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE
-              : CommonStatusEnum.ENABLE;
-        });
+      return getRolePage(this.queryParams).then(response => {
+        const data = response.data;
+        this.roleList = data.list;
+        this.total = data.total;
+      }).finally(() => {
+        this.loading = false;
+      });
     },
     // 取消按钮
     cancel() {
@@ -375,69 +367,20 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加角色";
+      this.$refs.roleForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id
-      getRole(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改角色";
-      });
+      this.$refs.roleForm.open('update', row.id);
     },
     /** 分配菜单权限操作 */
     handleMenu(row) {
-      this.reset();
-      const id = row.id
-      // 处理了 form 的角色 name 和 code 的展示
-      this.form.id = id;
-      this.form.name = row.name;
-      this.form.code = row.code;
-      // 打开弹窗
-      this.openMenu = true;
-      // 获得菜单列表
-      listSimpleMenus().then(response => {
-        // 处理 menuOptions 参数
-        this.menuOptions = [];
-        this.menuOptions.push(...this.handleTree(response.data, "id"));
-        // 获取角色拥有的菜单权限
-        listRoleMenus(id).then(response => {
-          // 设置为严格，避免设置父节点自动选中子节点，解决半选中问题
-          this.form.menuCheckStrictly = true
-          // 设置选中
-          this.$refs.menu.setCheckedKeys(response.data);
-          // 设置为非严格，继续使用半选中
-          this.form.menuCheckStrictly = false
-        })
-      });
+      this.$refs.roleAssignMenuForm.open(row);
 
     },
     /** 分配数据权限操作 */
     handleDataScope(row) {
-      this.reset();
-      // 处理了 form 的角色 name 和 code 的展示
-      this.form.id = row.id;
-      this.form.name = row.name;
-      this.form.code = row.code;
-      // 打开弹窗
-      this.openDataScope = true;
-      // 获得部门列表
-      listSimpleDepts().then(response => {
-        // 处理 deptOptions 参数
-        this.deptOptions = [];
-        this.deptOptions.push(...this.handleTree(response.data, "id"));
-        this.depts = response.data;
-        // this.deptIds = response.data.map(x => x.id);
-        // 获得角色拥有的数据权限
-        getRole(row.id).then(response => {
-          this.form.dataScope = response.data.dataScope;
-          this.$refs.dept.setCheckedKeys(response.data.dataScopeDeptIds, false);
-        });
-      });
+      this.$refs.roleDataPermissionForm.open(row);
     },
     /** 提交按钮 */
     submitForm: function() {
@@ -450,7 +393,7 @@ export default {
               this.getList();
             });
           } else {
-            addRole(this.form).then(response => {
+            createRole(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -491,7 +434,7 @@ export default {
     handleDelete(row) {
       const ids = row.id || this.ids;
       this.$modal.confirm('是否确认删除角色编号为"' + ids + '"的数据项?').then(function() {
-          return delRole(ids);
+          return deleteRole(ids);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
@@ -501,7 +444,7 @@ export default {
     async handleDeleteBatch() {
       await this.$modal.confirm('是否确认批量删除选中的角色数据?')
       try {
-        await delRoleList(this.checkedIds);
+        await deleteRoleList(this.checkedIds);
         this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("删除成功");

@@ -9,7 +9,7 @@
           <div class="process-form-area" v-loading="submitting">
             <el-row :gutter="24">
               <el-col :span="17">
-                <template v-if="definition.formType === BpmModelFormType.NORMAL">
+                <template v-if="isNormalForm">
                   <form-create
                     v-if="detailForm.rule.length"
                     v-model="fApi"
@@ -20,14 +20,15 @@
                   />
                   <el-empty v-else description="该流程未配置表单字段" />
                 </template>
-                <template v-else>
+                <template v-else-if="isCustomForm">
                   <el-alert
-                    title="该流程使用业务表单，将跳转到业务发起页面"
+                    :title="customCreatePath ? '该流程使用业务表单，将跳转到业务发起页面' : '该业务表单未配置发起路由'"
                     type="info"
                     :closable="false"
                     show-icon
                   />
                 </template>
+                <el-empty v-else description="该流程未配置有效的表单类型" />
               </el-col>
               <el-col :span="6" :offset="1">
                 <ProcessInstanceTimeline
@@ -42,7 +43,7 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="流程图" name="diagram">
+        <el-tab-pane label="流程图" name="diagram" lazy>
           <div class="process-diagram-area">
             <SimpleProcessViewer
               v-if="isSimpleModel && simpleModel"
@@ -111,7 +112,8 @@ export default {
         option: {
           submitBtn: false,
           resetBtn: false
-        }
+        },
+        value: {}
       },
       fApi: {},
       bpmnXML: '',
@@ -125,8 +127,18 @@ export default {
     }
   },
   computed: {
+    isNormalForm() {
+      return Number(this.definition.formType) === Number(BpmModelFormType.NORMAL)
+    },
+    isCustomForm() {
+      return Number(this.definition.formType) === Number(BpmModelFormType.CUSTOM)
+    },
+    customCreatePath() {
+      return String(this.definition.formCustomCreatePath || '').trim()
+    },
     isSimpleModel() {
-      return this.definition.modelType === BpmModelType.SIMPLE || this.definition.type === BpmModelType.SIMPLE
+      return Number(this.definition.modelType) === Number(BpmModelType.SIMPLE) ||
+        Number(this.definition.type) === Number(BpmModelType.SIMPLE)
     }
   },
   beforeDestroy() {
@@ -136,9 +148,14 @@ export default {
   },
   methods: {
     async initProcessInfo(definition, formVariables) {
-      this.definition = definition || this.selectProcessDefinition
+      this.definition = definition || this.selectProcessDefinition || {}
+      if (this.approvalRefreshTimer) {
+        clearTimeout(this.approvalRefreshTimer)
+        this.approvalRefreshTimer = null
+      }
       this.detailForm.rule = []
       this.detailForm.value = {}
+      this.fApi = {}
       this.bpmnXML = ''
       this.simpleModel = null
       this.activityNodes = []
@@ -151,7 +168,24 @@ export default {
           this.$refs.timeline.resetCustomApproveUsers()
         }
       })
-      if (this.definition.formType === BpmModelFormType.NORMAL && this.definition.formConf && this.definition.formFields) {
+      // Vue3 leaves the create page immediately for business forms. Keep the
+      // same contract here so the bottom action bar cannot submit a normal
+      // instance with an accidental empty variable map.
+      if (this.isCustomForm) {
+        if (this.customCreatePath) {
+          await this.$router.push({ path: this.customCreatePath })
+        } else if (this.$message) {
+          this.$message.warning('业务表单未配置发起路由')
+        }
+        return
+      }
+      if (!this.isNormalForm) {
+        if (this.$message) {
+          this.$message.warning('流程未配置有效的表单类型')
+        }
+        return
+      }
+      if (this.definition.formConf && this.definition.formFields) {
         const variables = this.filterFormVariables(this.definition.formFields, formVariables || {})
         setConfAndFields2(this.detailForm, this.definition.formConf, this.definition.formFields, variables)
         this.detailForm.option.submitBtn = false
@@ -163,7 +197,9 @@ export default {
         })
       }
       await this.loadProcessDiagram()
-      await this.loadApprovalDetail(this.getCurrentFormData(formVariables || {}))
+      // Use the filtered/current form values for approval prediction. This is
+      // important when a re-created instance carries non-form variables.
+      await this.loadApprovalDetail(this.getCurrentFormData(this.detailForm.value || {}, this.fApi))
     },
     filterFormVariables(formFields, formVariables) {
       if (!formVariables || Object.keys(formVariables).length === 0) {
@@ -191,7 +227,9 @@ export default {
       try {
         const response = await getProcessDefinition(this.definition.id)
         definitionDetail = response.data || null
-      } catch (e) {}
+      } catch (e) {
+        // 流程定义详情加载失败时，继续使用入口携带的定义数据。
+      }
       if (definitionDetail) {
         this.definition = {
           ...this.definition,
@@ -213,10 +251,9 @@ export default {
             this.$message && this.$message.warning('流程图数据格式错误，暂无法预览')
           }
         }
-      } else {
-        // /bpm/process-definition/get 返回完整定义，流程图 XML 位于 bpmnXml。
-        // 旧 /get-bpmn-xml 已被后端移除，不能再回退请求该地址。
-        this.bpmnXML = this.definition.bpmnXml || this.definition.bpmnXML || ''
+      } else if (this.isNormalForm) {
+        // 定义详情接口返回完整定义，BPMN XML 位于 bpmnXml。
+        this.bpmnXML = this.definition.bpmnXml || ''
       }
     },
     async loadApprovalDetail(variables) {
@@ -231,12 +268,10 @@ export default {
           activityId: NodeId.START_USER_NODE_ID,
           processVariablesStr: JSON.stringify(variables || {})
         })
-        const data = response.data || {}
-        this.activityNodes = data.activityNodes || []
+        const data = response.data
+        this.activityNodes = data.activityNodes
         this.restoreStartUserSelectAssignees(this.activityNodes)
         this.applyFormFieldsPermission(data.formFieldsPermission)
-      } catch (e) {
-        this.activityNodes = []
       } finally {
         this.approvalLoading = false
       }
@@ -253,11 +288,19 @@ export default {
       }, 300)
     },
     submitForm() {
-      if (this.definition.formType === BpmModelFormType.CUSTOM) {
+      if (this.isCustomForm) {
+        if (!this.customCreatePath) {
+          this.$message && this.$message.warning('业务表单未配置发起路由')
+          return
+        }
         this.$router.push({
-          path: this.definition.formCustomCreatePath,
+          path: this.customCreatePath,
           query: { processDefinitionId: this.definition.id }
         })
+        return
+      }
+      if (!this.isNormalForm) {
+        this.$message && this.$message.warning('流程未配置有效的表单类型')
         return
       }
       if (this.fApi && this.fApi.submit) {
@@ -375,7 +418,9 @@ export default {
             this.$set(rule, 'validate', [])
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        // 部分表单控件没有可写的校验配置。
+      }
     }
   }
 }

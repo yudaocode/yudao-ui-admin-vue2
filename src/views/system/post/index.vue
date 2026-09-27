@@ -99,17 +99,20 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <PostForm ref="postForm" @success="getList" />
   </div>
 </template>
 
 <script>
-import { listPost, getPost, delPost, addPost, updatePost, exportPost, delPostList } from "@/api/system/post";
+import PostForm from './PostForm.vue';
+import { getPostPage, getPost, deletePost, createPost, updatePost, exportPost, deletePostList } from "@/api/system/post";
 
 import {CommonStatusEnum} from '@/utils/constants'
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
 
 export default {
   name: "SystemPost",
+  components: { PostForm },
   data() {
     return {
       // 遮罩层
@@ -164,9 +167,11 @@ export default {
     /** 查询岗位列表 */
     getList() {
       this.loading = true;
-      listPost(this.queryParams).then(response => {
-        this.postList = response.data.list;
-        this.total = response.data.total;
+      return getPostPage(this.queryParams).then(response => {
+        const data = response.data;
+        this.postList = data.list;
+        this.total = data.total;
+      }).finally(() => {
         this.loading = false;
       });
     },
@@ -199,19 +204,11 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加岗位";
+      this.$refs.postForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id
-      getPost(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改岗位";
-      });
+      this.$refs.postForm.open('update', row.id);
     },
     /** 提交按钮 */
     submitForm: function() {
@@ -224,7 +221,7 @@ export default {
               this.getList();
             });
           } else {
-            addPost(this.form).then(response => {
+            createPost(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -237,7 +234,7 @@ export default {
     handleDelete(row) {
       const ids = row.id;
       this.$modal.confirm('是否确认删除岗位编号为"' + ids + '"的数据项?').then(function() {
-          return delPost(ids);
+          return deletePost(ids);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
@@ -247,7 +244,7 @@ export default {
     async handleDeleteBatch() {
       await this.$modal.confirm('是否确认批量删除选中的岗位数据?')
       try {
-        await delPostList(this.checkedIds);
+        await deletePostList(this.checkedIds);
         this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("删除成功");

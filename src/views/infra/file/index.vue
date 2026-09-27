@@ -6,6 +6,9 @@
       <el-form-item label="文件路径" prop="path">
         <el-input v-model="queryParams.path" placeholder="请输入文件路径" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
+      <el-form-item label="文件类型" prop="type">
+        <el-input v-model="queryParams.type" placeholder="请输入文件类型" clearable @keyup.enter.native="handleQuery"/>
+      </el-form-item>
       <el-form-item label="创建时间" prop="createTime">
         <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss"
                         type="daterange"
@@ -49,16 +52,12 @@
       <el-table-column label="文件类型" :show-overflow-tooltip="true" align="center" prop="type" width="180px"/>
       <el-table-column label="文件内容" align="center" prop="content" min-width="150px">
         <template v-slot="scope">
-          <image-preview v-if="scope.row.type&&scope.row.type.indexOf('image/') === 0" :src="scope.row.url"
-                         :width="'100px'"></image-preview>
-          <video v-else-if="scope.row.type&&scope.row.type.indexOf('video/') === 0" :width="'100px'">
-            <source :src="scope.row.url"/>
-          </video>
-          <i v-else>无法预览，点击
-            <el-link type="primary" :underline="false" style="font-size:12px;vertical-align: baseline;" target="_blank"
-                     :href="getFileUrl + scope.row.configId + '/get/' + scope.row.path">下载
-            </el-link>
-          </i>
+          <el-image v-if="scope.row.type.includes('image')" :src="scope.row.url"
+                    :preview-src-list="[scope.row.url]" style="width: 80px; height: 80px" fit="cover" lazy />
+          <el-link v-else-if="scope.row.type.includes('pdf')" type="primary" :underline="false"
+                   target="_blank" :href="scope.row.url">预览</el-link>
+          <el-link v-else type="primary" :underline="false" download
+                   target="_blank" :href="scope.row.url">下载</el-link>
         </template>
       </el-table-column>
       <el-table-column label="上传时间" align="center" prop="createTime" min-width="170px">
@@ -68,6 +67,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" min-width="100px">
         <template v-slot="scope">
+          <el-button size="mini" type="text" v-clipboard:copy="scope.row.url"
+                     v-clipboard:success="clipboardSuccess" v-clipboard:error="clipboardError">复制链接</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
                      v-hasPermi="['infra:file:delete']">删除
           </el-button>
@@ -78,41 +79,22 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
 
-    <!-- 对话框(添加 / 修改) -->
-    <el-dialog :title="upload.title" :visible.sync="upload.open" width="400px" append-to-body>
-      <el-upload ref="upload" :limit="1" accept=".jpg, .png, .gif" :auto-upload="false" drag
-                 :headers="upload.headers" :action="upload.url" :data="upload.data" :disabled="upload.isUploading"
-                 :on-change="handleFileChange"
-                 :on-progress="handleFileUploadProgress"
-                 :on-success="handleFileSuccess">
-        <i class="el-icon-upload"></i>
-        <div class="el-upload__text">
-          将文件拖到此处，或 <em>点击上传</em>
-        </div>
-        <div class="el-upload__tip" style="color:red" slot="tip">提示：仅允许导入 jpg、png、gif 格式文件！</div>
-      </el-upload>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitFileForm">确 定</el-button>
-        <el-button @click="upload.open = false">取 消</el-button>
-      </div>
-    </el-dialog>
+    <file-form ref="form" @success="getList" />
 
   </div>
 </template>
 
 <script>
 import {deleteFile, getFilePage, deleteFileList} from "@/api/infra/file";
-import {getAccessToken} from "@/utils/auth";
-import ImagePreview from "@/components/ImagePreview";
+import FileForm from './FileForm.vue'
 
 export default {
   name: "InfraFile",
   components: {
-    ImagePreview
+    FileForm
   },
   data() {
     return {
-      getFileUrl: process.env.VUE_APP_BASE_API + '/admin-api/infra/file/',
       // 遮罩层
       loading: true,
       // 显示搜索条件
@@ -121,8 +103,6 @@ export default {
       total: 0,
       // 文件列表
       list: [],
-      // 弹出层标题
-      title: "",
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -131,15 +111,6 @@ export default {
         type: null,
         createTime: []
       },
-      // 用户导入参数
-      upload: {
-        open: false, // 是否显示弹出层
-        title: "", // 弹出层标题
-        isUploading: false, // 是否禁用上传
-        url: process.env.VUE_APP_BASE_API + "/admin-api/infra/file/upload", // 请求地址
-        headers: {Authorization: "Bearer " + getAccessToken()}, // 设置上传的请求头部
-        data: {} // 上传的额外数据，用于文件名
-      },
       checkedIds: []
     };
   },
@@ -147,6 +118,8 @@ export default {
     this.getList();
   },
   methods: {
+    clipboardSuccess() { this.$modal.msgSuccess('复制成功') },
+    clipboardError() { this.$modal.msgError('复制失败') },
     /** 查询列表 */
     getList() {
       this.loading = true;
@@ -156,18 +129,6 @@ export default {
         this.total = response.data.total;
         this.loading = false;
       });
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        content: undefined,
-      };
-      this.resetForm("form");
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -181,30 +142,7 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.upload.open = true;
-      this.upload.title = "上传文件";
-    },
-    /** 处理上传的文件发生变化 */
-    handleFileChange(file, fileList) {
-
-    },
-    /** 处理文件上传中 */
-    handleFileUploadProgress(event, file, fileList) {
-      this.upload.isUploading = true; // 禁止修改
-    },
-    /** 发起文件上传 */
-    submitFileForm() {
-      this.$refs.upload.submit();
-    },
-    /** 文件上传成功处理 */
-    handleFileSuccess(response, file, fileList) {
-      // 清理
-      this.upload.open = false;
-      this.upload.isUploading = false;
-      this.$refs.upload.clearFiles();
-      // 提示成功，并刷新
-      this.$modal.msgSuccess("上传成功");
-      this.getList();
+      this.$refs.form.open();
     },
     /** 删除按钮操作 */
     handleDelete(row) {
@@ -222,7 +160,7 @@ export default {
         this.$message.warning('请选择要删除的数据项');
         return;
       }
-      this.$modal.confirm('是否确认删除选中的' + this.checkedIds.length + '项数据?').then(function() {
+      this.$modal.confirm('是否确认删除选中的' + this.checkedIds.length + '项数据?').then(() => {
         return deleteFileList(this.checkedIds);
       }).then(() => {
         this.checkedIds = [];

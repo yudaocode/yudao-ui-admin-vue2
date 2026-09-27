@@ -151,7 +151,17 @@ export default {
         conditionExpression: source.conditionExpression || '',
         conditionGroups: source.conditionGroups || conditionGroupsDefault()
       }
-      const entries = Object.keys(source.updateFormFields || {}).map((key) => ({ key, value: source.updateFormFields[key] === undefined || source.updateFormFields[key] === null ? '' : String(source.updateFormFields[key]) }))
+      // Keep the backend value type while the row is untouched.  Form trigger
+      // DTOs allow arbitrary JSON values (not just strings); coercing numbers,
+      // booleans, or nested values here makes a reopen + save silently change
+      // the process semantics.  `<el-input>` will still turn a value into a
+      // string when the user edits it, matching Vue3's behavior.
+      const entries = Object.keys(source.updateFormFields || {}).map((key) => ({
+        key,
+        value: source.updateFormFields[key] === undefined || source.updateFormFields[key] === null
+          ? ''
+          : clone(source.updateFormFields[key])
+      }))
       return {
         hasCondition: !!source.conditionType,
         condition,
@@ -165,13 +175,15 @@ export default {
       const value = Number(type)
       if (value === TriggerTypeEnum.HTTP_REQUEST || value === TriggerTypeEnum.HTTP_CALLBACK) {
         if (!this.draft.httpRequestSetting) this.$set(this.draft, 'httpRequestSetting', emptyHttpSetting())
-        this.draft.formSettings = []
+        // Keep the inactive branch in the draft.  Switching types is common
+        // while composing a trigger; clearing it here makes a subsequent
+        // switch-back lose all fields/conditions before the user can confirm.
       } else {
-        this.draft.httpRequestSetting = undefined
         if (!Array.isArray(this.draft.formSettings) || !this.draft.formSettings.length) this.draft.formSettings = [emptyFormSetting(value === TriggerTypeEnum.FORM_UPDATE)]
         this.draft.formSettings.forEach((setting) => {
           if (value === TriggerTypeEnum.FORM_UPDATE && !Array.isArray(setting.updateEntries)) this.$set(setting, 'updateEntries', [])
-          if (value === TriggerTypeEnum.FORM_DELETE) this.$set(setting, 'updateEntries', undefined)
+          // Leave updateEntries intact when viewing the delete variant so a
+          // switch back to FORM_UPDATE restores the user's draft.
         })
       }
     },

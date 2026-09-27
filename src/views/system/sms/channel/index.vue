@@ -58,7 +58,7 @@
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status"/>
         </template>
-      </el-table-column>>
+      </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="短信 API 的账号" align="center" prop="apiKey" />
       <el-table-column label="短信 API 的密钥" align="center" prop="apiSecret" />
@@ -82,51 +82,17 @@
                 @pagination="getList"/>
 
     <!-- 对话框(添加 / 修改) -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="130px">
-        <el-form-item label="短信签名" prop="signature">
-          <el-input v-model="form.signature" placeholder="请输入短信签名" />
-        </el-form-item>
-        <el-form-item label="渠道编码" prop="code">
-          <el-select v-model="form.code" placeholder="请选择渠道编码" clearable>
-            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE)"
-                       :key="dict.value" :label="dict.label" :value="dict.value"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="启用状态">
-          <el-radio-group v-model="form.status">
-            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.COMMON_STATUS)"
-                      :key="dict.value" :label="parseInt(dict.value)">{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" placeholder="请输入备注" />
-        </el-form-item>
-        <el-form-item label="短信 API 的账号" prop="apiKey">
-          <el-input v-model="form.apiKey" placeholder="请输入短信 API 的账号" />
-        </el-form-item>
-        <el-form-item label="短信 API 的密钥" prop="apiSecret">
-          <el-input v-model="form.apiSecret" placeholder="请输入短信 API 的密钥" />
-        </el-form-item>
-        <el-form-item label="短信发送回调 URL" prop="callbackUrl">
-          <el-input v-model="form.callbackUrl" placeholder="请输入短信发送回调 URL" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <SmsChannelForm ref="smsChannelForm" @success="getList" />
   </div>
 </template>
 
 <script>
-import { createSmsChannel, updateSmsChannel, deleteSmsChannel, getSmsChannel, getSmsChannelPage, deleteSmsChannelList } from "@/api/system/sms/smsChannel";
+import SmsChannelForm from './SmsChannelForm.vue'
+import { deleteSmsChannel, getSmsChannelPage, deleteSmsChannelList } from "@/api/system/sms/smsChannel";
 
 export default {
   name: "SystemSmsChannel",
-  components: {
-  },
+  components: { SmsChannelForm },
   data() {
     return {
       // 遮罩层
@@ -137,10 +103,6 @@ export default {
       total: 0,
       // 短信渠道列表
       list: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 选中行
       checkedIds: [],
       // 查询参数
@@ -150,16 +112,7 @@ export default {
         signature: null,
         status: null,
         createTime: []
-      },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        signature: [{ required: true, message: "短信签名不能为空", trigger: "blur" }],
-        code: [{ required: true, message: "渠道编码不能为空", trigger: "blur" }],
-        status: [{ required: true, message: "启用状态不能为空", trigger: "blur" }],
-        apiKey: [{ required: true, message: "短信 API 的账号不能为空", trigger: "blur" }],
-      },
+      }
     };
   },
   created() {
@@ -170,30 +123,12 @@ export default {
     getList() {
       this.loading = true;
       // 执行查询
-      getSmsChannelPage(this.queryParams).then(response => {
+      return getSmsChannelPage(this.queryParams).then(response => {
         this.list = response.data.list;
         this.total = response.data.total;
+      }).finally(() => {
         this.loading = false;
       });
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        id: undefined,
-        signature: undefined,
-        code: undefined,
-        status: undefined,
-        remark: undefined,
-        apiKey: undefined,
-        apiSecret: undefined,
-        callbackUrl: undefined,
-      };
-      this.resetForm("form");
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -207,42 +142,11 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加短信渠道";
+      this.$refs.smsChannelForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getSmsChannel(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改短信渠道";
-      });
-    },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (!valid) {
-          return;
-        }
-        // 修改的提交
-        if (this.form.id != null) {
-          updateSmsChannel(this.form).then(response => {
-            this.$modal.msgSuccess("修改成功");
-            this.open = false;
-            this.getList();
-          });
-          return;
-        }
-        // 添加的提交
-        createSmsChannel(this.form).then(response => {
-          this.$modal.msgSuccess("新增成功");
-          this.open = false;
-          this.getList();
-        });
-      });
+      this.$refs.smsChannelForm.open('update', row.id);
     },
     /** 删除按钮操作 */
     handleDelete(row) {

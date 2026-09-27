@@ -8,13 +8,13 @@
     <div slot="title" class="condition-config-title">
       <el-input
         v-if="editingName"
-        v-model="currentNode.name"
+        v-model="draftName"
         size="small"
         maxlength="30"
         @blur="finishNameEdit"
       />
       <span v-else>
-        {{ currentNode.name }}
+        {{ draftName || currentNode.name }}
         <i class="el-icon-edit" @click="editingName = true" />
       </span>
     </div>
@@ -31,7 +31,9 @@
 
 <script>
 import Condition from './components/Condition.vue'
-import { ConditionType, DEFAULT_CONDITION_GROUP_VALUE } from '../consts'
+import { ConditionType, DEFAULT_CONDITION_GROUP_VALUE, ProcessVariableEnum } from '../consts'
+import { parseFields } from './components/node-config-utils'
+import { getConditionShowText } from '../node'
 
 function clone(value) {
   if (Array.isArray(value)) return value.map((item) => clone(item))
@@ -56,23 +58,53 @@ export default {
       default: 0
     }
   },
+  inject: {
+    formFieldsRef: { from: 'formFields', default: () => ({ value: [] }) }
+  },
   data() {
     return {
       visible: false,
       editingName: false,
       currentNode: this.conditionNode,
+      // Keep the editable title in the drawer draft.  Binding the input to
+      // currentNode.name mutates the live flow even when the user cancels (or
+      // when condition validation fails), making a reopen appear to have
+      // persisted an invalid edit.
+      draftName: this.conditionNode && this.conditionNode.name ? this.conditionNode.name : '',
       condition: this.defaultCondition()
     }
   },
   computed: {
     isDefaultFlow() {
       return !!(this.currentNode && this.currentNode.conditionSetting && this.currentNode.conditionSetting.defaultFlow)
+    },
+    // Keep condition summaries readable after saving an imported or newly
+    // configured branch. Vue3 resolves field IDs and operator codes through
+    // the same shared helper; passing the live form options here avoids
+    // persisting low-level values such as `field_1 == 100` into the card.
+    fieldOptions() {
+      const injected = this.formFieldsRef
+      const fields = injected && Object.prototype.hasOwnProperty.call(injected, 'value')
+        ? injected.value
+        : injected
+      const options = parseFields(Array.isArray(fields) ? fields : [])
+      if (!options.some((item) => item.field === ProcessVariableEnum.START_USER_ID)) {
+        options.unshift({
+          field: ProcessVariableEnum.START_USER_ID,
+          title: '发起人',
+          required: true
+        })
+      }
+      return options
     }
   },
   watch: {
     conditionNode: {
       deep: true,
-      handler(value) { this.currentNode = value }
+      handler(value) {
+        this.currentNode = value
+        if (!this.visible) this.draftName = value && value.name ? value.name : ''
+      }
     }
   },
   methods: {
@@ -88,6 +120,7 @@ export default {
     },
     open() {
       this.currentNode = this.conditionNode
+      this.draftName = this.currentNode && this.currentNode.name ? this.currentNode.name : ''
       const condition = this.currentNode && this.currentNode.conditionSetting
         ? clone(this.currentNode.conditionSetting)
         : this.defaultCondition()
@@ -102,7 +135,7 @@ export default {
     },
     finishNameEdit() {
       this.editingName = false
-      if (!this.currentNode.name) this.currentNode.name = `条件${this.nodeIndex + 1}`
+      if (!this.draftName) this.draftName = `条件${this.nodeIndex + 1}`
     },
     async handleBeforeClose(done) {
       // Match the Vue3 drawer contract: closing through the X button runs the
@@ -121,6 +154,8 @@ export default {
     },
     async saveConfig() {
       if (this.isDefaultFlow) {
+        this.finishNameEdit()
+        this.$set(this.currentNode, 'name', this.draftName)
         this.visible = false
         return true
       }
@@ -130,6 +165,14 @@ export default {
         return false
       }
       const conditionType = Number(this.condition.conditionType)
+      const showText = this.buildShowText()
+      // Element UI validation only checks that individual controls are
+      // populated. Keep Vue3's additional guard so a malformed imported rule
+      // cannot be saved with an empty branch summary.
+      if (!showText) {
+        this.$message.warning('请完善条件规则')
+        return false
+      }
       const setting = {
         ...(this.currentNode.conditionSetting || {}),
         conditionType,
@@ -141,22 +184,19 @@ export default {
           : undefined
       }
       this.$set(this.currentNode, 'conditionSetting', setting)
-      this.$set(this.currentNode, 'showText', this.buildShowText())
+      this.$set(this.currentNode, 'showText', showText)
       this.finishNameEdit()
+      this.$set(this.currentNode, 'name', this.draftName)
       this.visible = false
       return true
     },
     buildShowText() {
-      if (Number(this.condition.conditionType) === ConditionType.EXPRESSION) {
-        return this.condition.conditionExpression ? `表达式：${this.condition.conditionExpression}` : ''
-      }
-      const groups = this.condition.conditionGroups && this.condition.conditionGroups.conditions
-      if (!groups || !groups.length) return ''
-      const text = groups.map((group) => {
-        const rules = (group.rules || []).map((rule) => `${rule.leftSide} ${rule.opCode} ${rule.rightSide}`)
-        return `(${rules.join(group.and ? ' 且 ' : ' 或 ')})`
-      })
-      return text.join(this.condition.conditionGroups.and ? ' 且 ' : ' 或 ')
+      return getConditionShowText(
+        Number(this.condition.conditionType),
+        this.condition.conditionExpression,
+        this.condition.conditionGroups,
+        this.fieldOptions
+      )
     }
   }
 }

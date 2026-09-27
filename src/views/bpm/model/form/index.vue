@@ -59,8 +59,8 @@ import { createModel, deployModel, getModel, updateModel } from '@/api/bpm/model
 import { getFormSimpleList } from '@/api/bpm/form'
 import { getCategorySimpleList } from '@/api/bpm/category'
 import { getProcessDefinition } from '@/api/bpm/definition'
-import { listSimpleUsers } from '@/api/system/user'
-import { listSimpleDepts } from '@/api/system/dept'
+import { getSimpleUserList } from '@/api/system/user'
+import { getSimpleDeptList } from '@/api/system/dept'
 import { BpmAutoApproveType, BpmModelFormType, BpmModelType } from '@/utils/constants'
 import BasicInfo from './BasicInfo.vue'
 import FormDesign from './FormDesign.vue'
@@ -117,6 +117,14 @@ function normalizeModel(data) {
     ...defaultFormData(),
     ...data
   }
+  const modelType = Number(result.type)
+  result.type = [BpmModelType.BPMN, BpmModelType.SIMPLE].includes(modelType)
+    ? modelType
+    : BpmModelType.BPMN
+  const formType = Number(result.formType)
+  result.formType = [BpmModelFormType.NORMAL, BpmModelFormType.CUSTOM].includes(formType)
+    ? formType
+    : BpmModelFormType.NORMAL
   if (typeof result.simpleModel === 'string' && result.simpleModel) {
     try {
       result.simpleModel = JSON.parse(result.simpleModel)
@@ -179,9 +187,7 @@ export default {
     getActionType() {
       const routeNameMap = {
         BpmModelCreate: 'create',
-        BpmModelUpdate: 'update',
-        BpmModelCopy: 'copy',
-        BpmModelDefinitionRestore: 'definition'
+        BpmModelUpdate: 'update'
       }
       return this.$route.params.type || routeNameMap[this.$route.name] || 'create'
     },
@@ -212,7 +218,7 @@ export default {
         }
       } else if (this.actionType === 'definition') {
         const response = await getProcessDefinition(id)
-        const data = response.data || {}
+        const data = response.data
         this.formData = normalizeModel({
           ...data,
           id: data.modelId,
@@ -221,17 +227,16 @@ export default {
       }
     },
     async loadOptions() {
-      const normalize = (response) => response && response.data ? response.data : []
       const responses = await Promise.all([
         getFormSimpleList(),
         getCategorySimpleList(),
-        listSimpleUsers(),
-        listSimpleDepts()
+        getSimpleUserList(),
+        getSimpleDeptList()
       ])
-      this.formList = normalize(responses[0])
-      this.categoryList = normalize(responses[1])
-      this.userList = normalize(responses[2])
-      this.deptList = normalize(responses[3])
+      this.formList = responses[0].data
+      this.categoryList = responses[1].data
+      this.userList = responses[2].data
+      this.deptList = responses[3].data
     },
     async validateStep(index) {
       const step = this.steps[index]
@@ -297,8 +302,7 @@ export default {
           this.$modal.msgSuccess(this.actionType === 'definition' ? '恢复成功' : '修改成功')
         } else {
           const response = await createModel(data)
-          const id = response.data && response.data.id ? response.data.id : response.data
-          this.formData.id = id
+          this.formData.id = response.data
           this.$modal.msgSuccess(this.actionType === 'copy' ? '复制成功' : '新建成功')
         }
         if (this.actionType !== 'update') {
@@ -322,7 +326,7 @@ export default {
           await updateModel(data)
         } else {
           const response = await createModel(data)
-          this.formData.id = response.data && response.data.id ? response.data.id : response.data
+          this.formData.id = response.data
         }
         await deployModel(this.formData.id)
         this.$modal.msgSuccess('发布成功')

@@ -108,9 +108,8 @@ export default {
       this.loading = true
       try {
         const response = await getProcessExpressionPage(this.queryParams)
-        const data = response && response.data ? response.data : {}
-        this.list = data.list || []
-        this.total = data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }

@@ -1,9 +1,7 @@
 <template>
   <el-dialog title="打印预览" :visible.sync="visible" width="900px" append-to-body>
     <div id="processInstancePrintContent" v-loading="loading" class="print-content">
-      <div v-if="legacyHtml" v-html="legacyHtml" />
-      <pre v-else-if="legacyText">{{ legacyText }}</pre>
-      <div v-else-if="printData.processInstance">
+      <div v-if="printData.processInstance">
         <div v-if="printData.printTemplateEnable" v-html="printTemplateHtml" />
         <div v-else>
           <h2 class="print-title">{{ printData.processInstance.name }}</h2>
@@ -80,8 +78,8 @@
 <script>
 import { getProcessInstancePrintData } from '@/api/bpm/processInstance'
 import { getAreaTree } from '@/api/system/area'
-import { listSimpleDepts } from '@/api/system/dept'
-import { listSimpleUsers } from '@/api/system/user'
+import { getSimpleDeptList } from '@/api/system/dept'
+import { getSimpleUserList } from '@/api/system/user'
 import { DICT_TYPE, getDictDataLabel, getDictDatas } from '@/utils/dict'
 import { decodeFields } from '@/utils/formCreate'
 import { formatDate } from '@/utils'
@@ -97,8 +95,6 @@ export default {
       printTime: '',
       formFields: [],
       printDataMap: {},
-      legacyHtml: '',
-      legacyText: '',
       BusinessFormComponent: null
     }
   },
@@ -129,25 +125,10 @@ export default {
       this.printData = {}
       this.formFields = []
       this.printDataMap = {}
-      this.legacyHtml = ''
-      this.legacyText = ''
       this.BusinessFormComponent = null
       try {
         const response = await getProcessInstancePrintData(processInstanceId)
-        const data = response.data
-        if (typeof data === 'string') {
-          this.legacyHtml = data
-          return
-        }
-        if (data && data.html) {
-          this.legacyHtml = data.html
-          return
-        }
-        if (!data || !data.processInstance) {
-          this.legacyText = JSON.stringify(data || {}, null, 2)
-          return
-        }
-        this.printData = data
+        this.printData = response.data
         this.printTime = formatDate(new Date()).slice(0, 16)
         this.initPrintDataMap()
         await this.parseFormFields()
@@ -215,13 +196,13 @@ export default {
       const hasDeptSelect = formFieldsObj.some((item) => item.type === 'DeptSelect')
       const [areaResp, userResp, deptResp] = await Promise.all([
         hasAreaSelect ? getAreaTree() : Promise.resolve({ data: [] }),
-        hasUserSelect ? listSimpleUsers() : Promise.resolve({ data: [] }),
-        hasDeptSelect ? listSimpleDepts() : Promise.resolve({ data: [] })
+        hasUserSelect ? getSimpleUserList() : Promise.resolve({ data: [] }),
+        hasDeptSelect ? getSimpleDeptList() : Promise.resolve({ data: [] })
       ])
       const userList = userResp.data || []
       const deptList = deptResp.data || []
       return {
-        areaMap: this.flattenAreaTree(areaResp.data || []),
+        areaMap: this.flattenAreaTree(areaResp.data),
         deptMap: new Map(deptList.map((item) => [String(item.id), item.name])),
         userMap: new Map(userList.map((item) => [String(item.id), item.nickname || item.username || item.name]))
       }

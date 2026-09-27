@@ -1,8 +1,7 @@
 import request from '@/utils/request'
-import { praseStrEmpty } from "@/utils/ruoyi";
 
 // 查询用户列表
-export function listUser(query) {
+export function getUserPage(query) {
   return request({
     url: '/system/user/page',
     method: 'get',
@@ -11,13 +10,6 @@ export function listUser(query) {
 }
 
 // 获取用户精简信息列表
-export function listSimpleUsers() {
-  // Keep the legacy function name for Vue2 callers, but use the canonical
-  // simple-list route shared with the Vue3 APIs.
-  return getSimpleUserList()
-}
-
-// 获取用户精简信息列表（Vue3 新接口）
 export function getSimpleUserList() {
   return request({
     url: '/system/user/simple-list',
@@ -30,7 +22,7 @@ export function getUserList(ids) {
   return request({
     url: '/system/user/list',
     method: 'get',
-    params: { ids: Array.isArray(ids) ? ids.join(',') : ids }
+    params: { ids: ids.join(',') }
   })
 }
 
@@ -43,16 +35,25 @@ export function getSimpleUser(id) {
   })
 }
 
+// 按昵称模糊搜索用户（用于社交/IM 加好友等场景）
+export function getSimpleUserListByNickname(nickname) {
+  return request({
+    url: '/system/user/list-by-nickname',
+    method: 'get',
+    params: { nickname }
+  })
+}
+
 // 查询用户详细
 export function getUser(userId) {
   return request({
-    url: '/system/user/get?id=' + praseStrEmpty(userId),
+    url: '/system/user/get?id=' + userId,
     method: 'get'
   })
 }
 
 // 新增用户
-export function addUser(data) {
+export function createUser(data) {
   return request({
     url: '/system/user/create',
     method: 'post',
@@ -70,7 +71,7 @@ export function updateUser(data) {
 }
 
 // 删除用户
-export function delUser(userId) {
+export function deleteUser(userId) {
   return request({
     url: '/system/user/delete?id=' + userId,
     method: 'delete'
@@ -78,10 +79,11 @@ export function delUser(userId) {
 }
 
 // 批量删除用户
-export function delUserList(ids) {
+export function deleteUserList(ids) {
   return request({
-    url: `/system/user/delete-list?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/user/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
@@ -96,7 +98,7 @@ export function exportUser(query) {
 }
 
 // 用户密码重置
-export function resetUserPwd(id, password) {
+export function resetUserPassword(id, password) {
   const data = {
     id,
     password
@@ -109,7 +111,7 @@ export function resetUserPwd(id, password) {
 }
 
 // 用户状态修改
-export function changeUserStatus(id, status) {
+export function updateUserStatus(id, status) {
   const data = {
     id,
     status
@@ -121,47 +123,8 @@ export function changeUserStatus(id, status) {
   })
 }
 
-// 查询用户个人信息
-export function getUserProfile() {
-  return request({
-    url: '/system/user/profile/get',
-    method: 'get'
-  })
-}
-
-// 修改用户个人信息
-export function updateUserProfile(data) {
-  return request({
-    url: '/system/user/profile/update',
-    method: 'put',
-    data: data
-  })
-}
-
-// 用户密码重置
-export function updateUserPwd(oldPassword, newPassword) {
-  const data = {
-    oldPassword,
-    newPassword
-  }
-  return request({
-    url: '/system/user/profile/update-password',
-    method: 'put',
-    data: data
-  })
-}
-
-// 用户头像上传
-export function uploadAvatar(data) {
-  return request({
-    url: '/system/user/profile/update-avatar',
-    method: 'put',
-    data: data
-  })
-}
-
 // 下载用户导入模板
-export function importTemplate() {
+export function importUserTemplate() {
   return request({
     url: '/system/user/get-import-template',
     method: 'get',

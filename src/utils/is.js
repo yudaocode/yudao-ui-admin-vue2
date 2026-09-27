@@ -42,6 +42,10 @@ export function isEmpty(val) {
   return false
 }
 
+export function isEmptyVal(val) {
+  return val === '' || val === null || val === undefined
+}
+
 export function isUrl(path) {
   const reg =
     /(((^https?:(?:\/\/)?)(?:[-:&=+$,\w]+@)?[A-Za-z0-9.-]+(?::\d+)?|(?:www\.|[-:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%#\/.\w-]*)?\??(?:[-+=&%@.\w]*)#?(?:[\w]*))?)$/

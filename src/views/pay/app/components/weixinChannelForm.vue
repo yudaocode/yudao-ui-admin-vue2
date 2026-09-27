@@ -155,9 +155,10 @@ export default {
       this.formLoading = true;
       this.reset(appId, code);
       getChannel(appId, code).then(response => {
-        if (response.data && response.data.id) {
-          this.formData = response.data;
-          this.formData.config = JSON.parse(response.data.config);
+        const data = response.data;
+        if (data && data.id) {
+          this.formData = data;
+          this.formData.config = JSON.parse(data.config);
         }
         this.title = !this.formData.id ? '创建支付渠道' : '编辑支付渠道'
       }).finally(() => {
@@ -186,7 +187,7 @@ export default {
             this.$modal.msgSuccess("修改成功");
             this.$emit('success')
             this.close();
-          })
+          });
         }
       });
     },
@@ -219,7 +220,6 @@ export default {
     fileBeforeUpload(file, fileAccept) {
       let format = '.' + file.name.split(".")[1];
       if (format !== fileAccept) {
-        debugger
         this.$message.error('请上传指定格式"' + fileAccept + '"文件');
         return false;
       }
@@ -230,10 +230,10 @@ export default {
       return isRightSize
     },
     p12FileBeforeUpload(file) {
-      this.fileBeforeUpload(file, '.p12')
+      return this.fileBeforeUpload(file, '.p12')
     },
     pemFileBeforeUpload(file) {
-      this.fileBeforeUpload(file, '.pem')
+      return this.fileBeforeUpload(file, '.pem')
     },
     /**
      * 读取 apiclient_key.pem 到 privateKeyContent 字段

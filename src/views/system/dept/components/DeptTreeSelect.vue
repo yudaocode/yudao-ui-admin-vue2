@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import { listSimpleDepts } from '@/api/system/dept'
+import { getSimpleDeptList } from '@/api/system/dept'
 import { handleTree } from '@/utils/ruoyi'
 
 export default {
@@ -56,8 +56,8 @@ export default {
   },
   methods: {
     async loadTree() {
-      const response = await listSimpleDepts()
-      this.deptList = handleTree(response.data || [], 'id')
+      const response = await getSimpleDeptList()
+      this.deptList = handleTree(response.data, 'id')
     },
     filterNode(value, data) {
       if (!value) return true

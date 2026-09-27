@@ -3,7 +3,8 @@
     <doc-alert title="功能权限" url="https://doc.iocoder.cn/resource-permission" />
     <doc-alert title="菜单路由" url="https://doc.iocoder.cn/vue2/route/" />
     <!-- 搜索工作栏 -->
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch"
+             @submit.native.prevent>
       <el-form-item label="菜单名称" prop="name">
         <el-input v-model="queryParams.name" placeholder="请输入菜单名称" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
@@ -27,24 +28,13 @@
         <el-button type="info" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">展开/折叠</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="isEmpty(checkedIds)"
-          @click="handleDeleteBatch"
-          v-hasPermi="['system:menu:delete']"
-        >
-          批量删除
-        </el-button>
+        <el-button type="info" plain icon="el-icon-refresh" size="mini" @click="refreshMenu">刷新菜单缓存</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-if="refreshTable" v-loading="loading" :data="menuList" row-key="id" :default-expand-all="isExpandAll"
-              :tree-props="{children: 'children', hasChildren: 'hasChildren'}" @selection-change="handleRowCheckboxChange">
-      <el-table-column type="selection" width="55"/>
+              :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column prop="name" label="菜单名称" :show-overflow-tooltip="true" width="250"></el-table-column>
       <el-table-column prop="icon" label="图标" align="center" width="100">
         <template v-slot="scope">
@@ -57,7 +47,15 @@
       <el-table-column prop="componentName" label="组件名称" :show-overflow-tooltip="true" />
       <el-table-column prop="status" label="状态" width="80">
         <template v-slot="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status"/>
+          <el-switch
+            v-if="checkPermi(['system:menu:update'])"
+            v-model="scope.row.status"
+            :active-value="CommonStatusEnum.ENABLE"
+            :inactive-value="CommonStatusEnum.DISABLE"
+            :loading="menuStatusUpdating[scope.row.id]"
+            @change="handleStatusChanged(scope.row)"
+          />
+          <dict-tag v-else :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status"/>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -207,11 +205,13 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <MenuForm ref="menuForm" @success="getList" />
   </div>
 </template>
 
 <script>
-import { listMenu, getMenu, delMenu, addMenu, updateMenu, delMenuList } from "@/api/system/menu";
+import MenuForm from './MenuForm.vue'
+import { getMenuList, getSimpleMenusList, getMenu, deleteMenu, createMenu, updateMenu } from '@/api/system/menu'
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 import IconSelect from "@/components/IconSelect";
@@ -219,10 +219,11 @@ import IconSelect from "@/components/IconSelect";
 import { SystemMenuTypeEnum, CommonStatusEnum } from '@/utils/constants'
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
 import {isExternal} from "@/utils/validate";
+import { checkPermi } from '@/utils/permission'
 
 export default {
   name: "SystemMenu",
-  components: { Treeselect, IconSelect },
+  components: { Treeselect, IconSelect, MenuForm },
   data() {
     return {
       // 遮罩层
@@ -241,12 +242,12 @@ export default {
       isExpandAll: false,
       // 重新渲染表格状态
       refreshTable: true,
-      // 选中行
-      checkedIds: [],
+      // 菜单状态更新中的 menu 映射
+      menuStatusUpdating: {},
       // 查询参数
       queryParams: {
         name: undefined,
-        visible: undefined
+        status: undefined
       },
       // 表单参数
       form: {},
@@ -271,7 +272,8 @@ export default {
       CommonStatusEnum: CommonStatusEnum,
       // 数据字典
       menuTypeDictDatas: getDictDatas(DICT_TYPE.SYSTEM_MENU_TYPE),
-      statusDictDatas: getDictDatas(DICT_TYPE.COMMON_STATUS)
+      statusDictDatas: getDictDatas(DICT_TYPE.COMMON_STATUS),
+      checkPermi
     };
   },
   created() {
@@ -285,8 +287,9 @@ export default {
     /** 查询菜单列表 */
     getList() {
       this.loading = true;
-      listMenu(this.queryParams).then(response => {
+      return getMenuList(this.queryParams).then(response => {
         this.menuList = this.handleTree(response.data, "id");
+      }).finally(() => {
         this.loading = false;
       });
     },
@@ -303,7 +306,7 @@ export default {
     },
     /** 查询菜单下拉树结构 */
     getTreeselect() {
-      listMenu().then(response => {
+      getSimpleMenusList().then(response => {
         this.menuOptions = [];
         const menu = { id: 0, name: '主类目', children: [] };
         menu.children = this.handleTree(response.data, "id");
@@ -350,25 +353,11 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd(row) {
-      this.reset();
-      this.getTreeselect();
-      if (row != null && row.id) {
-        this.form.parentId = row.id;
-      } else {
-        this.form.parentId = 0;
-      }
-      this.open = true;
-      this.title = "添加菜单";
+      this.$refs.menuForm.open('create', undefined, row && row.id);
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      this.getTreeselect();
-      getMenu(row.id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改菜单";
-      });
+      this.$refs.menuForm.open('update', row.id);
     },
     /** 提交按钮 */
     submitForm: function() {
@@ -399,7 +388,7 @@ export default {
               this.getList();
             });
           } else {
-            addMenu(this.form).then(response => {
+            createMenu(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -411,25 +400,24 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       this.$modal.confirm('是否确认删除名称为"' + row.name + '"的数据项?').then(function() {
-          return delMenu(row.id);
-        }).then(() => {
+          return deleteMenu(row.id);
+      }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
     },
-    /** 批量删除操作 */
-    async handleDeleteBatch() {
-      await this.$modal.confirm('是否确认批量删除选中的菜单数据?')
-      try {
-        await delMenuList(this.checkedIds);
-        this.checkedIds = [];
-        await this.getList();
-        this.$modal.msgSuccess("删除成功");
-      } catch {}
+    /** 开启/关闭菜单状态 */
+    handleStatusChanged(row) {
+      this.$set(this.menuStatusUpdating, row.id, true)
+      updateMenu(row).finally(() => {
+        this.$set(this.menuStatusUpdating, row.id, false)
+      })
     },
-    /** 选择行数据 */
-    handleRowCheckboxChange(records) {
-      this.checkedIds = records.map((item) => item.id);
+    /** 刷新菜单缓存 */
+    refreshMenu() {
+      this.$modal.confirm('即将刷新菜单缓存并重新加载页面，是否继续？').then(() => {
+        window.location.reload()
+      }).catch(() => {})
     }
   }
 };

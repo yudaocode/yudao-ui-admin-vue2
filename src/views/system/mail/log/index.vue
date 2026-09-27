@@ -182,19 +182,19 @@
         <el-button @click="open = false">关 闭</el-button>
       </div>
     </el-dialog>
+    <MailLogDetail ref="mailLogDetail" />
   </div>
 </template>
 
 <script>
+import MailLogDetail from './MailLogDetail.vue'
 import { getMailLogPage } from "@/api/system/mail/log";
 import { getSimpleMailAccountList } from "@/api/system/mail/account";
 import Editor from '@/components/Editor';
 
 export default {
   name: "SystemMailLog",
-  components: {
-    Editor,
-  },
+  components: { Editor, MailLogDetail },
   data() {
     return {
       // 遮罩层
@@ -288,8 +288,7 @@ export default {
     },
     /** 详细按钮操作 */
     handleView(row) {
-      this.open = true;
-      this.form = row;
+      this.$refs.mailLogDetail.open(row);
     },
   }
 };

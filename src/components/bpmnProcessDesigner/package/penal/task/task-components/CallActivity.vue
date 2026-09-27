@@ -4,18 +4,12 @@
       <el-input v-model="form.processInstanceName" clearable placeholder="请输入实例名称" @change="updateCallActivityAttr('processInstanceName')" />
     </el-form-item>
     <el-form-item label="被调用流程" prop="calledElement">
-      <el-select
+      <el-input
         v-model="form.calledElement"
-        style="width: 100%"
-        filterable
-        allow-create
         clearable
-        default-first-option
-        placeholder="请选择或填写流程标识"
-        @change="handleChildProcessChange"
-      >
-        <el-option v-for="item in childProcessOptions" :key="item.key" :value="item.key" :label="item.name || item.key" />
-      </el-select>
+        placeholder="请输入被调用流程"
+        @change="updateCallActivityAttr('calledElement')"
+      />
     </el-form-item>
     <el-form-item v-if="supportsFlowableAttributes" label="调用标识类型" prop="calledElementType">
       <el-select v-model="form.calledElementType" style="width: 100%" @change="updateCallActivityAttr('calledElementType')">
@@ -85,8 +79,6 @@
 </template>
 
 <script>
-import { getModelList } from '@/api/bpm/model'
-
 export default {
   name: 'CallActivity',
   props: {
@@ -113,8 +105,6 @@ export default {
       inVariables: [],
       outVariables: [],
       otherExtensions: [],
-      childProcessOptions: [],
-      childProcessLoadError: '',
       variableVisible: false,
       variableType: 'in',
       editingVariableIndex: -1,
@@ -154,9 +144,6 @@ export default {
       }
     }
   },
-  created() {
-    this.loadChildProcesses()
-  },
   methods: {
     getBpmnInstances() {
       return typeof window !== 'undefined' && window.bpmnInstances ? window.bpmnInstances : null
@@ -186,38 +173,14 @@ export default {
         ? businessObject.extensionElements.values
         : []
       values.forEach((item) => {
+        // Ignore malformed null extension entries from imported JSON. They
+        // are not moddle values and would make a later variable edit fail
+        // when the collection is rebuilt.
+        if (!item) return
         if (item && item.$type === this.inType) this.inVariables.push(item)
         else if (item && item.$type === this.outType) this.outVariables.push(item)
         else this.otherExtensions.push(item)
       })
-    },
-    async loadChildProcesses() {
-      try {
-        const response = await getModelList()
-        const payload = response && response.data !== undefined ? response.data : response
-        const data = Array.isArray(payload)
-          ? payload
-          : payload && (payload.list || payload.records || payload.items)
-            ? (payload.list || payload.records || payload.items)
-            : []
-        this.childProcessOptions = Array.isArray(data)
-          ? data.filter((item) => item && item.key).map((item) => ({ key: String(item.key), name: item.name || String(item.key) }))
-          : []
-        this.childProcessLoadError = ''
-      } catch (error) {
-        this.childProcessOptions = []
-        this.childProcessLoadError = '子流程列表加载失败，可直接填写流程标识'
-        // Keep the editor usable when the optional list endpoint is unavailable.
-        // eslint-disable-next-line no-console
-        console.warn('[bpm] failed to load call-activity process list', error)
-      }
-    },
-    handleChildProcessChange(key) {
-      this.updateCallActivityAttr('calledElement')
-      const selected = this.childProcessOptions.find((item) => String(item.key) === String(key))
-      if (!selected) return
-      this.form.processInstanceName = selected.name || selected.key
-      this.updateCallActivityAttr('processInstanceName')
     },
     updateCallActivityAttr(attr) {
       const instances = this.getBpmnInstances()

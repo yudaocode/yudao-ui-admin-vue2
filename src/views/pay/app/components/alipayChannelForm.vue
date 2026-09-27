@@ -53,6 +53,11 @@
           </el-form-item>
         </div>
         <div v-if="formData.config.mode === 2">
+          <el-form-item label-width="180px" label="应用私钥" prop="config.privateKey">
+            <el-input type="textarea" :autosize="{minRows: 8, maxRows: 8}" v-model="formData.config.privateKey"
+                      placeholder="请输入应用私钥" clearable :style="{width: '100%'}">
+            </el-input>
+          </el-form-item>
           <el-form-item label-width="180px" label="商户公钥应用证书" prop="config.appCertContent">
             <el-input v-model="formData.config.appCertContent" type="textarea"
                       placeholder="请上传商户公钥应用证书"
@@ -104,6 +109,17 @@
               :http-request="rootCertUpload">
               <el-button size="small" type="primary" icon="el-icon-upload">点击上传</el-button>
             </el-upload>
+          </el-form-item>
+        </div>
+        <el-form-item label-width="180px" label="接口内容加密方式" prop="config.encryptType">
+          <el-radio-group v-model="formData.config.encryptType">
+            <el-radio label="">无加密</el-radio>
+            <el-radio label="AES">AES</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <div v-if="formData.config.encryptType === 'AES'">
+          <el-form-item label-width="180px" label="接口内容加密密钥" prop="config.encryptKey">
+            <el-input v-model="formData.config.encryptKey" clearable placeholder="请输入接口内容加密密钥" />
           </el-form-item>
         </div>
         <el-form-item label-width="180px" label="备注" prop="remark">
@@ -158,6 +174,7 @@ export default {
         'config.appCertContent': [{ required: true,  message: '请上传商户公钥应用证书', trigger: 'blur' }],
         'config.alipayPublicCertContent': [{ required: true, message: '请上传支付宝公钥证书', trigger: 'blur'}],
         'config.rootCertContent': [{ required: true, message: '请上传指定根证书', trigger: 'blur' }],
+        'config.encryptKey': [{ required: true, message: '请输入接口内容加密密钥', trigger: 'blur' }],
       },
       fileAccept: ".crt",
     }
@@ -168,9 +185,10 @@ export default {
       this.formLoading = true;
       this.reset(appId, code);
       getChannel(appId, code).then(response => {
-        if (response.data && response.data.id) {
-          this.formData = response.data;
-          this.formData.config = JSON.parse(response.data.config);
+        const data = response.data;
+        if (data && data.id) {
+          this.formData = data;
+          this.formData.config = JSON.parse(data.config);
         }
         this.title = !this.formData.id ? '创建支付渠道' : '编辑支付渠道'
       }).finally(() => {
@@ -199,7 +217,7 @@ export default {
             this.$modal.msgSuccess("修改成功");
             this.$emit('success')
             this.close();
-          })
+          });
         }
       });
     },
@@ -220,7 +238,9 @@ export default {
           alipayPublicKey: '',
           appCertContent: '',
           alipayPublicCertContent: '',
-          rootCertContent: ''
+          rootCertContent: '',
+          encryptType: '',
+          encryptKey: ''
         }
       }
       this.resetForm('form')

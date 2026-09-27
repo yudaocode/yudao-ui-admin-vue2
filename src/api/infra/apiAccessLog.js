@@ -10,7 +10,7 @@ export function getApiAccessLogPage(query) {
 }
 
 // 导出API 访问日志 Excel
-export function exportApiAccessLogExcel(query) {
+export function exportApiAccessLog(query) {
   return request({
     url: '/infra/api-access-log/export-excel',
     method: 'get',

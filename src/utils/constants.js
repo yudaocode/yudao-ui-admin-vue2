@@ -44,6 +44,23 @@ export const CommonStatusEnum = {
 }
 
 /**
+ * 全局用户类型枚举
+ */
+export const UserTypeEnum = {
+  MEMBER: 1, // 会员
+  ADMIN: 2 // 管理员
+}
+
+/**
+ * 用户性别枚举（对齐后端 system_user_sex 字典）
+ */
+export const SystemUserSexEnum = {
+  UNKNOWN: 0, // 未知
+  MALE: 1, // 男
+  FEMALE: 2 // 女
+}
+
+/**
  * BPM 模型类型
  */
 export const BpmModelType = {
@@ -66,6 +83,17 @@ export const BpmAutoApproveType = {
   NONE: 0,
   APPROVE_ALL: 1,
   APPROVE_SEQUENTIAL: 2
+}
+
+/**
+ * BPM 流程实例状态
+ */
+export const BpmProcessInstanceStatus = {
+  NOT_START: -1, // 未开始
+  RUNNING: 1, // 审批中
+  APPROVE: 2, // 审批通过
+  REJECT: 3, // 审批不通过
+  CANCEL: 4 // 已取消
 }
 
 /**
@@ -328,6 +356,24 @@ export const CouponTemplateValidityTypeEnum = {
 }
 
 /**
+ * 优惠劵模板的领取方式的枚举
+ */
+export const CouponTemplateTakeTypeEnum = {
+  USER: {
+    type: 1,
+    name: '直接领取'
+  },
+  ADMIN: {
+    type: 2,
+    name: '指定发放'
+  },
+  REGISTER: {
+    type: 3,
+    name: '新人券'
+  }
+}
+
+/**
  * 营销的商品范围枚举
  */
 export const PromotionProductScopeEnum = {
@@ -338,6 +384,10 @@ export const PromotionProductScopeEnum = {
   SPU: {
     scope: 2,
     name: '指定商品参与'
+  },
+  CATEGORY: {
+    scope: 3,
+    name: '指定品类参与'
   }
 }
 
@@ -374,5 +424,46 @@ export const PromotionActivityStatusEnum = {
   CLOSE: {
     type: 40,
     name: '已关闭'
+  }
+}
+
+// ========== MALL - 交易模块 ==========
+/**
+ * 配送方式枚举
+ */
+export const DeliveryTypeEnum = {
+  EXPRESS: {
+    type: 1,
+    name: '快递发货'
+  },
+  PICK_UP: {
+    type: 2,
+    name: '到店自提'
+  }
+}
+
+/**
+ * 交易订单 - 状态
+ */
+export const TradeOrderStatusEnum = {
+  UNPAID: {
+    status: 0,
+    name: '待支付'
+  },
+  UNDELIVERED: {
+    status: 10,
+    name: '待发货'
+  },
+  DELIVERED: {
+    status: 20,
+    name: '已发货'
+  },
+  COMPLETED: {
+    status: 30,
+    name: '已完成'
+  },
+  CANCELED: {
+    status: 40,
+    name: '已取消'
   }
 }

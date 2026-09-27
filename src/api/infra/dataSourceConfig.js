@@ -29,8 +29,9 @@ export function deleteDataSourceConfig(id) {
 // 批量删除数据源配置
 export function deleteDataSourceConfigList(ids) {
   return request({
-    url: `/infra/data-source-config/delete-list?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/infra/data-source-config/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 

@@ -31,6 +31,15 @@ export function dateFormatter2(row, column, cellValue) {
   return parseTime(cellValue, '{y}-{m}-{d}')
 }
 
+export function generateRandomStr(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
 /**
  * 将耗时（毫秒）格式化为人类可读的文本，如 "2 天3 小时 0 分钟"
  */
@@ -548,4 +557,122 @@ export function isEmpty(val) {
   }
 
   return false
+}
+
+/** 解析 JSON 字符串。 */
+export function jsonParse(str) {
+  try {
+    return JSON.parse(str)
+  } catch (e) {
+    console.warn(`str[${str}] 不是一个 JSON 字符串`)
+    return str
+  }
+}
+
+// ========== ERP / CRM number helpers ==========
+
+const ERP_COUNT_DIGIT = 3
+const ERP_PRICE_DIGIT = 2
+
+/** Sum numeric values while ignoring values that cannot be converted to a number. */
+export function getSumValue(values) {
+  return (values || []).reduce((previous, current) => {
+    const value = Number(current)
+    return Number.isNaN(value) ? previous : previous + value
+  }, 0)
+}
+
+/** Format an ERP number with a fixed number of decimal places. */
+export function erpNumberFormatter(num, digit) {
+  if (num == null) {
+    return ''
+  }
+  const value = typeof num === 'string' ? parseFloat(num) : num
+  if (isNaN(value)) {
+    return ''
+  }
+  return value.toFixed(digit)
+}
+
+export function erpCountInputFormatter(num) {
+  return erpNumberFormatter(num, ERP_COUNT_DIGIT)
+}
+
+export function erpCountTableColumnFormatter(row, column, cellValue) {
+  return erpNumberFormatter(cellValue, ERP_COUNT_DIGIT)
+}
+
+export function erpPriceInputFormatter(num) {
+  return erpNumberFormatter(num, ERP_PRICE_DIGIT)
+}
+
+export function erpPriceTableColumnFormatter(row, column, cellValue) {
+  return erpNumberFormatter(cellValue, ERP_PRICE_DIGIT)
+}
+
+export function erpPriceMultiply(price, count) {
+  if (price == null || count == null) {
+    return undefined
+  }
+  return parseFloat((price * count).toFixed(ERP_PRICE_DIGIT))
+}
+
+export function erpCalculatePercentage(value, total) {
+  if (total === 0) return 0
+  return ((value / total) * 100).toFixed(2)
+}
+
+/**
+ * 将值复制到目标对象，且以目标对象属性为准。
+ */
+export function copyValueToTarget(target, source) {
+  const newObj = Object.assign({}, target, source)
+  Object.keys(newObj).forEach((key) => {
+    if (Object.keys(target).indexOf(key) === -1) {
+      delete newObj[key]
+    }
+  })
+  Object.assign(target, newObj)
+}
+
+/** 将一个整数转换为分数并保留两位小数。 */
+export function formatToFraction(num) {
+  if (typeof num === 'undefined') return '0.00'
+  const parsedNumber = typeof num === 'string' ? parseFloat(num) : num
+  return (parsedNumber / 100.0).toFixed(2)
+}
+
+/** 将分值格式化为固定两位小数。 */
+export function floatToFixed2(num) {
+  let value = '0.00'
+  if (typeof num === 'undefined') return value
+  const fraction = formatToFraction(num)
+  const decimalPart = fraction.toString().split('.')[1]
+  const length = decimalPart ? decimalPart.length : 0
+  switch (length) {
+    case 0:
+      value = fraction.toString() + '.00'
+      break
+    case 1:
+      value = fraction.toString() + '0'
+      break
+    case 2:
+      value = fraction.toString()
+      break
+    default:
+      break
+  }
+  return value
+}
+
+/** 将一个分数转换为整数。 */
+export function convertToInteger(num) {
+  if (typeof num === 'undefined') return 0
+  const parsedNumber = typeof num === 'string' ? parseFloat(num) : num
+  return Math.round(parsedNumber * 100)
+}
+
+/** 分转元。 */
+export function fenToYuan(price) {
+  return formatToFraction(price)
 }

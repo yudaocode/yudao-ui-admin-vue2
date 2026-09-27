@@ -39,3 +39,21 @@ export function getChannel(appId, code) {
   })
 }
 
+// 获得支付渠道分页
+export function getChannelPage(params) {
+  return request({
+    url: '/pay/channel/page',
+    method: 'get',
+    params
+  })
+}
+
+// 导出支付渠道
+export function exportChannel(params) {
+  return request({
+    url: '/pay/channel/export-excel',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}

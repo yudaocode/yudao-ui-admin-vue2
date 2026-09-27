@@ -1,70 +1,38 @@
 import request from '@/utils/request'
 
-// 查询字典类型列表
-export function listType(query) {
+// Dictionary type API. Names and paths follow the Vue3 client contract.
+export function getSimpleDictTypeList() {
+  return request({ url: '/system/dict-type/simple-list', method: 'get' })
+}
+
+export function getDictTypePage(params) {
+  return request({ url: '/system/dict-type/page', method: 'get', params })
+}
+
+export function getDictType(id) {
+  return request({ url: '/system/dict-type/get?id=' + id, method: 'get' })
+}
+
+export function createDictType(data) {
+  return request({ url: '/system/dict-type/create', method: 'post', data })
+}
+
+export function updateDictType(data) {
+  return request({ url: '/system/dict-type/update', method: 'put', data })
+}
+
+export function deleteDictType(id) {
+  return request({ url: '/system/dict-type/delete?id=' + id, method: 'delete' })
+}
+
+export function deleteDictTypeList(ids) {
   return request({
-    url: '/system/dict-type/page',
-    method: 'get',
-    params: query
+    url: '/system/dict-type/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
-// 查询字典类型详细
-export function getType(dictId) {
-  return request({
-    url: '/system/dict-type/get?id=' + dictId,
-    method: 'get'
-  })
-}
-
-// 新增字典类型
-export function addType(data) {
-  return request({
-    url: '/system/dict-type/create',
-    method: 'post',
-    data: data
-  })
-}
-
-// 修改字典类型
-export function updateType(data) {
-  return request({
-    url: '/system/dict-type/update',
-    method: 'put',
-    data: data
-  })
-}
-
-// 删除字典类型
-export function delType(dictId) {
-  return request({
-    url: '/system/dict-type/delete?id=' + dictId,
-    method: 'delete'
-  })
-}
-
-// 批量删除字典类型
-export function delTypeList(ids) {
-  return request({
-    url: `/system/dict-type/delete-batch?ids=${ids.join(',')}`,
-    method: 'delete'
-  })
-}
-
-// 导出字典类型
-export function exportType(query) {
-  return request({
-    url: '/system/dict-type/export-excel',
-    method: 'get',
-    params: query,
-    responseType: 'blob'
-  })
-}
-
-// 获取字典选择框列表
-export function listAllSimple() {
-  return request({
-    url: '/system/dict-type/list-all-simple',
-    method: 'get'
-  })
+export function exportDictType(params) {
+  return request({ url: '/system/dict-type/export-excel', method: 'get', params, responseType: 'blob' })
 }

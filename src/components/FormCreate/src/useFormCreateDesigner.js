@@ -1,5 +1,9 @@
 import uniqueId from '@form-create/utils/lib/unique'
 import { AreaLevelEnum } from '@/utils/constants'
+import { useEditorRule } from './config/useEditorRule'
+import { useUploadFileRule } from './config/useUploadFileRule'
+import { useUploadImgRule } from './config/useUploadImgRule'
+import { useUploadImgsRule } from './config/useUploadImgsRule'
 
 function requiredRule() {
   return {
@@ -281,6 +285,8 @@ export function useFormCreateDesigner(designer) {
   addSystemMenu(designer, systemComponents)
   if (designer.addComponent) {
     designer.addComponent([
+      ...[useEditorRule(), useUploadFileRule(), useUploadImgRule(), useUploadImgsRule()]
+        .map(component => ({ ...component, menu: 'main' })),
       createAreaSelectRule(),
       createIframeRule()
     ])

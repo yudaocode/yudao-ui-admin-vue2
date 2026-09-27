@@ -29,8 +29,9 @@ export function deleteTenantPackage(id) {
 // 批量删除租户套餐
 export function deleteTenantPackageList(ids) {
   return request({
-    url: `/system/tenant-package/delete-batch?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/tenant-package/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
@@ -54,7 +55,7 @@ export function getTenantPackagePage(query) {
 // 获取租户套餐精简信息列表
 export function getTenantPackageList() {
   return request({
-    url: '/system/tenant-package/get-simple-list',
+    url: '/system/tenant-package/simple-list',
     method: 'get'
   })
 }

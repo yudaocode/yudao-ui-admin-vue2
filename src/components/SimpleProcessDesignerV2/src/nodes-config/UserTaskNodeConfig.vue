@@ -1,11 +1,23 @@
 <template>
   <el-drawer
-    :title="drawerTitle"
     :visible.sync="visible"
     :append-to-body="true"
     size="640px"
     :before-close="handleBeforeClose"
   >
+    <div slot="title" class="user-task-config-title">
+      <el-input
+        v-if="editingName"
+        v-model="draft.name"
+        size="small"
+        maxlength="30"
+        @blur="finishNameEdit"
+      />
+      <span v-else>
+        {{ draft.name || (isApprovalNode ? '审批人' : '办理人') }}
+        <i class="el-icon-edit" title="编辑节点名称" @click="editingName = true" />
+      </span>
+    </div>
     <div class="user-task-config">
       <el-form ref="configForm" :model="draft" label-width="128px" label-position="top" size="small">
         <el-form-item v-if="isApprovalNode" label="审批类型">
@@ -322,7 +334,7 @@ function parseFields(rawFields) {
       const rule = typeof field === 'string' ? JSON.parse(field) : field
       if (rule && typeof rule === 'object') parseFormFields(rule, result)
     } catch (e) {
-      // Keep valid fields available when one legacy rule is malformed.
+      // Keep valid fields available when one imported rule is malformed.
     }
   })
   return result
@@ -424,7 +436,6 @@ export default {
     }
   },
   computed: {
-    drawerTitle() { return `${this.draft.name || '节点'}配置` },
     roleList() { return this.roleListRef && this.roleListRef.value ? this.roleListRef.value : [] },
     postList() { return this.postListRef && this.postListRef.value ? this.postListRef.value : [] },
     userList() { return this.userListRef && this.userListRef.value ? this.userListRef.value : [] },
@@ -683,10 +694,12 @@ export default {
     },
     async saveConfig() {
       this.finishNameEdit()
-      this.$set(this.flowNode, 'name', this.draft.name)
-      this.$set(this.flowNode, 'approveType', Number(this.draft.approveType) || ApproveType.USER)
       if (this.isApprovalNode && Number(this.draft.approveType) !== ApproveType.USER) {
         const approve = this.approveTypes.find((item) => Number(item.value) === Number(this.draft.approveType))
+        // Auto approve/reject nodes intentionally skip the candidate form, but
+        // still commit the draft only after this branch has been accepted.
+        this.$set(this.flowNode, 'name', this.draft.name)
+        this.$set(this.flowNode, 'approveType', Number(this.draft.approveType) || ApproveType.USER)
         this.flowNode.showText = approve ? approve.label : ''
         this.visible = false
         return true
@@ -701,6 +714,11 @@ export default {
         this.$message.error('请完善候选人配置')
         return false
       }
+      // Keep the live node untouched while validation is running.  This is
+      // important for cancel/reopen: an invalid candidate configuration must
+      // not leak a changed name or approve type into the designer model.
+      this.$set(this.flowNode, 'name', this.draft.name)
+      this.$set(this.flowNode, 'approveType', Number(this.draft.approveType) || ApproveType.USER)
       this.applyDraftToNode()
       this.visible = false
       return true
@@ -722,6 +740,17 @@ export default {
 <style scoped>
 .user-task-config {
   padding: 0 20px 64px;
+}
+
+.user-task-config-title {
+  padding-right: 24px;
+  font-weight: 600;
+}
+
+.user-task-config-title .el-icon-edit {
+  margin-left: 8px;
+  color: #409eff;
+  cursor: pointer;
 }
 
 .radio-line {

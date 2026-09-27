@@ -54,9 +54,10 @@ export default {
       this.formLoading = true
       this.reset(appId, code)
       getChannel(appId, code).then(response => {
-        if (response.data && response.data.id) {
-          this.formData = response.data
-          this.formData.config = JSON.parse(response.data.config)
+        const data = response.data
+        if (data && data.id) {
+          this.formData = data
+          this.formData.config = JSON.parse(data.config)
         }
         this.title = !this.formData.id ? '创建支付渠道' : '编辑支付渠道'
       }).finally(() => {

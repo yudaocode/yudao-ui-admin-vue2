@@ -1,8 +1,31 @@
 <template>
   <div class="panel-tab__content">
     <el-form size="mini" label-width="80px" @submit.native.prevent>
-      <el-form-item label="表单标识">
-        <el-input v-model="formKey" clearable @change="updateElementFormKey" />
+      <el-form-item label="流程表单">
+        <!--
+          Vue3 exposes the published workflow-form list here.  Keep
+          `allow-create` for old BPMN definitions that used an arbitrary
+          string formKey; selecting a published form still writes its numeric
+          id exactly as the Vue3 designer does.
+        -->
+        <el-select
+          v-model="formKey"
+          clearable
+          filterable
+          allow-create
+          default-first-option
+          placeholder="请选择流程表单"
+          style="width: 100%"
+          :loading="formListLoading"
+          @change="updateElementFormKey"
+        >
+          <el-option
+            v-for="form in formList"
+            :key="form.id"
+            :label="form.name"
+            :value="form.id"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="业务标识">
         <el-select v-model="businessKey" @change="updateElementBusinessKey">
@@ -148,6 +171,8 @@
 </template>
 
 <script>
+import { getFormSimpleList } from '@/api/bpm/form'
+
 export default {
   name: "ElementForm",
   props: {
@@ -161,6 +186,8 @@ export default {
   data() {
     return {
       formKey: "",
+      formList: [],
+      formListLoading: false,
       businessKey: "",
       optionModelTitle: "",
       fieldList: [],
@@ -184,6 +211,9 @@ export default {
       fieldPropertiesList: [] // 绑定属性列表
     };
   },
+  async mounted() {
+    await this.loadFormList()
+  },
   watch: {
     id: {
       immediate: true,
@@ -194,8 +224,14 @@ export default {
   },
   methods: {
     resetFormList() {
+      if (!window.bpmnInstances || !window.bpmnInstances.bpmnElement) return;
       this.bpmnELement = window.bpmnInstances.bpmnElement;
-      this.formKey = this.bpmnELement.businessObject.formKey;
+      const currentFormKey = this.bpmnELement.businessObject.formKey;
+      // Published form IDs are numeric in the Vue3 API. Preserve a non-numeric
+      // formKey as text so existing custom BPMN remains editable.
+      this.formKey = currentFormKey === undefined || currentFormKey === null || currentFormKey === ''
+        ? ""
+        : (/^\d+$/.test(String(currentFormKey)) ? Number(currentFormKey) : String(currentFormKey));
       // 获取元素扩展属性 或者 创建扩展属性
       this.elExtensionElements =
         this.bpmnELement.businessObject.get("extensionElements") || window.bpmnInstances.moddle.create("bpmn:ExtensionElements", { values: [] });
@@ -217,10 +253,22 @@ export default {
       this.updateElementExtensions();
     },
     updateElementFormKey() {
-      window.bpmnInstances.modeling.updateProperties(this.bpmnELement, { formKey: this.formKey });
+      if (!window.bpmnInstances || !this.bpmnELement) return;
+      window.bpmnInstances.modeling.updateProperties(this.bpmnELement, {
+        formKey: this.formKey === '' || this.formKey === null ? undefined : this.formKey
+      });
     },
     updateElementBusinessKey() {
       window.bpmnInstances.modeling.updateModdleProperties(this.bpmnELement, this.formData, { businessKey: this.businessKey });
+    },
+    async loadFormList() {
+      this.formListLoading = true;
+      try {
+        const response = await getFormSimpleList();
+        this.formList = Array.isArray(response.data) ? response.data : [];
+      } finally {
+        this.formListLoading = false;
+      }
     },
     // 根据类型调整字段type
     changeFieldTypeType(type) {

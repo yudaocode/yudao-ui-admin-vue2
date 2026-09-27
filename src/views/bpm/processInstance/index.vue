@@ -144,6 +144,7 @@ import {
 import { getCategorySimpleList } from '@/api/bpm/category'
 import { getProcessDefinition, getSimpleProcessDefinitionList } from '@/api/bpm/definition'
 import { TaskStatusEnum } from '@/api/bpm/task'
+import { BpmModelFormType } from '@/utils/constants'
 
 export default {
   name: 'BpmProcessInstanceMy',
@@ -181,15 +182,15 @@ export default {
         getCategorySimpleList(),
         getSimpleProcessDefinitionList()
       ])
-      this.categoryList = categoryResp.data || []
-      this.processDefinitionList = definitionResp.data || []
+      this.categoryList = categoryResp.data
+      this.processDefinitionList = definitionResp.data
     },
     async getList() {
       this.loading = true
       try {
         const response = await getProcessInstanceMyPage(this.queryParams)
-        this.list = response.data.list || []
-        this.total = response.data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }
@@ -220,14 +221,23 @@ export default {
     },
     async handleReCreate(row) {
       const response = await getProcessDefinition(row.processDefinitionId)
-      const definition = response.data || {}
-      if (definition.formType === 20) {
+      const definition = response.data
+      if (Number(definition.formType) === Number(BpmModelFormType.CUSTOM)) {
+        const path = String(definition.formCustomCreatePath || '').trim()
+        if (!path) {
+          this.$message.warning('业务表单未配置发起路由')
+          return
+        }
         this.$router.push({
-          path: definition.formCustomCreatePath,
+          path,
           query: {
             id: row.businessKey
           }
         })
+        return
+      }
+      if (Number(definition.formType) !== Number(BpmModelFormType.NORMAL)) {
+        this.$message.warning('流程未配置有效的表单类型')
         return
       }
       this.$router.push({ name: 'BpmProcessInstanceCreate', query: { processInstanceId: row.id }})

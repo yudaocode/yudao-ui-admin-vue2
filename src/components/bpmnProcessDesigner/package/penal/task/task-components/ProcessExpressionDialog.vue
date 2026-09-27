@@ -60,13 +60,8 @@ export default {
       this.loading = true
       try {
         const response = await getProcessExpressionPage(this.queryParams)
-        const data = response && response.data ? response.data : response || {}
-        this.list = Array.isArray(data.list) ? data.list : []
-        this.total = Number(data.total || 0)
-      } catch (e) {
-        this.list = []
-        this.total = 0
-        if (this.$message) this.$message.error('流程表达式加载失败')
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }

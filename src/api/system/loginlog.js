@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 查询登录日志列表
-export function list(query) {
+export function getLoginLogPage(query) {
   return request({
     url: '/system/login-log/page',
     method: 'get',

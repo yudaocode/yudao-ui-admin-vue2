@@ -110,9 +110,8 @@ export default {
     getList() {
       this.loading = true
       return getProcessListenerPage(this.queryParams).then(response => {
-        const data = response && response.data ? response.data : {}
-        this.list = data.list || []
-        this.total = data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       }).finally(() => {
         this.loading = false
       })

@@ -27,6 +27,12 @@
       <el-form-item label="商户订单编号" prop="merchantOrderId">
         <el-input v-model="queryParams.merchantOrderId" placeholder="请输入商户订单编号" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
+      <el-form-item label="商户退款编号" prop="merchantRefundId">
+        <el-input v-model="queryParams.merchantRefundId" placeholder="请输入商户退款编号" clearable @keyup.enter.native="handleQuery"/>
+      </el-form-item>
+      <el-form-item label="商户转账编号" prop="merchantTransferId">
+        <el-input v-model="queryParams.merchantTransferId" placeholder="请输入商户转账编号" clearable @keyup.enter.native="handleQuery"/>
+      </el-form-item>
       <el-form-item label="创建时间" prop="createTime">
         <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss" type="daterange"
                         range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" :default-time="['00:00:00', '23:59:59']" />
@@ -41,7 +47,13 @@
     <el-table v-loading="loading" :data="list">
       <el-table-column label="任务编号" align="center" prop="id" />
       <el-table-column label="应用编号" align="center" prop="appName" />
-      <el-table-column label="商户订单编号" align="center" prop="merchantOrderId" />
+      <el-table-column label="商户单信息" align="center" prop="merchant">
+        <template v-slot="scope">
+          <div v-if="scope.row.merchantOrderId">商户订单编号：{{ scope.row.merchantOrderId }}</div>
+          <div v-if="scope.row.merchantRefundId">商户退款编号：{{ scope.row.merchantRefundId }}</div>
+          <div v-if="scope.row.merchantTransferId">商户转账编号：{{ scope.row.merchantTransferId }}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="通知类型" align="center" prop="type">
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.PAY_NOTIFY_TYPE" :value="scope.row.type" />
@@ -82,69 +94,18 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
 
-    <!-- 对话框(详情) -->
-    <el-dialog title="通知详情" :visible.sync="open" width="700px" v-dialogDrag append-to-body>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="商户订单编号">
-          <el-tag size="small">{{ notifyDetail.merchantOrderId }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="通知状态">
-          <dict-tag :type="DICT_TYPE.PAY_NOTIFY_STATUS" :value="notifyDetail.status" size="small" />
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="应用编号">{{ notifyDetail.appId }}</el-descriptions-item>
-        <el-descriptions-item label="应用名称">{{ notifyDetail.appName }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="关联编号">{{ notifyDetail.dataId }}</el-descriptions-item>
-        <el-descriptions-item label="通知类型">
-          <dict-tag :type="DICT_TYPE.PAY_NOTIFY_TYPE" :value="notifyDetail.type" />
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="通知次数">{{ notifyDetail.notifyTimes }}</el-descriptions-item>
-        <el-descriptions-item label="最大通知次数">{{ notifyDetail.maxNotifyTimes }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="最后通知时间">{{ parseTime(notifyDetail.lastExecuteTime) }}</el-descriptions-item>
-        <el-descriptions-item label="下次通知时间">{{ parseTime(notifyDetail.nextNotifyTime) }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="创建时间">{{ parseTime(notifyDetail.createTime) }}</el-descriptions-item>
-        <el-descriptions-item label="更新时间">{{ parseTime(notifyDetail.updateTime) }}</el-descriptions-item>
-      </el-descriptions>
-      <!-- 分割线 -->
-      <el-divider />
-      <el-descriptions :column="1" label-class-name="desc-label" direction="vertical" border>
-        <el-descriptions-item label="回调日志">
-          <el-table :data="notifyDetail.logs">
-            <el-table-column label="日志编号" align="center" prop="id" />
-            <el-table-column label="通知状态" align="center" prop="status">
-              <template v-slot="scope">
-                <dict-tag :type="DICT_TYPE.PAY_NOTIFY_STATUS" :value="scope.row.status" />
-              </template>
-            </el-table-column>
-            <el-table-column label="通知次数" align="center" prop="notifyTimes" />
-            <el-table-column label="通知时间" align="center" prop="lastExecuteTime" width="180">
-              <template v-slot="scope">
-                <span>{{ parseTime(scope.row.createTime) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="响应结果" align="center" prop="response" />
-          </el-table>
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
+    <notify-detail ref="detailRef" />
   </div>
 </template>
 
 <script>
-import { getNotifyTaskPage, getNotifyTaskDetail } from "@/api/pay/notify";
+import { getNotifyTaskPage } from "@/api/pay/notify";
 import { getAppList } from "@/api/pay/app";
+import NotifyDetail from './NotifyDetail.vue';
 
 export default {
   name: "PayNotify",
+  components: { NotifyDetail },
   data() {
     return {
       // 遮罩层
@@ -155,8 +116,6 @@ export default {
       total: 0,
       // 支付通知列表
       list: [],
-      // 是否显示弹出层
-      open: false,
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -166,15 +125,13 @@ export default {
         dataId: null,
         status: null,
         merchantOrderId: null,
+        merchantRefundId: null,
+        merchantTransferId: null,
         createTime: [],
       },
 
       // 支付应用列表集合
       appList: [],
-      // 通知详情
-      notifyDetail: {
-        logs: []
-      },
     };
   },
   created() {
@@ -182,16 +139,18 @@ export default {
     // 获得筛选项
     getAppList().then(response => {
       this.appList = response.data;
-    })
+    });
   },
   methods: {
     /** 查询列表 */
     getList() {
       this.loading = true;
       // 执行查询
-      getNotifyTaskPage(this.queryParams).then(response => {
-        this.list = response.data.list;
-        this.total = response.data.total;
+      return getNotifyTaskPage(this.queryParams).then(response => {
+        const page = response.data;
+        this.list = page.list;
+        this.total = page.total;
+      }).finally(() => {
         this.loading = false;
       });
     },
@@ -207,13 +166,7 @@ export default {
     },
     /** 详情按钮操作 */
     handleDetail(row) {
-      this.notifyDetail = {};
-      getNotifyTaskDetail(row.id).then(response => {
-        // 设置值
-        this.notifyDetail = response.data;
-        // 弹窗打开
-        this.open = true;
-      });
+      this.$refs.detailRef.open(row.id);
     },
   }
 };

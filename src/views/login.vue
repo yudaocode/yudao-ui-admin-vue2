@@ -14,23 +14,32 @@
 
         <!-- 表单 -->
         <div class="form-cont">
-          <el-tabs class="form" v-model="loginForm.loginType" style=" float:none;">
+          <el-tabs class="form" v-model="loginForm.loginType" style=" float:none;" @tab-click="handleTabClick">
             <el-tab-pane label="账号密码登录" name="uname">
             </el-tab-pane>
             <el-tab-pane label="短信验证码登录" name="sms">
             </el-tab-pane>
+            <el-tab-pane label="注册" name="register">
+            </el-tab-pane>
+            <el-tab-pane label="忘记密码" name="forget">
+            </el-tab-pane>
           </el-tabs>
           <div>
-            <el-form ref="loginForm" :model="loginForm" :rules="LoginRules" class="login-form">
+            <el-form ref="loginForm" :model="loginForm" :rules="activeRules" class="login-form">
               <el-form-item prop="tenantName" v-if="tenantEnable">
                 <el-input v-model="loginForm.tenantName" type="text" auto-complete="off" placeholder='租户'>
                   <svg-icon slot="prefix" icon-class="tree" class="el-input__icon input-icon"/>
                 </el-input>
               </el-form-item>
-              <!-- 账号密码登录 -->
-              <div v-if="loginForm.loginType === 'uname'">
+              <!-- 账号密码登录 / 注册 共用 -->
+              <div v-if="loginForm.loginType === 'uname' || loginForm.loginType === 'register'">
                 <el-form-item prop="username">
                   <el-input v-model="loginForm.username" type="text" auto-complete="off" placeholder="账号">
+                    <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon"/>
+                  </el-input>
+                </el-form-item>
+                <el-form-item prop="nickname" v-if="loginForm.loginType === 'register'">
+                  <el-input v-model="loginForm.nickname" type="text" auto-complete="off" placeholder="昵称">
                     <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon"/>
                   </el-input>
                 </el-form-item>
@@ -40,16 +49,26 @@
                     <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon"/>
                   </el-input>
                 </el-form-item>
-                <el-checkbox v-model="loginForm.rememberMe" style="margin:0 0 25px 0;">记住密码</el-checkbox>
+                <el-form-item prop="confirmPassword" v-if="loginForm.loginType === 'register'">
+                  <el-input v-model="loginForm.confirmPassword" type="password" auto-complete="off" placeholder="确认密码"
+                            @keyup.enter.native="getCode">
+                    <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon"/>
+                  </el-input>
+                </el-form-item>
+                <el-checkbox v-if="loginForm.loginType === 'uname'" v-model="loginForm.rememberMe" style="margin:0 0 25px 0;">记住密码</el-checkbox>
               </div>
 
-              <!-- 短信验证码登录 -->
-              <div v-if="loginForm.loginType === 'sms'">
+              <!-- 手机号：短信验证码登录 / 忘记密码 共用 -->
+              <div v-if="loginForm.loginType === 'sms' || loginForm.loginType === 'forget'">
                 <el-form-item prop="mobile">
                   <el-input v-model="loginForm.mobile" type="text" auto-complete="off" placeholder="请输入手机号">
                     <svg-icon slot="prefix" icon-class="phone" class="el-input__icon input-icon"/>
                   </el-input>
                 </el-form-item>
+              </div>
+
+              <!-- 短信验证码登录 -->
+              <div v-if="loginForm.loginType === 'sms'">
                 <el-form-item prop="mobileCode">
                   <el-input v-model="loginForm.mobileCode" type="text" auto-complete="off" placeholder="短信验证码"
                             class="sms-login-mobile-code-prefix"
@@ -65,17 +84,58 @@
                 </el-form-item>
               </div>
 
+              <!-- 忘记密码 -->
+              <div v-if="loginForm.loginType === 'forget'">
+                <el-form-item prop="resetCode">
+                  <el-input v-model="loginForm.resetCode" type="text" auto-complete="off" placeholder="短信验证码"
+                            class="sms-login-mobile-code-prefix"
+                            @keyup.enter.native="getCode">
+                    <template>
+                      <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon"/>
+                    </template>
+                    <template slot="append">
+                      <span v-if="mobileCodeTimer <= 0" class="getMobileCode" @click="getResetSmsCode" style="cursor: pointer;">获取验证码</span>
+                      <span v-if="mobileCodeTimer > 0" class="getMobileCode">{{ mobileCodeTimer }}秒后可重新获取</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+                <el-form-item prop="password">
+                  <el-input v-model="loginForm.password" type="password" auto-complete="off" placeholder="新密码"
+                            @keyup.enter.native="getCode">
+                    <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon"/>
+                  </el-input>
+                </el-form-item>
+                <el-form-item prop="checkPassword">
+                  <el-input v-model="loginForm.checkPassword" type="password" auto-complete="off" placeholder="确认新密码"
+                            @keyup.enter.native="getCode">
+                    <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon"/>
+                  </el-input>
+                </el-form-item>
+              </div>
+
+              <!-- 注册 / 忘记密码 入口 -->
+              <div style="width:100%; margin:0 0 10px; text-align:right;">
+                <template v-if="loginForm.loginType === 'uname'">
+                  <el-link :underline="false" type="primary" @click="loginForm.loginType = 'register'">立即注册</el-link>
+                  <el-link :underline="false" type="primary" style="padding-left:10px;" @click="loginForm.loginType = 'forget'">忘记密码？</el-link>
+                </template>
+                <el-link v-if="loginForm.loginType === 'register' || loginForm.loginType === 'forget'"
+                         :underline="false" type="primary" @click="loginForm.loginType = 'uname'">返回登录</el-link>
+              </div>
+
               <!-- 下方的登录按钮 -->
               <el-form-item style="width:100%;">
                 <el-button :loading="loading" size="medium" type="primary" style="width:100%;"
                     @click.native.prevent="getCode">
-                  <span v-if="!loading">登 录</span>
+                  <span v-if="loginForm.loginType === 'register'">注 册</span>
+                  <span v-else-if="loginForm.loginType === 'forget'">重置密码</span>
+                  <span v-else-if="!loading">登 录</span>
                   <span v-else>登 录 中...</span>
                 </el-button>
               </el-form-item>
 
               <!--  社交登录 -->
-             <el-form-item style="width:100%;">
+             <el-form-item style="width:100%;" v-if="loginForm.loginType === 'uname' || loginForm.loginType === 'sms'">
                   <div class="oauth-login" style="display:flex">
                     <div class="oauth-login-item" v-for="item in SysUserSocialTypeEnum" :key="item.type" @click="doSocialLogin(item)">
                       <img :src="item.img" height="25px" width="25px" alt="登录" >
@@ -100,6 +160,12 @@
     <!-- 图形验证码 -->
     <Verify ref="verify" :captcha-type="'blockPuzzle'" :img-size="{width:'400px',height:'200px'}"
             @success="handleLogin" />
+    <!-- 注册图形验证码 -->
+    <Verify ref="verifyRegister" :captcha-type="'blockPuzzle'" :img-size="{width:'400px',height:'200px'}"
+            @success="handleRegister" />
+    <!-- 忘记密码发送短信的图形验证码 -->
+    <Verify ref="verifySms" :captcha-type="'blockPuzzle'" :img-size="{width:'400px',height:'200px'}"
+            @success="sendResetSmsCode" />
 
     <!-- footer -->
     <div class="footer">
@@ -109,8 +175,8 @@
 </template>
 
 <script>
-import {sendSmsCode, socialAuthRedirect} from "@/api/login";
-import {getTenantIdByName} from "@/api/system/tenant";
+import {getTenantIdByName, sendSmsCode, socialAuthRedirect} from "@/api/login";
+import {register, smsResetPassword} from "@/api/login";
 import {SystemUserSocialTypeEnum} from "@/utils/constants";
 import {getCaptchaEnable, getTenantEnable} from "@/utils/ruoyi";
 import {
@@ -120,12 +186,11 @@ import {
   removePassword, removeRememberMe, removeTenantName,
   removeUsername,
   setPassword, setRememberMe, setTenantId, setTenantName,
+  setToken,
   setUsername
 } from "@/utils/auth";
 
 import Verify from '@/components/Verifition/Verify';
-import {resetUserPwd} from "@/api/system/user";
-
 export default {
   name: "Login",
   components: {
@@ -144,10 +209,15 @@ export default {
         captchaVerification: "",
         mobile: "",
         mobileCode: "",
+        nickname: "",
+        confirmPassword: "",
+        resetCode: "",
+        checkPassword: "",
         rememberMe: false,
         tenantName: "芋道源码",
       },
       scene: 21,
+      resetScene: 23, // 后台用户 - 忘记密码
 
       LoginRules: {
         username: [
@@ -194,6 +264,43 @@ export default {
       SysUserSocialTypeEnum: SystemUserSocialTypeEnum,
     };
   },
+  computed: {
+    // 根据当前登录方式，返回对应的表单校验规则
+    activeRules() {
+      const rules = {...this.LoginRules}
+      // 注册：更严格的账号、密码规则
+      if (this.loginForm.loginType === "register") {
+        rules.username = [
+          {required: true, trigger: "blur", message: "请输入您的账号"},
+          {min: 4, max: 30, message: "用户账号长度必须介于 4 和 30 之间", trigger: "blur"}
+        ]
+        rules.nickname = [
+          {required: true, trigger: "blur", message: "请输入您的昵称"},
+          {max: 30, message: "昵称长度不能超过 30 个字符", trigger: "blur"}
+        ]
+        rules.password = [
+          {required: true, trigger: "blur", message: "请输入您的密码"},
+          {min: 5, max: 20, message: "用户密码长度必须介于 5 和 20 之间", trigger: "blur"},
+          {pattern: /^[^<>"'|\\]+$/, message: "不能包含非法字符：< > \" ' \\ |", trigger: "blur"}
+        ]
+        rules.confirmPassword = [
+          {required: true, trigger: "blur", message: "请再次输入您的密码"},
+          {validator: this.equalToPassword, trigger: "blur"}
+        ]
+      }
+      // 忘记密码
+      if (this.loginForm.loginType === "forget") {
+        rules.resetCode = [
+          {required: true, trigger: "blur", message: "短信验证码不能为空"}
+        ]
+        rules.checkPassword = [
+          {required: true, trigger: "blur", message: "请再次输入密码"},
+          {validator: this.equalToPassword, trigger: "blur"}
+        ]
+      }
+      return rules
+    }
+  },
   created() {
     // 租户开关
     this.tenantEnable = getTenantEnable();
@@ -212,7 +319,35 @@ export default {
     this.getCookie();
   },
   methods: {
+    // 校验两次输入的密码是否一致
+    equalToPassword(rule, value, callback) {
+      if (this.loginForm.password !== value) {
+        callback(new Error("两次输入的密码不一致"))
+      } else {
+        callback()
+      }
+    },
+    handleTabClick() {
+      this.$refs.loginForm.clearValidate()
+    },
     getCode() {
+      // 注册
+      if (this.loginForm.loginType === "register") {
+        // 情况一，未开启：则直接注册
+        if (!this.captchaEnable) {
+          this.handleRegister({})
+          return;
+        }
+        // 情况二，已开启：则展示验证码；只有完成验证码的情况，才进行注册
+        // 弹出验证码
+        this.$refs.verifyRegister.show()
+        return;
+      }
+      // 忘记密码：直接重置密码
+      if (this.loginForm.loginType === "forget") {
+        this.handleResetPassword()
+        return;
+      }
       // 情况一，未开启：则直接登录
       if (!this.captchaEnable) {
         this.handleLogin({})
@@ -316,6 +451,80 @@ export default {
               clearInterval(msgTimer);
             }
           }, 1000);
+        });
+      });
+    },
+    /** ========== 以下为升级注册 ========== */
+    // 提交注册（图形验证码通过后触发）
+    handleRegister(captchaParams) {
+      this.$refs.loginForm.validate(valid => {
+        if (!valid) {
+          return;
+        }
+        this.loading = true;
+        // 租户编号在 tenantName 的校验器里已经设置
+        register({
+          tenantName: this.loginForm.tenantName,
+          username: this.loginForm.username,
+          nickname: this.loginForm.nickname,
+          password: this.loginForm.password,
+          confirmPassword: this.loginForm.confirmPassword,
+          captchaVerification: captchaParams.captchaVerification
+        }).then(res => {
+          // 注册即登录：设置 token 并跳转
+          setToken(res.data)
+          this.$router.push({path: this.redirect || "/"}).catch(() => {
+          });
+        }).catch(() => {
+          this.loading = false;
+        });
+      });
+    },
+    /** ========== 以下为升级忘记密码 ========== */
+    // 获取重置密码的短信验证码
+    getResetSmsCode() {
+      if (this.mobileCodeTimer > 0) return;
+      this.$refs.loginForm.validateField("mobile", (message) => {
+        if (message) return;
+        // 情况一，未开启：则直接发送验证码
+        if (!this.captchaEnable) {
+          this.sendResetSmsCode({})
+          return;
+        }
+        // 情况二，已开启：则展示验证码；只有完成验证码的情况，才发送短信
+        this.$refs.verifySms.show()
+      });
+    },
+    // 发送重置密码的短信验证码（图形验证码通过后触发）
+    sendResetSmsCode(captchaParams) {
+      sendSmsCode(this.loginForm.mobile, this.resetScene, captchaParams.captchaVerification).then(res => {
+        this.$modal.msgSuccess("获取验证码成功")
+        this.mobileCodeTimer = 60;
+        let msgTimer = setInterval(() => {
+          this.mobileCodeTimer = this.mobileCodeTimer - 1;
+          if (this.mobileCodeTimer <= 0) {
+            clearInterval(msgTimer);
+          }
+        }, 1000);
+      });
+    },
+    // 重置密码
+    handleResetPassword() {
+      this.$refs.loginForm.validate(valid => {
+        if (!valid) {
+          return;
+        }
+        this.loading = true;
+        smsResetPassword({
+          mobile: this.loginForm.mobile,
+          code: this.loginForm.resetCode,
+          password: this.loginForm.password
+        }).then(() => {
+          this.$modal.msgSuccess("重置密码成功")
+          this.loginForm.loginType = "uname"
+        }).catch(() => {
+        }).finally(() => {
+          this.loading = false;
         });
       });
     }

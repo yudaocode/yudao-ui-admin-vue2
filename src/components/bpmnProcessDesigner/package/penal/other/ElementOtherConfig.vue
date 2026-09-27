@@ -34,7 +34,9 @@ export default {
       handler: function(id) {
         if (id && id.length) {
           this.$nextTick(() => {
-            const documentations = window.bpmnInstances.bpmnElement.businessObject?.documentation;
+            const instances = typeof window !== 'undefined' ? window.bpmnInstances : null;
+            const element = instances && (instances.elementRegistry && instances.elementRegistry.get(id) || instances.bpmnElement);
+            const documentations = element && element.businessObject && element.businessObject.documentation;
             this.documentation = documentations && documentations.length ? documentations[0].text : "";
           });
         } else {
@@ -45,9 +47,12 @@ export default {
   },
   methods: {
     updateDocumentation() {
-      (this.bpmnElement && this.bpmnElement.id === this.id) || (this.bpmnElement = window.bpmnInstances.elementRegistry.get(this.id));
-      const documentation = window.bpmnInstances.bpmnFactory.create("bpmn:Documentation", { text: this.documentation });
-      window.bpmnInstances.modeling.updateProperties(this.bpmnElement, {
+      const instances = typeof window !== 'undefined' ? window.bpmnInstances : null;
+      if (!instances || !instances.modeling || !instances.bpmnFactory || !this.id) return;
+      (this.bpmnElement && this.bpmnElement.id === this.id) || (this.bpmnElement = instances.elementRegistry && instances.elementRegistry.get(this.id));
+      if (!this.bpmnElement) return;
+      const documentation = instances.bpmnFactory.create("bpmn:Documentation", { text: this.documentation });
+      instances.modeling.updateProperties(this.bpmnElement, {
         documentation: [documentation]
       });
     }

@@ -19,7 +19,7 @@ export function parseFields(rawFields) {
       const rule = typeof field === 'string' ? JSON.parse(field) : field
       if (rule && typeof rule === 'object') parseFormFields(rule, result)
     } catch (e) {
-      // Keep valid fields selectable when an imported legacy rule is malformed.
+      // Keep valid fields selectable when an imported rule is malformed.
     }
   })
   return result

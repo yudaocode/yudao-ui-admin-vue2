@@ -79,164 +79,11 @@
             class="model-category-card"
             :data-category-code="category.code"
           >
-            <div class="model-category-header">
-              <div class="model-category-title">
-                <el-tooltip v-if="isCategorySorting" content="拖动排序" placement="top">
-                  <i class="el-icon-rank category-drag-icon" />
-                </el-tooltip>
-                <h3>{{ category.name }}</h3>
-                <span>({{ category.modelList.length }})</span>
-                <i
-                  v-if="!isCategorySorting && category.modelList.length > 0"
-                  :class="category.expanded ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"
-                  class="category-expand-icon"
-                  @click="category.expanded = !category.expanded"
-                />
-              </div>
-              <div v-if="!isCategorySorting" class="model-category-actions">
-                <template v-if="!category.isModelSorting">
-                  <el-button
-                    v-if="category.modelList.length > 0"
-                    v-hasPermi="['bpm:model:update']"
-                    :disabled="!canManageModels(category)"
-                    type="text"
-                    class="model-muted-action"
-                    icon="el-icon-sort"
-                    @click.stop="startModelSort(category)"
-                  >
-                    排序
-                  </el-button>
-                  <el-button
-                    v-else
-                    v-hasPermi="['bpm:model:create']"
-                    type="text"
-                    class="model-muted-action"
-                    icon="el-icon-plus"
-                    @click.stop="openModelForm('create')"
-                  >
-                    新建
-                  </el-button>
-                  <el-dropdown trigger="click" @command="(command) => handleCategoryCommand(command, category)">
-                    <el-button type="text" class="model-muted-action" icon="el-icon-setting">
-                      分类
-                    </el-button>
-                    <el-dropdown-menu slot="dropdown">
-                      <el-dropdown-item command="rename" v-hasPermi="['bpm:category:update']">重命名</el-dropdown-item>
-                      <el-dropdown-item command="delete" v-hasPermi="['bpm:category:delete']">删除该类</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </el-dropdown>
-                </template>
-                <template v-else>
-                  <el-button @click.stop="cancelModelSort(category)">取 消</el-button>
-                  <el-button type="primary" @click.stop="saveModelSort(category)">保存排序</el-button>
-                </template>
-              </div>
-            </div>
-
-            <el-collapse-transition>
-              <div v-show="category.expanded">
-                <el-table
-                  v-if="category.modelList.length > 0"
-                  :ref="'modelTable-' + category.code"
-                  :data="category.modelList"
-                  row-key="id"
-                  :header-cell-style="tableHeaderStyle()"
-                  :cell-style="tableCellStyle()"
-                  :row-style="{ height: '68px' }"
-                >
-                  <el-table-column label="流程名" prop="name" min-width="150">
-                    <template v-slot="scope">
-                      <div class="model-name-cell">
-                        <el-tooltip v-if="category.isModelSorting" content="拖动排序" placement="top">
-                          <i class="el-icon-rank model-drag-icon" />
-                        </el-tooltip>
-                        <el-image v-if="scope.row.icon" :src="scope.row.icon" class="model-flow-image" />
-                        <div v-else class="flow-icon">
-                          <span>{{ subString(scope.row.name, 0, 2) }}</span>
-                        </div>
-                        <span>{{ scope.row.name }}</span>
-                      </div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="可见范围" prop="startUserIds" min-width="150">
-                    <template v-slot="scope">
-                      {{ visibleScopeText(scope.row) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="流程类型" prop="type" min-width="120">
-                    <template v-slot="scope">
-                      <dict-tag :value="scope.row.type" :type="DICT_TYPE.BPM_MODEL_TYPE" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="表单信息" prop="formType" min-width="150">
-                    <template v-slot="scope">
-                      <el-button
-                        v-if="scope.row.formType === BpmModelFormType.NORMAL"
-                        type="text"
-                        @click="handleFormDetail(scope.row)"
-                      >
-                        {{ scope.row.formName }}
-                      </el-button>
-                      <el-button
-                        v-else-if="scope.row.formType === BpmModelFormType.CUSTOM"
-                        type="text"
-                        @click="handleFormDetail(scope.row)"
-                      >
-                        {{ scope.row.formCustomCreatePath }}
-                      </el-button>
-                      <span v-else>暂无表单</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="最后发布" prop="deploymentTime" min-width="250">
-                    <template v-slot="scope">
-                      <div class="model-deployment-cell">
-                        <span v-if="scope.row.processDefinition" class="model-deployment-time">
-                          {{ formatDate(scope.row.processDefinition.deploymentTime) }}
-                        </span>
-                        <el-tag v-if="scope.row.processDefinition">
-                          v{{ scope.row.processDefinition.version }}
-                        </el-tag>
-                        <el-tag v-else type="warning">未部署</el-tag>
-                        <el-tag
-                          v-if="scope.row.processDefinition && scope.row.processDefinition.suspensionState === 2"
-                          type="warning"
-                        >
-                          已停用
-                        </el-tag>
-                      </div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="200" fixed="right">
-                    <template v-slot="scope">
-                      <el-button type="text" v-hasPermi="['bpm:model:update']" :disabled="!isModelManager(scope.row)" @click="openModelForm('update', scope.row.id)">修改</el-button>
-                      <el-button type="text" v-hasPermi="['bpm:model:update']" :disabled="!isModelManager(scope.row)" @click="openModelForm('copy', scope.row.id)">复制</el-button>
-                      <el-button type="text" v-hasPermi="['bpm:model:deploy']" :disabled="!isModelManager(scope.row)" @click="handleDeploy(scope.row)">发布</el-button>
-                      <el-dropdown
-                        v-if="hasModelMorePermission"
-                        trigger="click"
-                        @command="(command) => handleModelCommand(command, scope.row)"
-                      >
-                        <el-button type="text">更多</el-button>
-                        <el-dropdown-menu slot="dropdown">
-                          <el-dropdown-item command="definition" v-hasPermi="['bpm:process-definition:query']">历史</el-dropdown-item>
-                          <el-dropdown-item command="export" v-hasPermi="['bpm:model:export']">
-                            导出
-                          </el-dropdown-item>
-                          <el-dropdown-item command="report" v-hasPermi="['bpm:process-instance:manager-query']" :disabled="!scope.row.processDefinition || !isModelManager(scope.row)">
-                            报表
-                          </el-dropdown-item>
-                          <el-dropdown-item command="state" v-hasPermi="['bpm:model:update']" :disabled="!scope.row.processDefinition || !isModelManager(scope.row)">
-                            {{ scope.row.processDefinition && scope.row.processDefinition.suspensionState === 1 ? '停用' : '启用' }}
-                          </el-dropdown-item>
-                          <el-dropdown-item command="clean" v-hasPermi="['bpm:model:clean']" :disabled="!isModelManager(scope.row)">清理</el-dropdown-item>
-                          <el-dropdown-item command="delete" v-hasPermi="['bpm:model:delete']" :disabled="!isModelManager(scope.row)" divided>删除</el-dropdown-item>
-                        </el-dropdown-menu>
-                      </el-dropdown>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
-            </el-collapse-transition>
+            <CategoryDraggableModel
+              :category-info="category"
+              :is-category-sorting="isCategorySorting"
+              @success="getList"
+            />
           </div>
         </draggable>
       </div>
@@ -287,6 +134,7 @@ import { deepClone, formatDate } from '@/utils'
 import { SimpleProcessViewer } from '@/components/SimpleProcessDesignerV2/src'
 import CategoryForm from '../category/CategoryForm.vue'
 import ModelImportForm from './ModelImportForm.vue'
+import CategoryDraggableModel from './CategoryDraggableModel.vue'
 
 export default {
   name: 'BpmModel',
@@ -294,7 +142,8 @@ export default {
     draggable,
     SimpleProcessViewer,
     CategoryForm,
-    ModelImportForm
+    ModelImportForm,
+    CategoryDraggableModel
   },
   data() {
     return {
@@ -373,7 +222,7 @@ export default {
           getModelList(this.queryParams.name || undefined),
           getCategorySimpleList()
         ])
-        this.buildCategoryGroup(modelResp.data || [], categoryResp.data || [])
+        this.buildCategoryGroup(modelResp.data, categoryResp.data)
       } finally {
         this.loading = false
       }
@@ -444,8 +293,8 @@ export default {
     },
     openModelForm(type, id) {
       const route = type === 'create'
-        ? { name: 'BpmModelCreate', params: { type: 'create' }}
-        : { name: type === 'copy' ? 'BpmModelCopy' : 'BpmModelUpdate', params: { type, id }}
+        ? { name: 'BpmModelCreate' }
+        : { name: 'BpmModelUpdate', params: { type, id }}
       this.$router.push(route)
     },
     openImportDialog() {
@@ -457,7 +306,7 @@ export default {
     async handleExport(row) {
       try {
         const response = await exportModel(row.id)
-        const data = response && response.data !== undefined ? response.data : response
+        const data = response.data
         const fileName = `${row.key || row.name || 'model'}.json`
         this.$download.json(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), fileName)
         this.$modal.msgSuccess('导出成功')
@@ -534,7 +383,7 @@ export default {
     },
     handleDefinitionList(row) {
       this.$router.push({
-        name: 'BpmModelDefinition',
+        name: 'BpmProcessDefinition',
         query: { key: row.key }
       })
     },
@@ -632,7 +481,7 @@ export default {
     async handleBpmnDetail(row) {
       this.bpmnXML = ''
       this.simpleModel = null
-      if (row.type === BpmModelType.SIMPLE && row.simpleModel) {
+      if (Number(row.type) === Number(BpmModelType.SIMPLE) && row.simpleModel) {
         try {
           this.simpleModel = typeof row.simpleModel === 'string' ? JSON.parse(row.simpleModel) : row.simpleModel
         } catch (e) {
@@ -644,8 +493,8 @@ export default {
       }
       if (row.processDefinition && row.processDefinition.id) {
         const response = await getProcessDefinition(row.processDefinition.id)
-        const definition = response.data || {}
-        this.bpmnXML = definition.bpmnXml || definition.bpmnXML || ''
+        const definition = response.data
+        this.bpmnXML = definition.bpmnXml || ''
         this.bpmnVisible = true
       } else if (row.bpmnXml) {
         this.bpmnXML = row.bpmnXml

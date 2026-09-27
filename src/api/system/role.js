@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 查询角色列表
-export function listRole(query) {
+export function getRolePage(query) {
   return request({
     url: '/system/role/page',
     method: 'get',
@@ -10,18 +10,11 @@ export function listRole(query) {
 }
 
 // 查询角色（精简)列表
-export function listSimpleRoles() {
+export function getSimpleRoleList() {
   return request({
-    // The current System service exposes the Vue3-compatible simple-list
-    // endpoint. Keep this legacy function name for existing Vue2 callers.
     url: '/system/role/simple-list',
     method: 'get'
   })
-}
-
-// Vue3-compatible alias used by BPMN task configuration components.
-export function getSimpleRoleList() {
-  return listSimpleRoles()
 }
 
 // 查询角色详细
@@ -33,7 +26,7 @@ export function getRole(roleId) {
 }
 
 // 新增角色
-export function addRole(data) {
+export function createRole(data) {
   return request({
     url: '/system/role/create',
     method: 'post',
@@ -50,21 +43,8 @@ export function updateRole(data) {
   })
 }
 
-// 角色状态修改
-export function changeRoleStatus(id, status) {
-  const data = {
-    id,
-    status
-  }
-  return request({
-    url: '/system/role/update-status',
-    method: 'put',
-    data: data
-  })
-}
-
 // 删除角色
-export function delRole(roleId) {
+export function deleteRole(roleId) {
   return request({
     url: '/system/role/delete?id=' + roleId,
     method: 'delete'
@@ -72,10 +52,11 @@ export function delRole(roleId) {
 }
 
 // 批量删除角色
-export function delRoleList(ids) {
+export function deleteRoleList(ids) {
   return request({
-    url: `/system/role/delete-list?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/role/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 

@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import { listSimpleDepts } from '@/api/system/dept'
+import { getSimpleDeptList } from '@/api/system/dept'
 import { handleTree } from '@/utils/ruoyi'
 import Treeselect from '@riophae/vue-treeselect'
 import '@riophae/vue-treeselect/dist/vue-treeselect.css'
@@ -78,7 +78,7 @@ export default {
   methods: {
     async loadDeptList() {
       try {
-        const response = await listSimpleDepts()
+        const response = await getSimpleDeptList()
         this.deptList = response.data || []
         this.deptTree = handleTree(this.deptList, 'id')
         this.setDefaultValue()

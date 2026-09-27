@@ -1,4 +1,4 @@
-import { listSimpleDictDatas } from '@/api/system/dict/data'
+import { getSimpleDictDataList } from '@/api/system/dict/data'
 
 const state = {
   /**
@@ -17,7 +17,7 @@ const mutations = {
 
 const actions = {
   loadDictDatas({ commit }) {
-    listSimpleDictDatas().then(response => {
+    getSimpleDictDataList().then(response => {
       // 如果未加载到数据，则直接返回
       if (!response || !response.data) {
         return;

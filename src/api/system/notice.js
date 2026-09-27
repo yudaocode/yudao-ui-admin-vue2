@@ -1,28 +1,28 @@
 import request from '@/utils/request'
 
 // 查询公告列表
-export function listNotice(query) {
+export function getNoticePage(params) {
   return request({
     url: '/system/notice/page',
     method: 'get',
-    params: query
+    params
   })
 }
 
 // 查询公告详细
-export function getNotice(noticeId) {
+export function getNotice(id) {
   return request({
-    url: '/system/notice/get?id=' + noticeId,
+    url: '/system/notice/get?id=' + id,
     method: 'get'
   })
 }
 
 // 新增公告
-export function addNotice(data) {
+export function createNotice(data) {
   return request({
     url: '/system/notice/create',
     method: 'post',
-    data: data
+    data
   })
 }
 
@@ -36,25 +36,26 @@ export function updateNotice(data) {
 }
 
 // 删除公告
-export function delNotice(noticeId) {
+export function deleteNotice(id) {
   return request({
-    url: '/system/notice/delete?id=' + noticeId,
+    url: '/system/notice/delete?id=' + id,
     method: 'delete'
   })
 }
 
 // 批量删除公告
-export function delNoticeList(ids) {
+export function deleteNoticeList(ids) {
   return request({
-    url: `/system/notice/delete-batch?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/notice/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
 // 推送公告
-export function pushNotice(noticeId) {
+export function pushNotice(id) {
   return request({
-    url: '/system/notice/push?id=' + noticeId,
+    url: '/system/notice/push?id=' + id,
     method: 'post'
   })
 }

@@ -47,7 +47,7 @@
     <!-- 操作工具栏 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport"
+        <el-button type="warning" plain icon="el-icon-download" size="mini" :loading="exportLoading" @click="handleExport"
                    v-hasPermi="['pay:order:export']">导出
         </el-button>
       </el-col>
@@ -123,84 +123,19 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
 
-    <!-- 对话框(详情) -->
-    <el-dialog title="订单详情" :visible.sync="open" width="700px" v-dialogDrag append-to-body>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="商户单号">
-          <el-tag size="small">{{ orderDetail.merchantOrderId }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="支付单号">
-          <el-tag type="warning" size="small" v-if="orderDetail.no">{{ orderDetail.no }}</el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="应用编号">{{ orderDetail.appId }}</el-descriptions-item>
-        <el-descriptions-item label="应用名称">{{ orderDetail.appName }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="支付状态">
-          <dict-tag :type="DICT_TYPE.PAY_ORDER_STATUS" :value="orderDetail.status" size="small" />
-        </el-descriptions-item>
-        <el-descriptions-item label="支付金额">
-          <el-tag type="success" size="small">￥{{ (orderDetail.price / 100.0).toFixed(2) }}</el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="手续费">
-          <el-tag type="warning" size="small">￥{{ (orderDetail.channelFeePrice / 100.0).toFixed(2) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="手续费比例">{{ (orderDetail.channelFeeRate / 100.0).toFixed(2) }}%</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="支付时间">{{ parseTime(orderDetail.successTime) }}</el-descriptions-item>
-        <el-descriptions-item label="失效时间">{{ parseTime(orderDetail.expireTime) }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="创建时间">{{ parseTime(orderDetail.createTime) }}</el-descriptions-item>
-        <el-descriptions-item label="更新时间">{{ parseTime(orderDetail.updateTime) }}</el-descriptions-item>
-      </el-descriptions>
-      <!-- 分割线 -->
-      <el-divider/>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="商品标题">{{ orderDetail.subject }}</el-descriptions-item>
-        <el-descriptions-item label="商品描述">{{ orderDetail.body }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="支付渠道">
-          <dict-tag :type="DICT_TYPE.PAY_CHANNEL_CODE" :value="orderDetail.channelCode" />
-        </el-descriptions-item>
-        <el-descriptions-item label="支付 IP">{{ orderDetail.userIp }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="渠道单号">
-          <el-tag size="mini" type="success" v-if="orderDetail.channelOrderNo">{{ orderDetail.channelOrderNo }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="渠道用户">{{ orderDetail.channelUserId }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions :column="2" label-class-name="desc-label">
-        <el-descriptions-item label="退款金额">
-          <el-tag size="mini" type="danger">￥{{ (orderDetail.refundPrice / 100.0).toFixed(2) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="通知 URL">{{ orderDetail.notifyUrl }}</el-descriptions-item>
-      </el-descriptions>
-      <!-- 分割线 -->
-      <el-divider />
-      <el-descriptions :column="1" label-class-name="desc-label" direction="vertical" border>
-        <el-descriptions-item label="支付通道异步回调内容">
-          {{ orderDetail.extension.channelNotifyData }}
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
+    <!-- 表单弹窗：预览 -->
+    <order-detail ref="detailRef" />
   </div>
 </template>
 
 <script>
-import { getOrderDetail, getOrderPage, exportOrderExcel } from "@/api/pay/order";
+import { getOrderPage, exportOrder } from "@/api/pay/order";
 import { getAppList } from "@/api/pay/app";
+import OrderDetail from './OrderDetail.vue';
 
 export default {
   name: "PayOrder",
-  components: {},
+  components: { OrderDetail },
   data() {
     return {
       // 遮罩层
@@ -211,10 +146,6 @@ export default {
       total: 0,
       // 支付订单列表
       list: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -230,10 +161,7 @@ export default {
 
       // 支付应用列表集合
       appList: [],
-      // 订单详情
-      orderDetail: {
-        extension: {}
-      },
+      exportLoading: false,
     };
   },
   created() {
@@ -241,22 +169,20 @@ export default {
     // 获得筛选项
     getAppList().then(response => {
       this.appList = response.data;
-    })
+    });
   },
   methods: {
     /** 查询列表 */
     getList() {
       this.loading = true;
       // 执行查询
-      getOrderPage(this.queryParams).then(response => {
-        this.list = response.data.list;
-        this.total = response.data.total;
+      return getOrderPage(this.queryParams).then(response => {
+        const page = response.data;
+        this.list = page.list;
+        this.total = page.total;
+      }).finally(() => {
         this.loading = false;
       });
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -270,16 +196,7 @@ export default {
     },
     /** 详情按钮操作 */
     handleDetail(row) {
-      this.orderDetail = {};
-      getOrderDetail(row.id).then(response => {
-        // 设置值
-        this.orderDetail = response.data;
-        if (!this.orderDetail.extension) {
-          this.orderDetail.extension = {}
-        }
-        // 弹窗打开
-        this.open = true;
-      });
+      this.$refs.detailRef.open(row.id);
     },
     /** 导出按钮操作 */
     handleExport() {
@@ -288,11 +205,14 @@ export default {
       params.pageNo = undefined;
       params.pageSize = undefined;
       // 执行导出
-      this.$modal.confirm('是否确认导出所有支付订单数据项?').then(function () {
-        return exportOrderExcel(params);
+      this.$modal.confirm('是否确认导出所有支付订单数据项?').then(() => {
+        this.exportLoading = true;
+        return exportOrder(params);
       }).then(response => {
         this.$download.excel(response, '支付订单.xls');
-      }).catch(() => {});
+      }).catch(() => {}).finally(() => {
+        this.exportLoading = false;
+      });
     },
   }
 };

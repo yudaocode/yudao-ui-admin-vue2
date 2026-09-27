@@ -7,25 +7,47 @@
 -->
 <template>
   <div class="news-home">
-    <div v-for="(article, index) in articles" :key="index" class="news-div">
+    <div
+      v-for="(article, index) in articles"
+      :key="index"
+      class="news-div"
+    >
       <!-- 头条 -->
-      <a target="_blank" :href="article.url" v-if="index === 0">
+      <a
+        v-if="index === 0"
+        target="_blank"
+        :href="article.url"
+      >
         <div class="news-main">
           <div class="news-content">
-            <img class="material-img" :src="article.picUrl" width="280px" height="120px"/>
+            <img
+              class="material-img"
+              :src="article.picUrl || article.thumbUrl"
+              height="120px"
+              alt=""
+            />
             <div class="news-content-title">
-              <span>{{article.title}}</span>
+              <span>{{ article.title }}</span>
             </div>
           </div>
         </div>
       </a>
       <!-- 二条/三条等等 -->
-      <a target="_blank" :href="article.url" v-else>
+      <a
+        v-else
+        target="_blank"
+        :href="article.url"
+      >
         <div class="news-main-item">
           <div class="news-content-item">
-            <div class="news-content-item-title">{{article.title}}</div>
+            <div class="news-content-item-title">{{ article.title }}</div>
             <div class="news-content-item-img">
-              <img class="material-img" :src="article.picUrl" height="100%"/>
+              <img
+                class="material-img"
+                :src="article.picUrl || article.thumbUrl"
+                height="100%"
+                alt=""
+              />
             </div>
           </div>
         </div>
@@ -36,16 +58,14 @@
 
 <script>
 export default {
-  name: "wxNews",
+  name: 'WxNews',
   props: {
     articles: {
-      type: Array // title - 标题；description - 描述；picUrl - 图片连接；url - 跳转链接
+      type: Array, // title - 标题；description - 描述；picUrl - 图片连接；url - 跳转链接
+      default: () => []
     }
-  },
-  // created() {
-  //   console.log(this.articles)
-  // },
-};
+  }
+}
 </script>
 
 <style lang="scss" scoped>

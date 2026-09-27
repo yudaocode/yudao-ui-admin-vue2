@@ -50,23 +50,32 @@
           <dict-tag :type="DICT_TYPE.SYSTEM_LOGIN_RESULT" :value="scope.row.result" />
         </template>
       </el-table-column>
-      <el-table-column label="登录日期" align="center" prop="loginTime" width="180">
+      <el-table-column label="登录日期" align="center" prop="createTime" width="180">
         <template v-slot="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="80">
+        <template v-slot="scope">
+          <el-button size="mini" type="text" icon="el-icon-view" @click="openDetail(scope.row)"
+                     v-hasPermi="['system:login-log:query']">详情</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
+    <LoginLogDetail ref="detailRef" />
   </div>
 </template>
 
 <script>
-import { list, exportLoginLog } from "@/api/system/loginlog";
+import { getLoginLogPage, exportLoginLog } from "@/api/system/loginlog";
+import LoginLogDetail from './LoginLogDetail.vue';
 
 export default {
   name: "SystemLoginLog",
+  components: { LoginLogDetail },
   data() {
     return {
       // 遮罩层
@@ -97,12 +106,13 @@ export default {
     /** 查询登录日志列表 */
     getList() {
       this.loading = true;
-      list(this.queryParams).then(response => {
-          this.list = response.data.list;
-          this.total = response.data.total;
+      return getLoginLogPage(this.queryParams).then(response => {
+          const data = response.data;
+          this.list = data.list;
+          this.total = data.total;
+        }).finally(() => {
           this.loading = false;
-        }
-      );
+        });
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -113,6 +123,10 @@ export default {
     resetQuery() {
       this.resetForm("queryForm");
       this.handleQuery();
+    },
+    /** 详情按钮操作 */
+    openDetail(row) {
+      this.$refs.detailRef.open(row);
     },
     /** 导出按钮操作 */
     handleExport() {
@@ -132,4 +146,3 @@ export default {
   }
 };
 </script>
-

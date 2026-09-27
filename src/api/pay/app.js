@@ -19,11 +19,7 @@ export function updateApp(data) {
 }
 
 // 支付应用状态修改
-export function changeAppStatus(id, status) {
-  const data = {
-    id,
-    status
-  }
+export function changeAppStatus(data) {
   return request({
     url: '/pay/app/update-status',
     method: 'put',

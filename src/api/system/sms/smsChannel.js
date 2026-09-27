@@ -29,8 +29,9 @@ export function deleteSmsChannel(id) {
 // 批量删除短信渠道
 export function deleteSmsChannelList(ids) {
   return request({
-    url: `/system/sms-channel/delete-batch?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/sms-channel/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
@@ -52,9 +53,9 @@ export function getSmsChannelPage(query) {
 }
 
 // 获得短信渠道精简列表
-export function getSimpleSmsChannels() {
+export function getSimpleSmsChannelList() {
   return request({
-    url: '/system/sms-channel/list-all-simple',
-    method: 'get',
+    url: '/system/sms-channel/simple-list',
+    method: 'get'
   })
 }

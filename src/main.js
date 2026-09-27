@@ -15,12 +15,15 @@ import './assets/icons' // icon
 import './permission' // permission control
 import './tongji' // 百度统计
 import { getDicts } from "@/api/system/dict/data";
+import { getDictDataByType } from "@/api/system/dict/data";
 import { getConfigKey } from "@/api/infra/config";
 import { parseTime, resetForm, handleTree, addBeginAndEndTime, divide } from "@/utils/ruoyi";
 import { isEmpty } from "@/utils";
 import Pagination from "@/components/Pagination";
 // 自定义表格工具扩展
 import RightToolbar from "@/components/RightToolbar"
+// JSON 编辑器组件
+import JsonEditor from "@/components/JsonEditor"
 // 代码高亮插件
 // import hljs from 'highlight.js'
 // import 'highlight.js/styles/github-gist.css'
@@ -28,6 +31,7 @@ import { DICT_TYPE, getDictDataLabel, getDictDatas, getDictDatas2 } from "@/util
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts
+Vue.prototype.getDictDataByType = getDictDataByType
 Vue.prototype.getConfigKey = getConfigKey
 Vue.prototype.parseTime = parseTime
 Vue.prototype.resetForm = resetForm
@@ -45,9 +49,26 @@ Vue.component('DictTag', DictTag)
 Vue.component('DocAlert', DocAlert)
 Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
+Vue.component('JsonEditor', JsonEditor)
+Vue.component('Backtop', Backtop)
+Vue.component('Sticky', Sticky)
+Vue.component('InputPassword', InputPassword)
+Vue.component('OperateLogV2', OperateLogV2)
+Vue.component('DeptSelectForm', DeptSelectForm)
+Vue.component('ContentWrap', ContentWrap)
+Vue.component('ContentDetailWrap', ContentDetailWrap)
+Vue.component('Infotip', Infotip)
 // 字典标签组件
 import DictTag from '@/components/DictTag'
 import DocAlert from '@/components/DocAlert'
+import Backtop from '@/components/Backtop'
+import Sticky from '@/components/Sticky'
+import InputPassword from '@/components/InputPassword'
+import OperateLogV2 from '@/components/OperateLogV2'
+import DeptSelectForm from '@/components/DeptSelectForm'
+import ContentWrap from '@/components/ContentWrap'
+import ContentDetailWrap from '@/components/ContentDetailWrap'
+import Infotip from '@/components/Infotip'
 // 头部标签插件
 import VueMeta from 'vue-meta'
 
@@ -92,26 +113,32 @@ Vue.config.productionTip = false
 import formCreate from '@form-create/element-ui'
 import FcDesigner from '@form-create/designer'
 import ImageUpload from '@/components/ImageUpload'
+import UploadImg from '@/components/UploadImg'
+import UploadImgs from '@/components/UploadImgs'
 import FileUpload from '@/components/FileUpload'
+import UploadFile from '@/components/UploadFile'
 import Editor from '@/components/Editor'
+import { setupWangEditorPlugin } from '@/views/bpm/model/form/PrintTemplate/setup'
 import {
   registerFormCreateComponent,
   registerFormCreateCustomComponents
 } from '@/components/FormCreate'
 
+setupWangEditorPlugin()
+
 const formCreateComponents = [
   ['ImageUpload', ImageUpload],
   ['imageUpload', ImageUpload],
-  ['UploadImg', ImageUpload],
-  ['uploadImg', ImageUpload],
+  ['UploadImg', UploadImg],
+  ['uploadImg', UploadImg],
   ['ImagesUpload', ImageUpload],
   ['imagesUpload', ImageUpload],
-  ['UploadImgs', ImageUpload],
-  ['uploadImgs', ImageUpload],
+  ['UploadImgs', UploadImgs],
+  ['uploadImgs', UploadImgs],
   ['FileUpload', FileUpload],
   ['fileUpload', FileUpload],
-  ['UploadFile', FileUpload],
-  ['uploadFile', FileUpload],
+  ['UploadFile', UploadFile],
+  ['uploadFile', UploadFile],
   ['Editor', Editor],
   ['editor', Editor]
 ]

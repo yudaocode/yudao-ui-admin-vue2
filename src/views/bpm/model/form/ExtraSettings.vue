@@ -45,12 +45,11 @@
     </el-form-item>
     <el-form-item label="标题设置">
       <el-switch v-model="modelData.titleSetting.enable" />
-      <el-input
+      <TitleMentionInput
         v-if="modelData.titleSetting.enable"
         v-model="modelData.titleSetting.title"
-        type="textarea"
-        :rows="2"
-        placeholder="可填写固定文本或表单字段占位符"
+        :options="titleMentionOptions"
+        placeholder="可填写固定文本；输入“{”可选择流程变量或表单字段"
         style="margin-top: 8px"
       />
     </el-form-item>
@@ -73,14 +72,6 @@
       </el-select>
     </el-form-item>
 
-    <el-alert
-      v-if="formFieldsLoadError"
-      title="表单字段加载失败，字段映射暂不可用；请检查表单服务后重试"
-      type="warning"
-      :closable="false"
-      show-icon
-      class="trigger-setting-alert"
-    />
     <el-form-item
       v-for="trigger in triggerDefinitions"
       :key="trigger.settingKey"
@@ -136,6 +127,8 @@ import { parseFormFields } from '@/components/FormCreate/src/utils'
 import HttpRequestSetting from '@/components/SimpleProcessDesignerV2/src/nodes-config/components/HttpRequestSetting.vue'
 import PrintTemplateEditor from './PrintTemplateEditor.vue'
 import { DEFAULT_PRINT_TEMPLATE } from './print-template'
+import { ProcessVariableEnum } from '@/components/SimpleProcessDesignerV2/src/consts'
+import TitleMentionInput from './TitleMentionInput.vue'
 
 function pad(value) {
   return String(value).padStart(2, '0')
@@ -145,7 +138,8 @@ export default {
   name: 'BpmModelExtraSettings',
   components: {
     HttpRequestSetting,
-    PrintTemplateEditor
+    PrintTemplateEditor,
+    TitleMentionInput
   },
   // HttpRequestSetting/HttpRequestParamSetting use the same injected raw
   // form-field contract as the Vue3 implementation.  ExtraSettings is a
@@ -168,7 +162,6 @@ export default {
       BpmModelFormType,
       formFields: [],
       formFieldsRawRef: { value: [] },
-      formFieldsLoadError: false,
       triggerDefinitions: [
         {
           key: 'processBefore',
@@ -226,6 +219,26 @@ export default {
       }
       const infix = parts[rule.infix] || ''
       return `${rule.prefix || ''}${infix}${rule.postfix || ''}${'1'.padStart((rule.length || 5) - 1, '0')}`
+    },
+    // Keep the placeholder values identical to Vue3's `el-mention`: the
+    // backend resolves these `{PROCESS_*}` tokens when creating an instance.
+    titleMentionOptions() {
+      const result = [
+        { label: '发起人', value: ProcessVariableEnum.START_USER_ID },
+        { label: '发起时间', value: ProcessVariableEnum.START_TIME },
+        { label: '流程名称', value: ProcessVariableEnum.PROCESS_DEFINITION_NAME }
+      ]
+      const seen = new Set(result.map((item) => String(item.value)))
+      ;(this.formFields || []).forEach((field) => {
+        const id = field && (field.field || field.value || field.id)
+        if (!id || seen.has(String(id))) return
+        seen.add(String(id))
+        result.push({
+          label: field.title || field.label || field.name || String(id),
+          value: String(id)
+        })
+      })
+      return result
     }
   },
   methods: {
@@ -286,37 +299,21 @@ export default {
     async loadFormFields(formId) {
       this.formFields = []
       this.formFieldsRawRef.value = []
-      this.formFieldsLoadError = false
       if (!formId || Number(this.modelData.formType) !== Number(BpmModelFormType.NORMAL)) {
         return
       }
-      try {
-        const response = await getForm(formId)
-        const data = response && response.data ? response.data : response
-        const result = []
-        const rawFields = data && Array.isArray(data.fields) ? data.fields : []
-        this.formFieldsRawRef.value = rawFields
-        rawFields.forEach((field) => {
-          try {
-            const rule = typeof field === 'string' ? JSON.parse(field) : field
-            if (rule && typeof rule === 'object') {
-              parseFormFields(rule, result)
-            }
-          } catch (e) {
-            // Keep optional notification configuration usable if one old rule is malformed.
-          }
-        })
-        this.formFields = result
-      } catch (e) {
-        this.formFields = []
-        this.formFieldsRawRef.value = []
-        this.formFieldsLoadError = true
-        // Keep the optional editor usable, but do not turn a failed API call
-        // into an apparent success. The warning is visible in the drawer and
-        // the original error remains available in the browser console.
-        // eslint-disable-next-line no-console
-        console.error('[BPM] 加载流程表单字段失败', e)
-      }
+      const response = await getForm(formId)
+      const data = response.data
+      const result = []
+      const rawFields = data && Array.isArray(data.fields) ? data.fields : []
+      this.formFieldsRawRef.value = rawFields
+      rawFields.forEach((field) => {
+        const rule = typeof field === 'string' ? JSON.parse(field) : field
+        if (rule && typeof rule === 'object') {
+          parseFormFields(rule, result)
+        }
+      })
+      this.formFields = result
     },
     ensureTriggerSetting(setting) {
       if (!Array.isArray(setting.header)) this.$set(setting, 'header', [])

@@ -1,0 +1,64 @@
+<template><div><div class="toolbar"><el-button
+  v-hasPermi="['hrm:employee:update']"
+  type="primary"
+  plain
+  icon="el-icon-plus"
+  @click="openForm()"
+>新增</el-button></div><el-table
+  v-loading="loading"
+  :data="list"
+  stripe
+><el-table-column
+  label="证书名称"
+  prop="name"
+  min-width="150"
+/><el-table-column
+  label="证书级别"
+  prop="level"
+  min-width="110"
+/><el-table-column
+  label="证书编号"
+  prop="no"
+  min-width="140"
+/><el-table-column
+  label="有效开始日期"
+  prop="startTime"
+  width="120"
+  :formatter="dateFormatter2"
+/><el-table-column
+  label="有效结束日期"
+  prop="endTime"
+  width="120"
+  :formatter="dateFormatter2"
+/><el-table-column
+  label="发证机构"
+  prop="issuingAuthority"
+  min-width="150"
+/><el-table-column
+  label="发证日期"
+  prop="issuingTime"
+  width="120"
+  :formatter="dateFormatter2"
+/><el-table-column
+  label="备注"
+  prop="remark"
+  min-width="160"
+/><el-table-column
+  label="操作"
+  fixed="right"
+  width="120"
+><template slot-scope="scope"><el-button
+  v-hasPermi="['hrm:employee:update']"
+  type="text"
+  @click="openForm(scope.row)"
+>编辑</el-button><el-button
+  v-hasPermi="['hrm:employee:delete']"
+  type="text"
+  class="danger-button"
+  @click="handleDelete(scope.row.id)"
+>删除</el-button></template></el-table-column></el-table><employee-certificate-form
+  ref="form"
+  @success="getList"
+/></div></template>
+<script>import { dateFormatter2 } from '@/utils'; import { getEmployeeCertificateList, deleteEmployeeCertificate } from '@/api/hrm/employee/certificate'; import EmployeeCertificateForm from './EmployeeCertificateForm.vue'; export default { name: 'HrmEmployeeCertificateList', components: { EmployeeCertificateForm }, props: { employeeId: { type: Number, required: true }}, data() { return { loading: true, list: [] } }, created() { this.getList() }, methods: { dateFormatter2, async getList() { this.loading = true; try { const response = await getEmployeeCertificateList(this.employeeId); this.list = response.data } finally { this.loading = false } }, openForm(row) { this.$refs.form.open(this.employeeId, row) }, async handleDelete(id) { if (!id) return; try { await this.$modal.confirm('是否确认删除该证书?'); await deleteEmployeeCertificate(id); this.$modal.msgSuccess('删除成功'); await this.getList() } catch (error) {} } }}</script>
+<style scoped>.toolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }.danger-button { color:#f56c6c; }</style>

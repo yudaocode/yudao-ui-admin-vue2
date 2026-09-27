@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 查询操作日志列表
-export function listOperateLog(query) {
+export function getOperateLogPage(query) {
   return request({
     url: '/system/operate-log/page',
     method: 'get',

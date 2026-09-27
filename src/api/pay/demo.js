@@ -9,14 +9,6 @@ export function createDemoOrder(data) {
   })
 }
 
-// 获得示例订单
-export function getDemoOrder(id) {
-  return request({
-    url: '/pay/demo-order/get?id=' + id,
-    method: 'get'
-  })
-}
-
 // 获得示例订单分页
 export function getDemoOrderPage(query) {
   return request({

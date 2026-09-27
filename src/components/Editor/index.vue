@@ -1,279 +1,143 @@
 <template>
-  <div>
-    <el-upload
-      :action="uploadFileUrl"
-      :before-upload="handleBeforeUpload"
-      :on-success="handleUploadSuccess"
-      :on-error="handleUploadError"
-      name="file"
-      :show-file-list="false"
-      :headers="headers"
-      style="display: none"
-      ref="upload"
-      v-if="this.type === 'url'"
-    >
-    </el-upload>
-    <div class="editor" ref="editor" :style="styles"></div>
+  <div class="shared-editor">
+    <div
+      ref="toolbar"
+      class="shared-editor__toolbar"
+    />
+    <div
+      ref="editor"
+      class="editor"
+      :style="editorStyle"
+    />
   </div>
 </template>
 
 <script>
-import Quill from "quill";
-import "quill/dist/quill.core.css";
-import "quill/dist/quill.snow.css";
-import "quill/dist/quill.bubble.css";
-import { getAccessToken } from "@/utils/auth";
+import { createEditor, createToolbar } from '@wangeditor-next/editor'
+import { markRaw } from 'vue'
+import '@wangeditor-next/editor/dist/css/style.css'
+import merge from 'lodash/merge'
+import { useUpload } from '@/components/UploadFile/src/useUpload'
 
 export default {
-  name: "Editor",
+  name: 'Editor',
   props: {
-    /* 编辑器的内容 */
-    value: {
-      type: String,
-      default: "",
-    },
-    /* 高度 */
-    height: {
-      type: Number,
-      default: null,
-    },
-    /* 最小高度 */
-    minHeight: {
-      type: Number,
-      default: null,
-    },
-    /* 只读 */
-    readOnly: {
-      type: Boolean,
-      default: false,
-    },
-    // 上传文件大小限制(MB)
-    fileSize: {
-      type: Number,
-      default: 5,
-    },
-    /* 类型（base64格式、url格式） */
-    type: {
-      type: String,
-      default: "url",
-    }
-  },
-  data() {
-    return {
-      uploadFileUrl: process.env.VUE_APP_BASE_API + "/admin-api/infra/file/upload", // 请求地址
-      headers: { Authorization: "Bearer " + getAccessToken() }, // 设置上传的请求头部
-      Quill: null,
-      currentValue: "",
-      options: {
-        theme: "snow",
-        bounds: document.body,
-        debug: "warn",
-        modules: {
-          // 工具栏配置
-          toolbar: [
-            ["bold", "italic", "underline", "strike"],       // 加粗 斜体 下划线 删除线
-            ["blockquote", "code-block"],                    // 引用  代码块
-            [{ list: "ordered" }, { list: "bullet" }],       // 有序、无序列表
-            [{ indent: "-1" }, { indent: "+1" }],            // 缩进
-            [{ size: ["small", false, "large", "huge"] }],   // 字体大小
-            [{ header: [1, 2, 3, 4, 5, 6, false] }],         // 标题
-            [{ color: [] }, { background: [] }],             // 字体颜色、字体背景颜色
-            [{ align: [] }],                                 // 对齐方式
-            ["clean"],                                       // 清除文本格式
-            ["link", "image", "video"]                       // 链接、图片、视频
-          ],
-        },
-        placeholder: "请输入内容",
-        readOnly: true,
-      },
-    };
+    value: { type: String, default: '' },
+    editorId: { type: String, default: 'wangEditor-1' },
+    height: { type: [Number, String], default: '500px' },
+    minHeight: { type: Number, default: null },
+    readonly: { type: Boolean, default: false },
+    readOnly: { type: Boolean, default: false },
+    editorConfig: { type: Object, default: undefined },
+    directory: { type: String, default: 'editor-default' }
   },
   computed: {
-    styles() {
-      let style = {};
-      if (this.minHeight) {
-        style.minHeight = `${this.minHeight}px`;
+    editorStyle() {
+      return {
+        height: typeof this.height === 'number' ? this.height + 'px' : this.height,
+        minHeight: this.minHeight ? this.minHeight + 'px' : undefined,
+        width: '100%'
       }
-      if (this.height) {
-        style.height = `${this.height}px`;
-      }
-      return style;
     },
+    effectiveReadOnly() {
+      return Object.prototype.hasOwnProperty.call(this.$options.propsData || {}, 'readonly')
+        ? this.readonly : this.readOnly
+    }
   },
   watch: {
-    value: {
-      handler(val) {
-        if (val !== this.currentValue) {
-          this.currentValue = val === null ? "" : val;
-          if (this.Quill) {
-            this.Quill.pasteHTML(this.currentValue);
-          }
-        }
-      },
-      immediate: true,
+    value(value) {
+      const editor = this.editorInstance
+      if (editor && value !== this.currentValue) {
+        this.currentValue = value || ''
+        // External replacements can invalidate the current Slate selection.
+        // Clear it before setHtml tries to restore offsets from the old text.
+        editor.deselect()
+        editor.blur()
+        editor.setHtml(this.currentValue)
+      }
     },
+    effectiveReadOnly(value) {
+      const editor = this.editorInstance
+      if (editor) value ? editor.disable() : editor.enable()
+    }
+  },
+  created() {
+    // Keep Slate instances out of Vue2's deep reactive observer.
+    this.editorInstance = null
+    this.toolbarInstance = null
+    this.currentValue = this.value || ''
   },
   mounted() {
-    this.init();
+    const imageUpload = useUpload(this.directory + '-image').httpRequest
+    const videoUpload = useUpload(this.directory + '-video').httpRequest
+    const config = merge({
+      placeholder: '请输入内容...',
+      readOnly: this.effectiveReadOnly,
+      autoFocus: false,
+      scroll: true,
+      customAlert: (text, type) => {
+        const level = ['success', 'info', 'warning', 'error'].includes(type) ? type : 'info'
+        this.$message[level](text)
+      },
+      EXTEND_CONF: { mentionConfig: { showModal() {}, hideModal() {} }},
+      MENU_CONF: {
+        uploadImage: {
+          maxFileSize: 10 * 1024 * 1024,
+          maxNumberOfFiles: 100,
+          allowedFileTypes: ['image/*'],
+          customUpload: (file, insertFn) => this.uploadMedia(imageUpload, file, insertFn, 'image', '图片')
+        },
+        uploadVideo: {
+          maxFileSize: 1024 * 1024 * 1024,
+          maxNumberOfFiles: 10,
+          allowedFileTypes: ['video/*'],
+          customUpload: (file, insertFn) => this.uploadMedia(videoUpload, file, insertFn, 'mp4', '视频')
+        }
+      },
+      uploadImgShowBase64: true
+    }, this.editorConfig || {})
+    // An explicit endpoint uses WangEditor's configured server transport,
+    // rather than the default infra-file custom uploader.
+    for (const key of ['uploadImage', 'uploadVideo']) {
+      const supplied = this.editorConfig && this.editorConfig.MENU_CONF && this.editorConfig.MENU_CONF[key]
+      if (supplied && supplied.server && !Object.prototype.hasOwnProperty.call(supplied, 'customUpload')) {
+        delete config.MENU_CONF[key].customUpload
+      }
+    }
+    const onChange = config.onChange
+    config.onChange = editor => {
+      this.currentValue = editor.getHtml()
+      this.$emit('input', this.currentValue)
+      this.$emit('change', editor)
+      if (onChange) onChange(editor)
+    }
+    this.editorInstance = markRaw(createEditor({ selector: this.$refs.editor, html: this.value || '', config, mode: 'default' }))
+    this.toolbarInstance = createToolbar({ selector: this.$refs.toolbar, editor: this.editorInstance, mode: 'default' })
   },
   beforeDestroy() {
-    this.Quill = null;
+    if (this.toolbarInstance) this.toolbarInstance.destroy()
+    if (this.editorInstance) this.editorInstance.destroy()
+    this.toolbarInstance = null
+    this.editorInstance = null
   },
   methods: {
-    init() {
-      const editor = this.$refs.editor;
-      this.Quill = new Quill(editor, this.options);
-      // 取消自动聚焦 start
-      this.$nextTick(()=>{
-        this.Quill.blur();
-        if(!this.readOnly){
-          this.Quill.enable();
-        }
-      });
-      // 如果设置了上传地址则自定义图片上传事件
-      if (this.type === 'url') {
-        let toolbar = this.Quill.getModule("toolbar");
-        toolbar.addHandler("image", (value) => {
-          this.uploadType = "image";
-          if (value) {
-            this.$refs.upload.$children[0].$refs.input.click();
-          } else {
-            this.quill.format("image", false);
-          }
-        });
+    async getEditorRef() {
+      await this.$nextTick()
+      return this.editorInstance
+    },
+    async uploadMedia(httpRequest, file, insertFn, kind, label) {
+      try {
+        const response = await httpRequest({ file, onProgress() {}, onSuccess() {}, onError() {} })
+        insertFn(response.data, kind, response.data)
+      } catch (error) {
+        this.$message.error(error.msg || label + '上传失败')
       }
-      this.Quill.pasteHTML(this.currentValue);
-      this.Quill.on("text-change", (delta, oldDelta, source) => {
-        const html = this.$refs.editor.children[0].innerHTML;
-        const text = this.Quill.getText();
-        const quill = this.Quill;
-        this.currentValue = html;
-        this.$emit("input", html);
-        this.$emit("on-change", { html, text, quill });
-      });
-      this.Quill.on("text-change", (delta, oldDelta, source) => {
-        this.$emit("on-text-change", delta, oldDelta, source);
-      });
-      this.Quill.on("selection-change", (range, oldRange, source) => {
-        this.$emit("on-selection-change", range, oldRange, source);
-      });
-      this.Quill.on("editor-change", (eventName, ...args) => {
-        this.$emit("on-editor-change", eventName, ...args);
-      });
-    },
-    // 上传前校检格式和大小
-    handleBeforeUpload(file) {
-      // 校检文件大小
-      if (this.fileSize) {
-        const isLt = file.size / 1024 / 1024 < this.fileSize;
-        if (!isLt) {
-          this.$message.error(`上传文件大小不能超过 ${this.fileSize} MB!`);
-          return false;
-        }
-      }
-      return true;
-    },
-    handleUploadSuccess(res, file) {
-      // 获取富文本组件实例
-      let quill = this.Quill;
-      // 如果上传成功
-      // edit by 芋道源码
-      if (res.code === 200 || res.code === 0) {
-        // 获取光标所在位置
-        let length = quill.getSelection().index;
-        // 插入图片  res.url为服务器返回的图片地址
-        // edit by 芋道源码
-        quill.insertEmbed(length, "image", res.data);
-        // 调整光标到最后
-        quill.setSelection(length + 1);
-      } else {
-        this.$message.error("图片插入失败");
-      }
-    },
-    handleUploadError() {
-      this.$message.error("图片插入失败");
-    },
-  },
-};
+    }
+  }
+}
 </script>
 
-<style>
-.editor, .ql-toolbar {
-  white-space: pre-wrap !important;
-  line-height: normal !important;
-}
-.quill-img {
-  display: none;
-}
-.ql-snow .ql-tooltip[data-mode="link"]::before {
-  content: "请输入链接地址:";
-}
-.ql-snow .ql-tooltip.ql-editing a.ql-action::after {
-  border-right: 0px;
-  content: "保存";
-  padding-right: 0px;
-}
-
-.ql-snow .ql-tooltip[data-mode="video"]::before {
-  content: "请输入视频地址:";
-}
-
-.ql-snow .ql-picker.ql-size .ql-picker-label::before,
-.ql-snow .ql-picker.ql-size .ql-picker-item::before {
-  content: "14px";
-}
-.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="small"]::before,
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="small"]::before {
-  content: "10px";
-}
-.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="large"]::before,
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="large"]::before {
-  content: "18px";
-}
-.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="huge"]::before,
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="huge"]::before {
-  content: "32px";
-}
-
-.ql-snow .ql-picker.ql-header .ql-picker-label::before,
-.ql-snow .ql-picker.ql-header .ql-picker-item::before {
-  content: "文本";
-}
-.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="1"]::before,
-.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="1"]::before {
-  content: "标题1";
-}
-.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
-.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before {
-  content: "标题2";
-}
-.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
-.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before {
-  content: "标题3";
-}
-.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="4"]::before,
-.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="4"]::before {
-  content: "标题4";
-}
-.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="5"]::before,
-.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="5"]::before {
-  content: "标题5";
-}
-.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="6"]::before,
-.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="6"]::before {
-  content: "标题6";
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item::before {
-  content: "标准字体";
-}
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="serif"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="serif"]::before {
-  content: "衬线字体";
-}
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="monospace"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="monospace"]::before {
-  content: "等宽字体";
-}
+<style scoped>
+.shared-editor { min-width: 0; border: 1px solid #dcdfe6; }
+.shared-editor__toolbar { border-bottom: 1px solid #dcdfe6; }
 </style>

@@ -51,7 +51,7 @@
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType"/>
         </template>
-      </el-table-column>>
+      </el-table-column>
       <el-table-column label="应用名" align="center" prop="applicationName" />
       <el-table-column label="请求方法名" align="center" prop="requestMethod" />
       <el-table-column label="请求地址" align="center" prop="requestUrl" width="250" />
@@ -87,49 +87,18 @@
     <!-- 分页组件 -->
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
-
-    <!-- 查看明细 -->
-    <el-dialog title="API 访问日志详细" :visible.sync="open" width="700px" append-to-body>
-      <el-form ref="form" :model="form" label-width="100px" size="mini">
-        <el-row>
-          <el-col :span="24">
-            <el-form-item label="日志主键：">{{ form.id }}</el-form-item>
-            <el-form-item label="链路追踪：">{{ form.traceId }}</el-form-item>
-            <el-form-item label="应用名：">{{ form.applicationName }}</el-form-item>
-            <el-form-item label="用户信息：">
-              {{ form.userId }} <dict-tag :type="DICT_TYPE.USER_TYPE" :value="form.userType"/> | {{ form.userIp }} | {{ form.userAgent}}
-            </el-form-item>
-            <el-form-item label="请求信息：">{{ form.requestMethod }} | {{ form.requestUrl }} </el-form-item>
-            <el-form-item label="请求参数：">{{ form.requestParams }}</el-form-item>
-            <el-form-item label="开始时间：">
-              {{ parseTime(form.beginTime) }} ~ {{ parseTime(form.endTime) }} | {{ form.duration }} ms
-            </el-form-item>
-            <el-form-item label="操作结果：">
-              <div v-if="form.resultCode === 0">正常</div>
-              <div v-else-if="form.resultCode > 0">失败 | {{ form.resultCode }} || {{ form.resultMsg}}</div>
-            </el-form-item>
-            <el-form-item label="操作模块：">{{ form.operateModule }}</el-form-item>
-            <el-form-item label="操作名：">{{ form.operateName }}</el-form-item>
-            <el-form-item label="操作类型：">
-              <dict-tag :type="DICT_TYPE.INFRA_OPERATE_TYPE" :value="form.operateType"/>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="open = false">关 闭</el-button>
-      </div>
-    </el-dialog>
-
+    <api-access-log-detail ref="detailRef" />
   </div>
 </template>
 
 <script>
-import { getApiAccessLogPage, exportApiAccessLogExcel } from "@/api/infra/apiAccessLog";
+import { getApiAccessLogPage, exportApiAccessLog } from "@/api/infra/apiAccessLog";
+import ApiAccessLogDetail from './ApiAccessLogDetail.vue'
 
 export default {
   name: "InfraApiAccessLog",
   components: {
+    ApiAccessLogDetail
   },
   data() {
     return {
@@ -143,10 +112,6 @@ export default {
       total: 0,
       // API 访问日志列表
       list: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -159,8 +124,6 @@ export default {
         resultCode: null,
         beginTime: []
       },
-      // 表单参数
-      form: {},
     };
   },
   created() {
@@ -177,16 +140,6 @@ export default {
         this.loading = false;
       });
     },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {};
-      this.resetForm("form");
-    },
     /** 搜索按钮操作 */
     handleQuery() {
       this.queryParams.pageNo = 1;
@@ -199,8 +152,7 @@ export default {
     },
     /** 详细按钮操作 */
     handleView(row) {
-      this.open = true;
-      this.form = row;
+      this.$refs.detailRef.open(row);
     },
     /** 导出按钮操作 */
     handleExport() {
@@ -211,7 +163,7 @@ export default {
       // 执行导出
       this.$modal.confirm('是否确认导出所有API 访问日志数据项?').then(() => {
         this.exportLoading = true;
-        return exportApiAccessLogExcel(params);
+        return exportApiAccessLog(params);
       }).then(response => {
         this.$download.excel(response, 'API 访问日志.xls');
       }).finally(() => {

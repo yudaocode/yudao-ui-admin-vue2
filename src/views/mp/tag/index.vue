@@ -82,7 +82,7 @@ import {
   getTagPage,
   syncTag,
 } from '@/api/mp/tag'
-import { getSimpleAccounts} from '@/api/mp/account'
+import { getSimpleAccountList } from '@/api/mp/account'
 
 export default {
   name: 'MpTag',
@@ -121,7 +121,7 @@ export default {
     }
   },
   created() {
-    getSimpleAccounts().then(response => {
+    getSimpleAccountList().then(response => {
       this.accounts = response.data;
       // 默认选中第一个
       if (this.accounts.length > 0) {
@@ -133,22 +133,24 @@ export default {
   },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       // 如果没有选中公众号账号，则进行提示。
       if (!this.queryParams.accountId) {
         this.$message.error('未选中公众号，无法查询标签')
         return false
       }
 
-      this.loading = false
+      this.loading = true
       // 处理查询参数
       let params = {...this.queryParams}
       // 执行查询
-      getTagPage(params).then(response => {
+      try {
+        const response = await getTagPage(params)
         this.list = response.data.list
         this.total = response.data.total
+      } finally {
         this.loading = false
-      })
+      }
     },
     /** 取消按钮 */
     cancel() {
@@ -235,6 +237,7 @@ export default {
         return syncTag(accountId)
       }).then(() => {
         this.$modal.msgSuccess('同步标签成功')
+        return this.getList()
       }).catch(() => {
       })
     },

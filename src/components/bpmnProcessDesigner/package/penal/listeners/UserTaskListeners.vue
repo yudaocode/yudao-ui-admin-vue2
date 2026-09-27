@@ -249,15 +249,26 @@ export default {
       const listenerObject = createListenerObject(listenerForm, true, this.prefix)
       this.bpmnElementListeners.push(listenerObject)
       this.elementListenersList.push(initListenerType(listenerObject))
-      this.otherExtensionList = this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type !== `${this.prefix}:TaskListener`) || []
+      const extensionValues = this.bpmnElement.businessObject?.extensionElements?.values || []
+      this.otherExtensionList = extensionValues.filter(
+        ex => ex && ex.$type !== `${this.prefix}:TaskListener`
+      )
       updateElementExtensions(this.bpmnElement, this.otherExtensionList.concat(this.bpmnElementListeners))
     },
     resetListenersList() {
       const instances = typeof window !== 'undefined' ? window.bpmnInstances : null
       if (!instances || !instances.bpmnElement) return
       this.bpmnElement = instances.bpmnElement;
-      this.otherExtensionList = [];
-      this.bpmnElementListeners = this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type === `${this.prefix}:TaskListener`) ?? [];
+      // Preserve non-task-listener extensions when the list is rebuilt.  The
+      // save/remove paths concatenate this collection with listeners, so an
+      // empty value here would erase unrelated task configuration on reopen.
+      const extensionValues = this.bpmnElement.businessObject?.extensionElements?.values || [];
+      this.otherExtensionList = extensionValues.filter(
+        ex => ex && ex.$type !== `${this.prefix}:TaskListener`
+      );
+      this.bpmnElementListeners = extensionValues.filter(
+        ex => ex && ex.$type === `${this.prefix}:TaskListener`
+      );
       this.elementListenersList = this.bpmnElementListeners.map(listener => initListenerType(listener));
     },
     openListenerForm(listener, index) {
@@ -269,7 +280,9 @@ export default {
         this.editingListenerIndex = -1; // 标记为新增
       }
       if (listener && listener.fields) {
-        this.fieldsListOfListener = listener.fields.map(field => ({ ...field, fieldType: field.string ? "string" : "expression" }));
+        this.fieldsListOfListener = (Array.isArray(listener.fields) ? listener.fields : [])
+          .filter(Boolean)
+          .map(field => ({ ...field, fieldType: field.string ? "string" : "expression" }));
       } else {
         this.fieldsListOfListener = [];
         this.$set(this.listenerForm, "fields", []);
@@ -306,7 +319,10 @@ export default {
         this.elementListenersList.splice(this.editingListenerIndex, 1, this.listenerForm);
       }
       // 保存其他配置
-      this.otherExtensionList = this.bpmnElement.businessObject?.extensionElements?.values?.filter(ex => ex.$type !== `${this.prefix}:TaskListener`) ?? [];
+      const extensionValues = this.bpmnElement.businessObject?.extensionElements?.values || [];
+      this.otherExtensionList = extensionValues.filter(
+        ex => ex && ex.$type !== `${this.prefix}:TaskListener`
+      );
       updateElementExtensions(this.bpmnElement, this.otherExtensionList.concat(this.bpmnElementListeners));
       // 4. 隐藏侧边栏
       this.listenerFormModelVisible = false;

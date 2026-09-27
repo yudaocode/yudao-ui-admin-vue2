@@ -1,6 +1,6 @@
 <template>
   <el-form ref="form" :model="user" :rules="rules" label-width="80px">
-    <el-form-item label="用户昵称" prop="nickName">
+    <el-form-item label="用户昵称" prop="nickname">
       <el-input v-model="user.nickname" />
     </el-form-item>
     <el-form-item label="手机号码" prop="mobile">
@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { updateUserProfile } from "@/api/system/user";
+import { updateUserProfile } from "@/api/system/user/profile";
 
 export default {
   props: {
@@ -63,6 +63,7 @@ export default {
         if (valid) {
           updateUserProfile(this.user).then(response => {
             this.$modal.msgSuccess("修改成功");
+            this.$emit('success');
           });
         }
       });

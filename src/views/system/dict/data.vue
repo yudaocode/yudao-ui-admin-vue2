@@ -2,8 +2,8 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="字典名称" prop="dictType">
-        <el-select v-model="queryParams.dictType">
-          <el-option v-for="item in typeOptions" :key="item.id" :label="item.name" :value="item.type"/>
+        <el-select v-model="queryParams.dictType" @change="handleQuery">
+          <el-option v-for="item in typeOptions" :key="item.type" :label="item.name" :value="item.type"/>
         </el-select>
       </el-form-item>
       <el-form-item label="字典标签" prop="label">
@@ -29,10 +29,15 @@
         <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
                    v-hasPermi="['system:dict:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="checkedIds.length === 0"
+                   @click="handleDeleteBatch" v-hasPermi="['system:dict:delete']">批量删除</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="dataList" >
+    <el-table v-loading="loading" :data="dataList" @selection-change="handleRowCheckboxChange">
+      <el-table-column type="selection" width="55"/>
       <el-table-column label="字典编码" align="center" prop="id" />
       <el-table-column label="字典标签" align="center" prop="label" />
       <el-table-column label="字典键值" align="center" prop="value" />
@@ -63,55 +68,21 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
 
-    <!-- 添加或修改参数配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="字典类型">
-          <el-input v-model="form.dictType" :disabled="true" />
-        </el-form-item>
-        <el-form-item label="数据标签" prop="label">
-          <el-input v-model="form.label" placeholder="请输入数据标签" />
-        </el-form-item>
-        <el-form-item label="数据键值" prop="value">
-          <el-input v-model="form.value" placeholder="请输入数据键值" />
-        </el-form-item>
-        <el-form-item label="显示排序" prop="sort">
-          <el-input-number v-model="form.sort" controls-position="right" :min="0" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio v-for="dict in statusDictDatas" :key="parseInt(dict.value)" :label="parseInt(dict.value)">{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="颜色类型" prop="colorType">
-          <el-select v-model="form.colorType">
-            <el-option v-for="item in colorTypeOptions" :key="item.value" :label="item.label + '(' + item.value + ')'" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="CSS Class" prop="cssClass">
-          <el-input v-model="form.cssClass" placeholder="请输入 CSS Class" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <!-- 表单弹窗：添加/修改 -->
+    <DictDataForm ref="formRef" @success="getList" />
   </div>
 </template>
 
 <script>
-import { listData, getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
-import { listAllSimple, getType } from "@/api/system/dict/type";
+import { getDictDataPage, deleteDictData, deleteDictDataList, exportDictData } from "@/api/system/dict/data";
+import { getSimpleDictTypeList } from "@/api/system/dict/type";
+import DictDataForm from './data/DictDataForm'
 
-import { CommonStatusEnum } from '@/utils/constants'
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
 
 export default {
   name: "SystemDictData",
+  components: { DictDataForm },
   data() {
     return {
       // 遮罩层
@@ -126,109 +97,46 @@ export default {
       dataList: [],
       // 默认字典类型
       defaultDictType: "",
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 类型数据字典
       typeOptions: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
         pageSize: 10,
-        dictName: undefined,
+        label: undefined,
         dictType: undefined,
         status: undefined
       },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        label: [
-          { required: true, message: "数据标签不能为空", trigger: "blur" }
-        ],
-        value: [
-          { required: true, message: "数据键值不能为空", trigger: "blur" }
-        ],
-        sort: [
-          { required: true, message: "数据顺序不能为空", trigger: "blur" }
-        ]
-      },
-      // 数据标签回显样式
-      colorTypeOptions: [{
-          value: "default",
-          label: "默认"
-        }, {
-          value: "primary",
-          label: "主要"
-        }, {
-          value: "success",
-          label: "成功"
-        }, {
-          value: "info",
-          label: "信息"
-        }, {
-          value: "warning",
-          label: "警告"
-        }, {
-          value: "danger",
-          label: "危险"
-        }
-      ],
-
-      // 枚举
-      CommonStatusEnum: CommonStatusEnum,
+      // 选中行
+      checkedIds: [],
       // 数据字典
       statusDictDatas: getDictDatas(DICT_TYPE.COMMON_STATUS)
     };
   },
   created() {
-    const dictId = this.$route.params && this.$route.params.dictId;
-    this.getType(dictId);
+    const dictType = this.$route.params && this.$route.params.dictType;
+    this.queryParams.dictType = dictType;
+    this.defaultDictType = dictType;
+    this.getList();
     this.getTypeList();
   },
   methods: {
-    /** 查询字典类型详细 */
-    getType(dictId) {
-      getType(dictId).then(response => {
-        this.queryParams.dictType = response.data.type;
-        this.defaultDictType = response.data.type;
-        this.getList();
-      });
-    },
     /** 查询字典类型列表 */
     getTypeList() {
-      listAllSimple().then(response => {
-        this.typeOptions = response.data;
-      });
+      return getSimpleDictTypeList().then(response => {
+        this.typeOptions = response.data
+      })
     },
     /** 查询字典数据列表 */
     getList() {
       this.loading = true;
-      listData(this.queryParams).then(response => {
-        this.dataList = response.data.list;
-        this.total = response.data.total;
-        this.loading = false;
-      });
-    },
-    // 取消按钮
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    // 表单重置
-    reset() {
-      this.form = {
-        id: undefined,
-        label: undefined,
-        value: undefined,
-        sort: 0,
-        status: CommonStatusEnum.ENABLE,
-        colorType: 'default',
-        cssClass: undefined,
-        remark: undefined
-      };
-      this.resetForm("form");
+      return getDictDataPage(this.queryParams).then(response => {
+        const data = response.data
+        this.dataList = data.list
+        this.total = data.total
+      }).finally(() => {
+        this.loading = false
+      })
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -243,57 +151,42 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加字典数据";
-      this.form.dictType = this.queryParams.dictType;
+      this.$refs.formRef.open('create', undefined, this.queryParams.dictType)
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id || this.ids
-      getData(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改字典数据";
-      });
-    },
-    /** 提交按钮 */
-    submitForm: function() {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.id !== undefined) {
-            updateData(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addData(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
-          }
-        }
-      });
+      this.$refs.formRef.open('update', row.id)
     },
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id;
       this.$modal.confirm('是否确认删除字典编码为"' + ids + '"的数据项?').then(function() {
-          return delData(ids);
+          return deleteDictData(ids);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    /** 选择行数据 */
+    handleRowCheckboxChange(records) {
+      this.checkedIds = records.map((item) => item.id);
+    },
+    /** 批量删除操作 */
+    async handleDeleteBatch() {
+      await this.$modal.confirm('是否确认批量删除选中的字典数据?')
+      try {
+        await deleteDictDataList(this.checkedIds);
+        this.checkedIds = [];
+        await this.getList();
+        this.$modal.msgSuccess('删除成功');
+      } catch {}
     },
     /** 导出按钮操作 */
     handleExport() {
       const queryParams = this.queryParams;
       this.$modal.confirm('是否确认导出所有数据项?').then(() => {
         this.exportLoading = true;
-        return exportData(queryParams);
+        return exportDictData(queryParams);
       }).then(response => {
         this.$download.excel(response, '字典数据.xls');
       }).finally(() => {

@@ -1,15 +1,47 @@
 <template>
-  <div class="app-container">
-    <doc-alert title="AI 音乐创作" url="https://doc.iocoder.cn/ai/music/" />
-
-    <el-link type="danger" target="_blank" href="https://github.com/yudaocode/yudao-ui-admin-vue3">
-      该功能支持 Vue3 + element-plus 版本！
-    </el-link>
-    <br />
-    <el-text>
-      可参考 https://github.com/yudaocode/yudao-ui-admin-vue3/blob/master/src/views/ai/music/index/index.vue 代码，pull request 贡献给我们！
-    </el-text>
+  <div class="ai-music-create">
+    <MusicMode
+      class="ai-music-create__mode"
+      @generate-music="generateMusic"
+    />
+    <MusicList
+      ref="listRef"
+      class="ai-music-create__list"
+    />
   </div>
 </template>
+
 <script>
+import MusicList from './list/index.vue'
+import MusicMode from './mode/index.vue'
+
+export default {
+  name: 'AiMusicCreate',
+  components: {
+    MusicList,
+    MusicMode
+  },
+  methods: {
+    generateMusic(payload) {
+      this.$refs.listRef.generateMusic(payload.formData)
+    }
+  }
+}
 </script>
+
+<style scoped>
+.ai-music-create {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+
+.ai-music-create__mode {
+  flex: none;
+}
+
+.ai-music-create__list {
+  flex: auto;
+  min-width: 0;
+}
+</style>

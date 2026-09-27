@@ -118,21 +118,23 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <DeptForm ref="deptForm" @success="getList" />
   </div>
 </template>
 
 <script>
-import { listDept, getDept, delDept, addDept, updateDept, delDeptList } from "@/api/system/dept";
+import DeptForm from './DeptForm.vue';
+import { getDeptList, getDept, deleteDept, createDept, updateDept, deleteDeptList } from "@/api/system/dept";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 import {CommonStatusEnum} from '@/utils/constants'
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
-import {listSimpleUsers} from "@/api/system/user";
+import {getSimpleUserList} from "@/api/system/user";
 
 export default {
   name: "SystemDept",
-  components: { Treeselect },
+  components: { Treeselect, DeptForm },
   data() {
     return {
       // 遮罩层
@@ -200,7 +202,7 @@ export default {
   created() {
     this.getList();
     // 获得用户列表
-    listSimpleUsers().then(response => {
+    getSimpleUserList().then(response => {
       this.users = response.data;
     });
   },
@@ -208,8 +210,9 @@ export default {
     /** 查询部门列表 */
     getList() {
       this.loading = true;
-      listDept(this.queryParams).then(response => {
+      return getDeptList(this.queryParams).then(response => {
         this.deptList = this.handleTree(response.data, "id");
+      }).finally(() => {
         this.loading = false;
       });
     },
@@ -266,15 +269,7 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd(row) {
-      this.reset();
-      if (row !== undefined) {
-        this.form.parentId = row.id;
-      }
-      this.open = true;
-      this.title = "添加部门";
-      listDept().then(response => {
-	        this.deptOptions = this.handleTree(response.data, "id");
-      });
+      this.$refs.deptForm.open('create', undefined, row && row.id);
     },
     /** 展开/折叠操作 */
     toggleExpandAll() {
@@ -286,18 +281,7 @@ export default {
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      getDept(row.id).then(response => {
-        this.form = response.data;
-        if (this.form.parentId === 0) { // 无父部门时，标记为 undefined，避免展示为 Unknown
-          this.form.parentId = undefined;
-        }
-        this.open = true;
-        this.title = "修改部门";
-      });
-      listDept(row.id).then(response => {
-	        this.deptOptions = this.handleTree(response.data, "id");
-      });
+      this.$refs.deptForm.open('update', row.id);
     },
     /** 提交按钮 */
     submitForm: function() {
@@ -310,7 +294,7 @@ export default {
               this.getList();
             });
           } else {
-            addDept(this.form).then(response => {
+            createDept(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -322,7 +306,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       this.$modal.confirm('是否确认删除名称为"' + row.name + '"的数据项?').then(function() {
-          return delDept(row.id);
+          return deleteDept(row.id);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
@@ -332,7 +316,7 @@ export default {
     async handleDeleteBatch() {
       await this.$modal.confirm('是否确认批量删除选中的部门数据?')
       try {
-        await delDeptList(this.checkedIds);
+        await deleteDeptList(this.checkedIds);
         this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("删除成功");

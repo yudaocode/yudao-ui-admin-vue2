@@ -69,49 +69,93 @@ export default {
         key: [{ required: true, message: "流程标识不能为空", trigger: "blur" }],
         name: [{ required: true, message: "流程名称不能为空", trigger: "blur" }],
       },
+      baseInfoTimer: null,
     }
   },
   watch: {
     businessObject: {
-      immediate: false,
+      // The properties panel mounts after the first selection has already
+      // been resolved.  Without an immediate pass the initial task's ID and
+      // name stay blank until the element changes a second time.
+      immediate: true,
       handler: function (val) {
         if (val) {
-          this.$nextTick(() => this.resetBaseInfo())
+          this.$nextTick(() => this.resetBaseInfo(val))
         }
       }
     },
-    // 'model.key': {
-    //   immediate: false,
-    //   handler: function (val) {
-    //     this.handleKeyUpdate(val)
-    //   }
-    // }
+    // Vue3 watches the uploaded model's key immediately.  Keep both key and
+    // name in sync here as well, while guarding against this panel being
+    // mounted for a task/event rather than the root process.
+    'model.key': {
+      immediate: true,
+      handler () {
+        this.syncRootModel()
+      }
+    },
+    'model.name': {
+      immediate: true,
+      handler () {
+        this.syncRootModel()
+      }
+    }
   },
   created () {
     // 针对上传的 bpmn 流程图时，需要延迟 1 秒的时间，保证 key 和 name 的更新
-    setTimeout(() => {
-      this.handleKeyUpdate(this.model.key)
-      this.handleNameUpdate(this.model.name)
+    this.baseInfoTimer = setTimeout(() => {
+      // The delayed pass covers uploaded BPMN where `model` arrives after the
+      // panel is mounted; the equality checks in syncRootModel avoid adding a
+      // duplicate command when the immediate watchers already handled it.
+      this.syncRootModel()
     }, 1000)
   },
   methods: {
-    resetBaseInfo () {
-      this.bpmnElement = window?.bpmnInstances?.bpmnElement
-      this.elementBaseInfo = JSON.parse(JSON.stringify(this.bpmnElement.businessObject))
+    isRootProcessElement () {
+      const instances = typeof window !== 'undefined' ? window.bpmnInstances : null
+      const selected = this.businessObject ||
+        (instances && instances.bpmnElement && instances.bpmnElement.businessObject) ||
+        (this.bpmnElement && this.bpmnElement.businessObject)
+      const type = selected && selected.$type
+      return type === 'bpmn:Process' || type === 'bpmn:Collaboration'
+    },
+    syncRootModel () {
+      if (!this.isRootProcessElement()) return
+      const model = this.model || {}
+      const instances = typeof window !== 'undefined' ? window.bpmnInstances : null
+      const selected = this.businessObject ||
+        (instances && instances.bpmnElement && instances.bpmnElement.businessObject) ||
+        (this.bpmnElement && this.bpmnElement.businessObject)
+      if (!selected) return
+      if (model.key && String(model.key) !== String(selected.id || '')) {
+        this.handleKeyUpdate(model.key)
+      }
+      if (model.name && model.name !== selected.name) {
+        this.handleNameUpdate(model.name)
+      }
+    },
+    resetBaseInfo (businessObject) {
+      const instances = typeof window !== 'undefined' ? window.bpmnInstances : null
+      this.bpmnElement = instances && instances.bpmnElement
+      const source = businessObject || (this.bpmnElement && this.bpmnElement.businessObject)
+      if (!source) {
+        return
+      }
+      this.elementBaseInfo = JSON.parse(JSON.stringify(source))
     },
     handleKeyUpdate (value) {
       // 校验 value 的值，只有 XML NCName 通过的情况下，才进行赋值。否则，会导致流程图报错，无法绘制的问题
       if (!value) {
         return
       }
-      if (!value.match(/[a-zA-Z_][\-_.0-9a-zA-Z$]*/)) {
+      const key = String(value)
+      if (!/^[a-zA-Z_][\-_.0-9a-zA-Z$]*$/.test(key)) {
         console.log('key 不满足 XML NCName 规则，所以不进行赋值')
         return
       }
       console.log('key 满足 XML NCName 规则，所以进行赋值')
 
       // 在 BPMN 的 XML 中，流程标识 key，其实对应的是 id 节点
-      this.elementBaseInfo['id'] = value
+      this.elementBaseInfo['id'] = key
       this.updateBaseInfo('id')
     },
     handleNameUpdate (value) {
@@ -127,20 +171,51 @@ export default {
       // this.updateBaseInfo('documentation');
     },
     updateBaseInfo (key) {
+      const instances = typeof window !== 'undefined' ? window.bpmnInstances : null
+      if (!instances || !instances.modeling) {
+        return
+      }
+      // Resolve the element against the *current* registry.  A designer tab
+      // can be destroyed/recreated while this component's delayed callback is
+      // still queued; passing the old moddle element to a new command stack
+      // produces bpmn-js' "元素不能为空" exception.
+      const selected = (instances && instances.bpmnElement) || this.bpmnElement
+      let element = selected
+      if (instances.elementRegistry && selected && selected.id && typeof instances.elementRegistry.get === 'function') {
+        element = instances.elementRegistry.get(selected.id)
+      }
+      if (!element || !element.businessObject) {
+        return
+      }
+      this.bpmnElement = element
       // 触发 elementBaseInfo 对应的字段
       const attrObj = Object.create(null)
       attrObj[key] = this.elementBaseInfo[key]
-      if (key === "id") {
-        window.bpmnInstances.modeling.updateProperties(this.bpmnElement, {
-          id: this.elementBaseInfo[key],
-          di: { id: `${this.elementBaseInfo[key]}_di` }
-        })
-      } else {
-        window.bpmnInstances.modeling.updateProperties(this.bpmnElement, attrObj)
+      try {
+        if (key === "id") {
+          instances.modeling.updateProperties(element, {
+            id: this.elementBaseInfo[key],
+            di: { id: `${this.elementBaseInfo[key]}_di` }
+          })
+        } else {
+          instances.modeling.updateProperties(element, attrObj)
+        }
+      } catch (error) {
+        // Treat a callback racing with modeler teardown as a no-op.  The
+        // current editor remains usable and no uncaught console error leaks
+        // into browser smoke tests.
+        if (!this._isBeingDestroyed && !this._isDestroyed) {
+          // eslint-disable-next-line no-console
+          console.warn('[bpmn] ignored stale base-info update', error)
+        }
       }
     }
   },
   beforeDestroy () {
+    if (this.baseInfoTimer) {
+      clearTimeout(this.baseInfoTimer)
+      this.baseInfoTimer = null
+    }
     this.bpmnElement = null
   }
 };

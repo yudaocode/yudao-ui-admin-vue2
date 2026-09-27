@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-normal';
+import * as Demo03StudentApi from '@/api/infra/demo/demo03/normal';
 import Editor from '@/components/Editor';
 import Demo03CourseForm from './components/Demo03CourseForm.vue'
 import Demo03GradeForm from './components/Demo03GradeForm.vue'
@@ -84,18 +84,18 @@ export default {
     async open(id) {
       this.dialogVisible = true;
       this.reset();
+      this.dialogTitle = "新增学生";
       // 修改时，设置数据
       if (id) {
         this.formLoading = true;
         try {
           const res = await Demo03StudentApi.getDemo03Student(id);
           this.formData = res.data;
-          this.title = "修改学生";
+          this.dialogTitle = "修改学生";
         } finally {
           this.formLoading = false;
         }
       }
-      this.title = "新增学生";
     },
     /** 提交按钮 */
     async submitForm() {

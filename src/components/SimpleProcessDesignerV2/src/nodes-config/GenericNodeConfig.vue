@@ -291,9 +291,9 @@ function valuesEqual(left, right) {
   return false
 }
 
-// The backend does not persist the convenience arrays shown by this Vue2
+// The backend does not persist the convenience arrays shown by this drawer
 // form.  It persists one candidateParam string whose format depends on the
-// selected strategy.  Keep the conversion local to the compatibility form so
+// selected strategy. Keep the conversion local to the drawer so
 // existing/imported models can still be edited without losing their assignee.
 function parseCandidateParam(data) {
   if (!data || data.candidateParam === undefined || data.candidateParam === null || data.candidateParam === '') {
@@ -776,7 +776,7 @@ export default {
       // A visible strategy change wins over stale JSON controls from the
       // drawer-opening snapshot. Preserve an explicitly edited JSON
       // candidateParam as an escape hatch for strategies not exposed by the
-      // compatibility controls.
+      // visual controls.
       if (strategyChanged && !jsonCandidateParamChanged) {
         clearInactiveCandidateControls(merged, merged.candidateStrategy)
       } else if (jsonCandidateParamChanged) {
@@ -819,9 +819,9 @@ export default {
         }
       }
 
-      // Translate legacy visual controls to the current nested simple-model
-      // DTO before writing back to the live node.  The adapter only touches
-      // known legacy names and leaves advanced JSON fields intact.
+      // Translate visual controls to the current nested simple-model DTO
+      // before writing back to the live node. The normalizer only touches
+      // known persisted aliases and leaves advanced JSON fields intact.
       normalizeNodeConfig(merged)
 
       const nodeConfigError = this.validateNodeSpecificConfig(merged)

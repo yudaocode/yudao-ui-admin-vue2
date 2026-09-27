@@ -34,6 +34,15 @@ export function deleteMailTemplate(id) {
   })
 }
 
+// 批量删除邮件模版
+export function deleteMailTemplateList(ids) {
+  return request({
+    url: '/system/mail-template/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
+  })
+}
+
 // 获得邮件模版
 export function getMailTemplate(id) {
   return request({

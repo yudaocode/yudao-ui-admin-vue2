@@ -86,7 +86,7 @@ function extensionValue(extension, fallback) {
 function parseDuration(body) {
   const value = String(body === undefined || body === null ? '' : body).trim()
   // Flowable accepts compound ISO-8601 durations (PT1H30M, P1DT2H, PT30S),
-  // while this legacy drawer exposes one numeric value and a single unit.
+  // while this Element UI drawer exposes one numeric value and a single unit.
   // Parse every component and collapse mixed values to minutes. The original
   // body is retained separately, so merely opening/saving the handler does
   // not rewrite a value that cannot be represented exactly by the controls.
@@ -187,6 +187,7 @@ export default {
       this.timeoutHandlerEnable = Number(extensionValue(this.boundaryEventTypeEl, 0)) === 1
       this.timeoutHandlerType = asNumber(extensionValue(this.timeoutHandlerTypeEl, 1), 1)
       this.otherExtensions = values.filter((item) => {
+        if (!item) return false
         const type = item && item.$type ? String(item.$type).split(':').pop() : ''
         return MANAGED_TYPES.indexOf(type) === -1
       })
@@ -205,7 +206,7 @@ export default {
           this.rawTimeDuration = durationBody
           this.timeDurationDirty = false
         } else if (/^P/i.test(durationBody)) {
-          // Keep valid ISO units that this legacy single-unit UI cannot
+          // Keep valid ISO units that this single-unit UI cannot
           // display (for example P1Y/P1M) intact until the user edits them.
           this.rawTimeDuration = durationBody
           this.timeDurationDirty = false

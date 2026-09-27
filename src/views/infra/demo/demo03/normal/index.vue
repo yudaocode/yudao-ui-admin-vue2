@@ -98,7 +98,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-normal';
+import * as Demo03StudentApi from '@/api/infra/demo/demo03/normal';
 import Demo03StudentForm from './Demo03StudentForm.vue';
 
 export default {
@@ -195,7 +195,7 @@ export default {
       await this.$modal.confirm('是否确认导出所有学生数据项?');
       try {
         this.exportLoading = true;
-        const data = await Demo03StudentApi.exportDemo03StudentExcel(this.queryParams);
+        const data = await Demo03StudentApi.exportDemo03Student(this.queryParams);
         this.$download.excel(data, '学生.xls');
       } catch {
       } finally {

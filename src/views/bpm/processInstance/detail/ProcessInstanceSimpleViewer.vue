@@ -29,6 +29,12 @@ export default {
       type: [Object, String],
       default: undefined
     },
+    // Vue3 also accepts the serialized simple model directly. Keep this
+    // public prop so callers do not need to manufacture a modelView wrapper.
+    simpleJson: {
+      type: String,
+      default: undefined
+    },
     tasks: {
       type: Array,
       default: () => []
@@ -52,18 +58,56 @@ export default {
         this.updateModelView(value)
       }
     },
+    simpleJson: {
+      immediate: true,
+      handler(value) {
+        // `simpleJson` is optional. When callers use the Vue2 `modelView`
+        // contract, an undefined prop must not clear the model initialized by
+        // the modelView watcher; only an explicitly empty value means clear.
+        if (value === undefined) {
+          return
+        }
+        if (!value) {
+          this.simpleModel = null
+          this.renderTasks = this.toTaskArray(this.tasks)
+          this.renderProcessInstance = this.processInstance
+          return
+        }
+        try {
+          const parsed = JSON.parse(value)
+          const base = this.modelView && typeof this.modelView === 'object'
+            ? { ...this.modelView, simpleModel: parsed }
+            : { simpleModel: parsed }
+          this.updateModelView(base)
+        } catch (e) {
+          this.simpleModel = null
+        }
+      }
+    },
     tasks(value) {
-      this.renderTasks = value || []
+      this.renderTasks = this.toTaskArray(value)
     },
     processInstance(value) {
       this.renderProcessInstance = value
     }
   },
   methods: {
+    toIdArray(value) {
+      if (Array.isArray(value)) return value.slice()
+      if (value == null || typeof value === 'string') return value == null ? [] : [value]
+      try {
+        if (typeof Symbol !== 'undefined' && Symbol.iterator && typeof value[Symbol.iterator] === 'function') {
+          return Array.from(value)
+        }
+      } catch (e) {
+        return []
+      }
+      return [value]
+    },
     updateModelView(view) {
       if (!view) {
         this.simpleModel = null
-        this.renderTasks = this.tasks || []
+        this.renderTasks = this.toTaskArray(this.tasks)
         this.renderProcessInstance = this.processInstance
         return
       }
@@ -100,13 +144,13 @@ export default {
       this.setSimpleModelNodeTaskStatus(
         model,
         viewData.processInstance && viewData.processInstance.status,
-        viewData.rejectedTaskActivityIds || [],
-        viewData.unfinishedTaskActivityIds || [],
-        viewData.finishedTaskActivityIds || viewData.finishedActivityIds || [],
-        viewData.finishedSequenceFlowActivityIds || []
+        this.toIdArray(viewData.rejectedTaskActivityIds),
+        this.toIdArray(viewData.unfinishedTaskActivityIds),
+        this.toIdArray(viewData.finishedTaskActivityIds || viewData.finishedActivityIds),
+        this.toIdArray(viewData.finishedSequenceFlowActivityIds)
       )
       this.simpleModel = model
-      this.renderTasks = (this.tasks && this.tasks.length ? this.tasks : viewData.tasks) || []
+      this.renderTasks = this.toTaskArray(this.tasks && this.tasks.length ? this.tasks : viewData.tasks)
       this.renderProcessInstance = this.processInstance || viewData.processInstance
     },
     clone(value) {
@@ -122,6 +166,18 @@ export default {
       }
       return value
     },
+    toTaskArray(value) {
+      if (Array.isArray(value)) return value.slice()
+      if (value == null || typeof value === 'string') return []
+      try {
+        if (typeof Symbol !== 'undefined' && Symbol.iterator && typeof value[Symbol.iterator] === 'function') {
+          return Array.from(value)
+        }
+      } catch (e) {
+        return []
+      }
+      return []
+    },
     setSimpleModelNodeTaskStatus(
       node,
       processStatus,
@@ -133,7 +189,7 @@ export default {
       if (!node) {
         return
       }
-      const includes = (list, id) => Array.isArray(list) && list.includes(id)
+      const includes = (list, id) => Array.isArray(list) && list.some((item) => String(item) === String(id))
       if (node.type === NodeType.END_EVENT_NODE) {
         node.activityStatus = includes(finishedActivityIds, node.id)
           ? processStatus

@@ -21,3 +21,20 @@ selenium-debug.log
 *.local
 
 package-lock.json
+
+# Migration acceptance test scripts (not for commit)
+/*-test.js
+
+# Test infrastructure & debug artifacts (not for commit)
+/browser-auth-lock.js
+/browser-backend-preflight.js
+/wms-shipment-order-contract.js
+/probe-wx.js
+/report-service-browser-probe.js
+/dbg*.js
+/.scroll-*-tmp.js
+/bpm-browser-report.html
+/module-browser-*.png
+/module-browser-*.html
+/output/
+/.playwright-cli/

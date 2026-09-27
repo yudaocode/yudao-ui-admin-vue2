@@ -1,8 +1,22 @@
 <template>
-  <div class="user-select-v2" :class="{ 'is-disabled': disabled }" @click="handleClick" @mouseenter="hovering = true" @mouseleave="hovering = false">
-    <el-tooltip :disabled="selectedItems.length === 0" placement="top" :open-delay="500">
+  <div
+    class="user-select-v2"
+    :class="{ 'is-disabled': disabled }"
+    @click="handleClick"
+    @mouseenter="hovering = true"
+    @mouseleave="hovering = false"
+  >
+    <el-tooltip
+      :disabled="selectedItems.length === 0"
+      placement="top"
+      :open-delay="500"
+    >
       <div slot="content">
-        <div v-for="item in selectedItems" :key="item.id" class="user-tooltip-item">
+        <div
+          v-for="item in selectedItems"
+          :key="item.id"
+          class="user-tooltip-item"
+        >
           <div>用户名称：{{ item.username || '-' }}</div>
           <div>用户昵称：{{ item.nickname || '-' }}</div>
           <div>部门：{{ item.deptName || (item.dept && item.dept.name) || '-' }}</div>
@@ -17,12 +31,17 @@
         :suffix-icon="suffixIcon"
       />
     </el-tooltip>
-    <UserSelectDialogV2 ref="dialog" :multiple="multiple" :dept-id="deptId" @selected="handleSelected" />
+    <UserSelectDialogV2
+      ref="dialog"
+      :multiple="multiple"
+      :dept-id="deptId"
+      @selected="handleSelected"
+    />
   </div>
 </template>
 
 <script>
-import { getUserList, getSimpleUser } from '@/api/system/user'
+import { getUserList } from '@/api/system/user'
 import UserSelectDialogV2 from './UserSelectDialogV2.vue'
 
 export default {
@@ -99,17 +118,22 @@ export default {
   },
   methods: {
     async resolveItemById(value) {
-      if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) {
+      if (value === undefined || value === null) {
         this.selectedItems = []
         return
       }
       const ids = Array.isArray(value) ? value : [value]
+      if (
+        this.selectedItems.length === ids.length &&
+        this.selectedItems.every(item => ids.includes(item.id))
+      ) {
+        return
+      }
       try {
-        const response = ids.length === 1 ? await getSimpleUser(ids[0]) : await getUserList(ids)
-        const data = response.data
-        this.selectedItems = Array.isArray(data) ? data : (data ? [data] : [])
+        const response = await getUserList(ids)
+        this.selectedItems = response.data
       } catch (e) {
-        this.selectedItems = []
+        console.error('[UserSelectV2] resolveItemById failed:', e)
       }
     },
     handleClick(event) {

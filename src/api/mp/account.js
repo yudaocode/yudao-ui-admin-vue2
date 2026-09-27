@@ -44,10 +44,10 @@ export function getAccountPage(query) {
 }
 
 // 获取公众号账号精简信息列表
-export function getSimpleAccounts() {
+export function getSimpleAccountList() {
   return request({
     url: '/mp/account/list-all-simple',
-    method: 'get',
+    method: 'get'
   })
 }
 

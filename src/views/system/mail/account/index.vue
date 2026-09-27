@@ -22,11 +22,16 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
                    v-hasPermi="['system:mail-account:create']">新增</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="checkedIds.length === 0"
+                   @click="handleDeleteBatch" v-hasPermi="['system:mail-account:delete']">批量删除</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55" />
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column label="邮箱" align="center" prop="mail" />
       <el-table-column label="用户名" align="center" prop="username" />
@@ -35,6 +40,11 @@
       <el-table-column label="是否开启 SSL" align="center" prop="sslEnable">
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.sslEnable" />
+        </template>
+      </el-table-column>
+      <el-table-column label="是否开启 STARTTLS" align="center" prop="starttlsEnable">
+        <template v-slot="scope">
+          <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.starttlsEnable" />
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -79,22 +89,29 @@
                       :key="dict.value" :label="dict.value === 'true'">{{dict.label}}</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="是否开启 STARTTLS" prop="starttlsEnable">
+          <el-radio-group v-model="form.starttlsEnable">
+            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.INFRA_BOOLEAN_STRING)"
+                      :key="dict.value" :label="dict.value === 'true'">{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <MailAccountForm ref="mailAccountForm" @success="getList" />
   </div>
 </template>
 
 <script>
-import { createMailAccount, updateMailAccount, deleteMailAccount, getMailAccount, getMailAccountPage } from "@/api/system/mail/account";
+import MailAccountForm from './MailAccountForm.vue'
+import { createMailAccount, updateMailAccount, deleteMailAccount, deleteMailAccountList, getMailAccount, getMailAccountPage } from "@/api/system/mail/account";
 
 export default {
   name: "SystemMailAccount",
-  components: {
-  },
+  components: { MailAccountForm },
   data() {
     return {
       // 遮罩层
@@ -105,6 +122,8 @@ export default {
       total: 0,
       // 邮箱账号列表
       list: [],
+      // 选中的邮箱账号编号
+      checkedIds: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -126,6 +145,7 @@ export default {
         host: [{ required: true, message: "SMTP 服务器域名不能为空", trigger: "blur" }],
         port: [{ required: true, message: "SMTP 服务器端口不能为空", trigger: "blur" }],
         sslEnable: [{ required: true, message: "是否开启 SSL不能为空", trigger: "blur" }],
+        starttlsEnable: [{ required: true, message: "是否开启 STARTTLS不能为空", trigger: "blur" }],
       },
     };
   },
@@ -158,6 +178,7 @@ export default {
         host: undefined,
         port: undefined,
         sslEnable: true,
+        starttlsEnable: false,
       };
       this.resetForm("form");
     },
@@ -171,21 +192,17 @@ export default {
       this.resetForm("queryForm");
       this.handleQuery();
     },
+    /** 表格复选框选中数据 */
+    handleSelectionChange(selection) {
+      this.checkedIds = selection.map(item => item.id);
+    },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加邮箱账号";
+      this.$refs.mailAccountForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getMailAccount(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改邮箱账号";
-      });
+      this.$refs.mailAccountForm.open('update', row.id);
     },
     /** 提交按钮 */
     submitForm() {
@@ -219,6 +236,14 @@ export default {
           this.getList();
           this.$modal.msgSuccess("删除成功");
         }).catch(() => {});
+    },
+    /** 批量删除按钮操作 */
+    handleDeleteBatch() {
+      const ids = this.checkedIds;
+      this.$modal.confirm('是否确认删除选中的邮箱账号数据项?').then(() => deleteMailAccountList(ids)).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
     }
   }
 };

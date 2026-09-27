@@ -136,9 +136,9 @@ export default {
       this.loading = true
       try {
         const categoryResp = await getCategorySimpleList()
-        this.categoryList = categoryResp.data || []
+        this.categoryList = categoryResp.data
         const definitionResp = await getProcessDefinitionList({ suspensionState: 1 })
-        this.processDefinitionList = definitionResp.data || []
+        this.processDefinitionList = definitionResp.data
         this.handleQuery()
         if (this.availableCategories.length > 0) {
           this.activeCategory = this.availableCategories[0]
@@ -216,17 +216,19 @@ export default {
         this.$message.error('重新发起流程失败，流程实例不存在')
         return
       }
-      const definition = this.processDefinitionList.find((item) => item.key === processInstance.processDefinition.key)
+      const definition = this.processDefinitionList.find((item) => {
+        return String(item.key) === String(processInstance.processDefinition.key)
+      })
       if (!definition) {
         this.$message.error('重新发起流程失败，流程定义不存在')
         return
       }
-      this.handleSelect(definition, processInstance.formVariables)
+      await this.handleSelect(definition, processInstance.formVariables)
     },
     async handleSelect(definition, formVariables) {
       this.selectProcessDefinition = definition
       await this.$nextTick()
-      this.$refs.processDefinitionDetail.initProcessInfo(definition, formVariables)
+      await this.$refs.processDefinitionDetail.initProcessInfo(definition, formVariables)
     }
   }
 }

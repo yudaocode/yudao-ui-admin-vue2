@@ -95,7 +95,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)"
-                     v-hasPermi="['system:sms-log:query']">详细</el-button>
+                     v-hasPermi="['system:sms-log:query']">详情</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -104,90 +104,19 @@
                 @pagination="getList"/>
 
     <!-- 短信日志详细 -->
-    <el-dialog title="短信日志详细" :visible.sync="open" width="700px" append-to-body>
-      <el-form ref="form" :model="form" label-width="140px" size="mini">
-        <el-row>
-          <el-col :span="24">
-            <el-form-item label="日志主键：">{{ form.id }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="短信渠道：">
-              {{formatChannelSignature(form.channelId) }}
-              <dict-tag :type="DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE" :value="form.channelCode"/>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="短信模板：">
-              {{ form.templateId }} | {{ form.templateCode }}
-              <dict-tag :type="DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE" :value="form.templateType"/>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="API 的模板编号：">{{ form.apiTemplateId }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="用户信息：">{{ form.mobile }}
-              <span v-if="form.userType && form.userId">
-                <dict-tag :type="DICT_TYPE.USER_TYPE" :value="form.userType"/>({{ form.userId }})
-              </span>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="短信内容：">{{ form.templateContent }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="短信参数：">{{ form.templateParams }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="创建时间：">{{ parseTime(form.createTime) }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="发送状态：">
-              <dict-tag :type="DICT_TYPE.SYSTEM_SMS_SEND_STATUS" :value="form.sendStatus"/>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="发送时间：">{{ parseTime(form.sendTime) }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="API 发送结果：">{{ form.apiSendCode }} | {{ form.apiSendMsg }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="API 短信编号：">{{ form.apiSerialNo }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="API 请求编号：">{{ form.apiRequestId }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="接收状态：">
-              <dict-tag :type="DICT_TYPE.SYSTEM_SMS_RECEIVE_STATUS" :value="form.receiveStatus"/>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="接收时间：">{{ parseTime(form.receiveTime) }}</el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="API 接收结果：">{{ form.apiReceiveCode }} | {{ form.apiReceiveMsg }}
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="open = false">关 闭</el-button>
-      </div>
-    </el-dialog>
+    <SmsLogDetail ref="smsLogDetail" />
 
   </div>
 </template>
 
 <script>
-import { getSmsLogPage, exportSmsLogExcel } from "@/api/system/sms/smsLog";
-import {  getSimpleSmsChannels } from "@/api/system/sms/smsChannel";
+import SmsLogDetail from './SmsLogDetail.vue'
+import { getSmsLogPage, exportSmsLog } from "@/api/system/sms/smsLog";
+import { getSimpleSmsChannelList } from "@/api/system/sms/smsChannel";
 
 export default {
   name: "SystemSmsLog",
-  components: {
-  },
+  components: { SmsLogDetail },
   data() {
     return {
       // 遮罩层
@@ -200,12 +129,6 @@ export default {
       total: 0,
       // 短信日志列表
       list: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
-      // 表单参数
-      form: {},
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -225,7 +148,7 @@ export default {
   created() {
     this.getList();
     // 获得短信渠道
-    getSimpleSmsChannels().then(response => {
+    getSimpleSmsChannelList().then(response => {
       this.channelOptions = response.data;
     })
   },
@@ -234,16 +157,12 @@ export default {
     getList() {
       this.loading = true;
       // 执行查询
-      getSmsLogPage(this.queryParams).then(response => {
+      return getSmsLogPage(this.queryParams).then(response => {
         this.list = response.data.list;
         this.total = response.data.total;
+      }).finally(() => {
         this.loading = false;
       });
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -264,7 +183,7 @@ export default {
       // 执行导出
       this.$modal.confirm('是否确认导出所有短信日志数据项?').then(() => {
         this.exportLoading = true;
-        return exportSmsLogExcel(params);
+        return exportSmsLog(params);
       }).then(response => {
         this.$download.excel(response, '短信日志.xls');
       }).finally(() => {
@@ -273,8 +192,7 @@ export default {
     },
     /** 详细按钮操作 */
     handleView(row) {
-      this.open = true;
-      this.form = row;
+      this.$refs.smsLogDetail.open(row);
     },
     /** 格式化短信渠道 */
     formatChannelSignature(channelId) {

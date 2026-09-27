@@ -37,11 +37,16 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
                    v-hasPermi="['system:mail-template:create']">新增</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="checkedIds.length === 0"
+                   @click="handleDeleteBatch" v-hasPermi="['system:mail-template:delete']">批量删除</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55" />
       <el-table-column label="模板编码" align="center" prop="code" />
       <el-table-column label="模板名称" align="center" prop="name" />
       <el-table-column label="模板标题" align="center" prop="title" />
@@ -140,20 +145,22 @@
         <el-button @click="cancelSend">取 消</el-button>
       </div>
     </el-dialog>
+    <MailTemplateForm ref="mailTemplateForm" @success="getList" />
+    <MailTemplateSendForm ref="mailTemplateSendForm" />
   </div>
 </template>
 
 <script>
-import { createMailTemplate, updateMailTemplate, deleteMailTemplate, getMailTemplate, getMailTemplatePage, sendMail } from "@/api/system/mail/template";
+import MailTemplateForm from './MailTemplateForm.vue'
+import MailTemplateSendForm from './MailTemplateSendForm.vue'
+import { createMailTemplate, updateMailTemplate, deleteMailTemplate, deleteMailTemplateList, getMailTemplate, getMailTemplatePage, sendMail } from "@/api/system/mail/template";
 import Editor from '@/components/Editor';
 import { CommonStatusEnum } from "@/utils/constants";
 import { getSimpleMailAccountList } from "@/api/system/mail/account";
 
 export default {
   name: "SystemMailTemplate",
-  components: {
-    Editor,
-  },
+  components: { Editor, MailTemplateForm, MailTemplateSendForm },
   data() {
     return {
       // 遮罩层
@@ -164,6 +171,8 @@ export default {
       total: 0,
       // 邮件模版列表
       list: [],
+      // 选中的邮件模版编号
+      checkedIds: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -251,21 +260,17 @@ export default {
       this.resetForm("queryForm");
       this.handleQuery();
     },
+    /** 表格复选框选中数据 */
+    handleSelectionChange(selection) {
+      this.checkedIds = selection.map(item => item.id);
+    },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加邮件模版";
+      this.$refs.mailTemplateForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getMailTemplate(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改邮件模版";
-      });
+      this.$refs.mailTemplateForm.open('update', row.id);
     },
     /** 提交按钮 */
     submitForm() {
@@ -300,24 +305,17 @@ export default {
           this.$modal.msgSuccess("删除成功");
         }).catch(() => {});
     },
+    /** 批量删除按钮操作 */
+    handleDeleteBatch() {
+      const ids = this.checkedIds;
+      this.$modal.confirm('是否确认删除选中的邮件模版数据项?').then(() => deleteMailTemplateList(ids)).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
     /** 发送短息按钮 */
     handleSend(row) {
-      this.resetSend(row);
-      // 设置参数
-      this.sendForm.content = row.content;
-      this.sendForm.params = row.params;
-      this.sendForm.templateCode = row.code;
-      this.sendForm.templateParams = row.params.reduce(function(obj, item) {
-        obj[item] = undefined;
-        return obj;
-      }, {});
-      // 根据 row 重置 rules
-      this.sendRules.templateParams = row.params.reduce(function(obj, item) {
-        obj[item] = { required: true, message: '参数 ' + item + " 不能为空", trigger: "change" };
-        return obj;
-      }, {});
-      // 设置打开
-      this.sendOpen = true;
+      this.$refs.mailTemplateSendForm.open(row.id);
     },
     /** 重置发送邮箱的表单 */
     resetSend() {

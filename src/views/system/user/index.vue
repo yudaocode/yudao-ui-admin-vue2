@@ -199,7 +199,7 @@
             <el-checkbox v-model="upload.updateSupport" /> 是否更新已经存在的用户数据
           </div>
           <span>仅允许导入xls、xlsx格式文件。</span>
-          <el-link type="primary" :underline="false" style="font-size:12px;vertical-align: baseline;" @click="importTemplate">下载模板</el-link>
+          <el-link type="primary" :underline="false" style="font-size:12px;vertical-align: baseline;" @click="handleImportTemplate">下载模板</el-link>
         </div>
       </el-upload>
       <div slot="footer" class="dialog-footer">
@@ -234,37 +234,43 @@
       </div>
     </el-dialog>
 
+    <UserForm ref="userForm" @success="getList" />
+    <UserImportForm ref="userImportForm" @success="getList" />
+    <UserAssignRoleForm ref="userAssignRoleForm" @success="getList" />
   </div>
 </template>
 
 <script>
+import UserForm from './UserForm.vue'
+import UserImportForm from './UserImportForm.vue'
+import UserAssignRoleForm from './UserAssignRoleForm.vue'
 import {
-  addUser,
-  changeUserStatus,
-  delUser,
+  createUser,
+  updateUserStatus,
+  deleteUser,
   exportUser,
   getUser,
-  importTemplate,
-  listUser,
-  resetUserPwd,
+  importUserTemplate,
+  getUserPage,
+  resetUserPassword,
   updateUser,
-  delUserList
+  deleteUserList
 } from "@/api/system/user";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
-import {listSimpleDepts} from "@/api/system/dept";
-import {listSimplePosts} from "@/api/system/post";
+import {getSimpleDeptList} from "@/api/system/dept";
+import {getSimplePostList} from "@/api/system/post";
 
 import {CommonStatusEnum} from "@/utils/constants";
 import {DICT_TYPE, getDictDatas} from "@/utils/dict";
-import {assignUserRole, listUserRoles} from "@/api/system/permission";
-import {listSimpleRoles} from "@/api/system/role";
+import {assignUserRole, getUserRoleList} from "@/api/system/permission";
+import {getSimpleRoleList} from "@/api/system/role";
 import {getBaseHeader} from "@/utils/request";
 
 export default {
   name: "SystemUser",
-  components: { Treeselect },
+  components: { Treeselect, UserForm, UserImportForm, UserAssignRoleForm },
   data() {
     return {
       // 遮罩层
@@ -276,7 +282,7 @@ export default {
       // 总条数
       total: 0,
       // 用户表格数据
-      userList: null,
+      userList: [],
       // 弹出层标题
       title: "",
       // 部门树选项
@@ -408,21 +414,22 @@ export default {
     /** 查询用户列表 */
     getList() {
       this.loading = true;
-      listUser(this.queryParams).then(response => {
-          this.userList = response.data.list;
-          this.total = response.data.total;
+      return getUserPage(this.queryParams).then(response => {
+          const data = response.data;
+          this.userList = data.list;
+          this.total = data.total;
+        }).finally(() => {
           this.loading = false;
-        }
-      );
+        });
     },
     /** 查询部门下拉树结构 + 岗位下拉 */
     getTreeselect() {
-      listSimpleDepts().then(response => {
+      getSimpleDeptList().then(response => {
         // 处理 deptOptions 参数
         this.deptOptions = [];
         this.deptOptions.push(...this.handleTree(response.data, "id"));
       });
-      listSimplePosts().then(response => {
+      getSimplePostList().then(response => {
         // 处理 postOptions 参数
         this.postOptions = [];
         this.postOptions.push(...response.data);
@@ -442,9 +449,10 @@ export default {
     handleStatusChange(row) {
       let text = row.status === CommonStatusEnum.ENABLE ? "启用" : "停用";
       this.$modal.confirm('确认要"' + text + '""' + row.username + '"用户吗?').then(function() {
-          return changeUserStatus(row.id, row.status);
+          return updateUserStatus(row.id, row.status);
         }).then(() => {
           this.$modal.msgSuccess(text + "成功");
+          this.getList();
         }).catch(function() {
           row.status = row.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE
               : CommonStatusEnum.ENABLE;
@@ -490,24 +498,11 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      // 获得下拉数据
-      this.getTreeselect();
-      // 打开表单，并设置初始化
-      this.open = true;
-      this.title = "添加用户";
-      this.form.password = this.initPassword;
+      this.$refs.userForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      this.getTreeselect();
-      const id = row.id;
-      getUser(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改用户";
-      });
+      this.$refs.userForm.open('update', row.id);
     },
     /** 重置密码按钮操作 */
     handleResetPwd(row) {
@@ -515,32 +510,14 @@ export default {
         confirmButtonText: "确定",
         cancelButtonText: "取消"
       }).then(({ value }) => {
-          resetUserPwd(row.id, value).then(response => {
+          resetUserPassword(row.id, value).then(response => {
             this.$modal.msgSuccess("修改成功，新密码是：" + value);
           });
         }).catch(() => {});
     },
     /** 分配用户角色操作 */
     handleRole(row) {
-      this.reset();
-      const id = row.id
-      // 处理了 form 的用户 username 和 nickname 的展示
-      this.form.id = id;
-      this.form.username = row.username;
-      this.form.nickname = row.nickname;
-      // 打开弹窗
-      this.openRole = true;
-      // 获得角色列表
-      listSimpleRoles().then(response => {
-        // 处理 roleOptions 参数
-        this.roleOptions = [];
-        this.roleOptions.push(...response.data);
-      });
-      // 获得角色拥有的菜单集合
-      listUserRoles(id).then(response => {
-        // 设置选中
-        this.form.roleIds = response.data;
-      })
+      this.$refs.userAssignRoleForm.open(row);
     },
     /** 提交按钮 */
     submitForm: function() {
@@ -553,7 +530,7 @@ export default {
               this.getList();
             });
           } else {
-            addUser(this.form).then(response => {
+            createUser(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -578,7 +555,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       this.$modal.confirm('是否确认删除用户编号为"' + row.id + '"的数据项?').then(() => {//红号变更
-        return delUser(row.id);
+        return deleteUser(row.id);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -601,12 +578,11 @@ export default {
     },
     /** 导入按钮操作 */
     handleImport() {
-      this.upload.title = "用户导入";
-      this.upload.open = true;
+      this.$refs.userImportForm.open();
     },
     /** 下载模板操作 */
-    importTemplate() {
-      importTemplate().then(response => {
+    handleImportTemplate() {
+      importUserTemplate().then(response => {
         this.$download.excel(response, '用户导入模板.xls');
       });
     },
@@ -656,8 +632,7 @@ export default {
     async handleDeleteBatch() {
       await this.$modal.confirm('是否确认批量删除选中的用户数据?')
       try {
-        await delUserList(this.checkedIds);
-        this.checkedIds = [];
+        await deleteUserList(this.checkedIds);
         this.checkedIds = [];
         await this.getList();
         this.$modal.msgSuccess("批量删除成功");

@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import * as Demo01ContactApi from '@/api/infra/demo01';
+import * as Demo01ContactApi from '@/api/infra/demo/demo01';
 import ImageUpload from '@/components/ImageUpload';
 import Editor from '@/components/Editor';
 export default {
@@ -74,18 +74,18 @@ export default {
     async open(id) {
       this.dialogVisible = true;
       this.reset();
+      this.dialogTitle = "新增示例联系人";
       // 修改时，设置数据
       if (id) {
         this.formLoading = true;
         try {
           const res = await Demo01ContactApi.getDemo01Contact(id);
           this.formData = res.data;
-          this.title = "修改示例联系人";
+          this.dialogTitle = "修改示例联系人";
         } finally {
           this.formLoading = false;
         }
       }
-      this.title = "新增示例联系人";
     },
     /** 提交按钮 */
     async submitForm() {

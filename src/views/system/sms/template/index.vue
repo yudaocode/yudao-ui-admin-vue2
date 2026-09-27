@@ -171,16 +171,21 @@
       </div>
     </el-dialog>
 
+    <SmsTemplateForm ref="smsTemplateForm" @success="getList" />
+    <SmsTemplateSendForm ref="smsTemplateSendForm" />
   </div>
 </template>
 
 <script>
+import SmsTemplateForm from './SmsTemplateForm.vue'
+import SmsTemplateSendForm from './SmsTemplateSendForm.vue'
 import { createSmsTemplate, updateSmsTemplate, deleteSmsTemplate, getSmsTemplate, getSmsTemplatePage,
-  exportSmsTemplateExcel, sendSms, deleteSmsTemplateList } from "@/api/system/sms/smsTemplate";
-import {  getSimpleSmsChannels } from "@/api/system/sms/smsChannel";
+  exportSmsTemplate, sendSms, deleteSmsTemplateList } from "@/api/system/sms/smsTemplate";
+import { getSimpleSmsChannelList } from "@/api/system/sms/smsChannel";
 
 export default {
   name: "SystemSmsTemplate",
+  components: { SmsTemplateForm, SmsTemplateSendForm },
   data() {
     return {
       // 遮罩层
@@ -240,7 +245,7 @@ export default {
   created() {
     this.getList();
     // 获得短信渠道
-    getSimpleSmsChannels().then(response => {
+    getSimpleSmsChannelList().then(response => {
       this.channelOptions = response.data;
     })
   },
@@ -287,19 +292,11 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加短信模板";
+      this.$refs.smsTemplateForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getSmsTemplate(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改短信模板";
-      });
+      this.$refs.smsTemplateForm.open('update', row.id);
     },
     /** 提交按钮 */
     submitForm() {
@@ -357,7 +354,7 @@ export default {
       // 执行导出
       this.$modal.confirm('是否确认导出所有短信模板数据项?', "警告").then(() => {
         this.exportLoading = true;
-        return exportSmsTemplateExcel(params);
+        return exportSmsTemplate(params);
       }).then(response => {
         this.$download.excel(response, '短信模板.xls');
       }).finally(() => {
@@ -366,22 +363,7 @@ export default {
     },
     /** 发送短息按钮 */
     handleSendSms(row) {
-      this.resetSendSms(row);
-      // 设置参数
-      this.sendSmsForm.content = row.content;
-      this.sendSmsForm.params = row.params;
-      this.sendSmsForm.templateCode = row.code;
-      this.sendSmsForm.templateParams = row.params.reduce(function(obj, item) {
-        obj[item] = undefined;
-        return obj;
-      }, {});
-      // 根据 row 重置 rules
-      this.sendSmsRules.templateParams = row.params.reduce(function(obj, item) {
-        obj[item] = { required: true, message: '参数 ' + item + " 不能为空", trigger: "change" };
-        return obj;
-      }, {});
-      // 设置打开
-      this.sendSmsOpen = true;
+      this.$refs.smsTemplateSendForm.open(row.id);
     },
     /** 重置发送短信的表单 */
     resetSendSms() {

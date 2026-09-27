@@ -45,7 +45,7 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog title="表单详情" :visible.sync="taskFormVisible" width="600px" append-to-body>
+    <Dialog title="表单详情" v-model="taskFormVisible" width="600px">
       <form-create
         v-if="taskForm.rule.length"
         v-model="fApi"
@@ -54,11 +54,12 @@
         :option="taskForm.option"
       />
       <el-empty v-else description="暂无表单信息" />
-    </el-dialog>
+    </Dialog>
   </div>
 </template>
 
 <script>
+import Dialog from '@/components/Dialog'
 import { getTaskListByProcessInstanceId } from '@/api/bpm/task'
 import { formatPast2 } from '@/utils'
 import { setConfAndFields2 } from '@/utils/formCreate'
@@ -67,6 +68,7 @@ import TaskEvidenceCell from '@/views/bpm/task/components/TaskEvidenceCell.vue'
 export default {
   name: 'ProcessInstanceTaskList',
   components: {
+    Dialog,
     TaskEvidenceCell
   },
   props: {
@@ -136,7 +138,7 @@ export default {
       try {
         const response = await getTaskListByProcessInstanceId(processInstanceId)
         if (requestId === this.listRequestId && processInstanceId === this.id) {
-          this.list = response.data || []
+          this.list = response.data
         }
       } finally {
         if (requestId === this.listRequestId) {

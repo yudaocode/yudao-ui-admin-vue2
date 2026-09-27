@@ -7,12 +7,13 @@
 <script>
 import iFrame from "@/components/iFrame/index";
 import { getConfigKey } from "@/api/infra/config";
+import { getBackendBaseUrl } from "@/utils/backendUrl";
 export default {
   name: "InfraAdminServer",
   components: { iFrame },
   data() {
     return {
-      url: process.env.VUE_APP_BASE_API + "/admin/applications",
+      url: getBackendBaseUrl() + "/admin/applications",
       loading: true
     };
   },

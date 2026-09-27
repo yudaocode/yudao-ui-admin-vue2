@@ -114,7 +114,7 @@
 <script>
 import { cancelProcessInstanceByAdmin, getProcessInstanceManagerPage } from '@/api/bpm/processInstance'
 import { getProcessDefinition } from '@/api/bpm/definition'
-import { listSimpleUsers } from '@/api/system/user'
+import { getSimpleUserList } from '@/api/system/user'
 import { parseFormFields } from '@/components/FormCreate/src/utils'
 import { TaskStatusEnum } from '@/api/bpm/task'
 
@@ -155,12 +155,12 @@ export default {
         return
       }
       const response = await getProcessDefinition(this.processDefinitionId)
-      const definition = response.data || {}
+      const definition = response.data
       this.formFields = this.parseFormCreateFields(definition.formFields)
     },
     async loadUsers() {
-      const response = await listSimpleUsers()
-      this.userList = response.data || []
+      const response = await getSimpleUserList()
+      this.userList = response.data
     },
     parseFormCreateFields(formFields) {
       const result = []
@@ -181,8 +181,8 @@ export default {
           ...this.queryParams,
           formFieldsParams: JSON.stringify(this.queryParams.formFieldsParams || {})
         })
-        this.list = response.data.list || []
-        this.total = response.data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }

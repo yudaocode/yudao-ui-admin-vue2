@@ -44,14 +44,6 @@ export function getFormPage(query) {
 }
 
 // 获得动态表单的精简列表
-export function getSimpleForms() {
-  return request({
-    url: '/bpm/form/list-all-simple',
-    method: 'get'
-  })
-}
-
-// 获得动态表单的精简列表（新版接口，与 vue3 对齐）
 export function getFormSimpleList() {
   return request({
     url: '/bpm/form/simple-list',

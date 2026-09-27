@@ -7,12 +7,12 @@
           <el-radio :label="BpmModelFormType.CUSTOM">业务表单</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="modelData.formType === BpmModelFormType.NORMAL" label="流程表单" prop="formId">
+      <el-form-item v-if="Number(modelData.formType) === Number(BpmModelFormType.NORMAL)" label="流程表单" prop="formId">
         <el-select v-model="modelData.formId" filterable clearable placeholder="请选择流程表单" style="width: 100%">
           <el-option v-for="item in formList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
-      <template v-if="modelData.formType === BpmModelFormType.CUSTOM">
+      <template v-if="Number(modelData.formType) === Number(BpmModelFormType.CUSTOM)">
         <el-form-item label="提交路由" prop="formCustomCreatePath">
           <el-input v-model="modelData.formCustomCreatePath" placeholder="例如：/bpm/oa/leave/create" />
         </el-form-item>
@@ -22,7 +22,7 @@
       </template>
     </el-form>
 
-    <div v-if="modelData.formType === BpmModelFormType.NORMAL && formPreview.rule.length" class="form-preview">
+    <div v-if="Number(modelData.formType) === Number(BpmModelFormType.NORMAL) && formPreview.rule.length" class="form-preview">
       <div class="form-preview__title">表单预览</div>
       <form-create :rule="formPreview.rule" :option="formPreview.option" />
     </div>
@@ -88,11 +88,11 @@ export default {
   methods: {
     async loadPreview(formId) {
       this.formPreview.rule = []
-      if (!formId || this.modelData.formType !== BpmModelFormType.NORMAL) {
+      if (!formId || Number(this.modelData.formType) !== Number(BpmModelFormType.NORMAL)) {
         return
       }
       const response = await getForm(formId)
-      const data = response.data || {}
+      const data = response.data
       setConfAndFields2(this.formPreview, data.conf, data.fields)
       // The form shown in the model wizard is a preview only. Keep all
       // controls disabled just like the Vue3 implementation so editing here

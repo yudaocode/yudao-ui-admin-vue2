@@ -109,14 +109,17 @@
         <el-button @click="open = false">关 闭</el-button>
       </div>
     </el-dialog>
+    <NotifyMessageDetail ref="notifyMessageDetail" />
   </div>
 </template>
 
 <script>
+import NotifyMessageDetail from './NotifyMessageDetail.vue'
 import { getNotifyMessagePage } from "@/api/system/notify/message";
 
 export default {
   name: "SystemNotifyMessage",
+  components: { NotifyMessageDetail },
   data() {
     return {
       // 遮罩层
@@ -171,8 +174,7 @@ export default {
     },
     /** 详细按钮操作 */
     handleView(row) {
-      this.open = true;
-      this.form = row;
+      this.$refs.notifyMessageDetail.open(row);
     }
   }
 };

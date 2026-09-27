@@ -1,16 +1,5 @@
 import request from '@/utils/request'
 
-// 使用租户名，获得租户编号
-export function getTenantIdByName(name) {
-  return request({
-    url: '/system/tenant/get-id-by-name',
-    method: 'get',
-    params: {
-      name
-    }
-  })
-}
-
 // 创建租户
 export function createTenant(data) {
   return request({
@@ -40,8 +29,9 @@ export function deleteTenant(id) {
 // 批量删除租户
 export function deleteTenantList(ids) {
   return request({
-    url: `/system/tenant/delete-batch?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/system/tenant/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
@@ -63,7 +53,7 @@ export function getTenantPage(query) {
 }
 
 // 导出租户 Excel
-export function exportTenantExcel(query) {
+export function exportTenant(query) {
   return request({
     url: '/system/tenant/export-excel',
     method: 'get',

@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 查询角色拥有的菜单数组
-export function listRoleMenus(roleId) {
+export function getRoleMenuList(roleId) {
   return request({
     url: '/system/permission/list-role-menus?roleId=' + roleId,
     method: 'get'
@@ -18,7 +18,7 @@ export function assignRoleMenu(data) {
 }
 
 // 查询用户拥有的角色数组
-export function listUserRoles(userId) {
+export function getUserRoleList(userId) {
   return request({
     url: '/system/permission/list-user-roles?userId=' + userId,
     method: 'get'

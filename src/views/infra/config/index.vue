@@ -87,44 +87,17 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <!-- 添加或修改参数配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="参数分类" prop="category">
-          <el-input v-model="form.category" placeholder="请输入参数分类" />
-        </el-form-item>
-        <el-form-item label="参数名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入参数名称" />
-        </el-form-item>
-        <el-form-item label="参数键名" prop="key">
-          <el-input v-model="form.key" placeholder="请输入参数键名" />
-        </el-form-item>
-        <el-form-item label="参数键值" prop="value">
-          <el-input v-model="form.value" placeholder="请输入参数键值" />
-        </el-form-item>
-        <el-form-item label="是否可见" prop="type">
-          <el-radio-group v-model="form.visible">
-            <el-radio :key="true" :label="true">是</el-radio>
-            <el-radio :key="false" :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <config-form ref="form" @success="getList" />
   </div>
 </template>
 
 <script>
-import { listConfig, getConfig, delConfig, addConfig, updateConfig, exportConfig, delConfigList } from "@/api/infra/config";
+import { getConfigPage, deleteConfig, exportConfig, deleteConfigList } from '@/api/infra/config'
+import ConfigForm from './ConfigForm.vue'
 
 export default {
-  name: "InfraConfig",
+  name: 'InfraConfig',
+  components: { ConfigForm },
   data() {
     return {
       // 遮罩层
@@ -137,12 +110,6 @@ export default {
       total: 0,
       // 参数表格数据
       configList: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
-      // 类型数据字典
-      typeOptions: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -151,23 +118,6 @@ export default {
         key: undefined,
         type: undefined,
         createTime: []
-      },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        category: [
-          { required: true, message: "参数分类不能为空", trigger: "blur" }
-        ],
-        name: [
-          { required: true, message: "参数名称不能为空", trigger: "blur" }
-        ],
-        key: [
-          { required: true, message: "参数键名不能为空", trigger: "blur" }
-        ],
-        value: [
-          { required: true, message: "参数键值不能为空", trigger: "blur" }
-        ]
       },
       checkedIds: []
     };
@@ -179,28 +129,15 @@ export default {
     /** 查询参数列表 */
     getList() {
       this.loading = true;
-      listConfig(this.queryParams).then(response => {
+      getConfigPage(this.queryParams).then(response => {
           this.configList = response.data.list;
           this.total = response.data.total;
+        }).catch(() => {
+          this.configList = [];
+          this.total = 0;
+        }).finally(() => {
           this.loading = false;
-        }
-      );
-    },
-    // 取消按钮
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    // 表单重置
-    reset() {
-      this.form = {
-        id: undefined,
-        name: undefined,
-        key: undefined,
-        value: undefined,
-        remark: undefined
-      };
-      this.resetForm("form");
+        });
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -214,45 +151,17 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加参数";
+      this.$refs.form.open('create')
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id || this.ids
-      getConfig(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改参数";
-      });
-    },
-    /** 提交按钮 */
-    submitForm: function() {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.id !== undefined) {
-            updateConfig(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addConfig(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
-          }
-        }
-      });
+      this.$refs.form.open('update', row.id)
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const ids = row.id || this.ids;
+      const ids = row.id;
       this.$modal.confirm('是否确认删除参数编号为"' + ids + '"的数据项?').then(function() {
-          return delConfig(ids);
+              return deleteConfig(ids);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
@@ -279,7 +188,7 @@ export default {
     handleDeleteBatch() {
       const ids = this.checkedIds;
       this.$modal.confirm('是否确认删除选中的' + this.checkedIds.length + '项数据?').then(function() {
-          return delConfigList(ids);
+              return deleteConfigList(ids);
         }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");

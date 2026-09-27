@@ -135,7 +135,7 @@ export default {
       httpInitializing: false,
       headerEditorVisible: false,
       // Retain the representation used by an existing XML field when it is
-      // edited. New fields use the Vue3-compatible <flowable:string> form.
+      // edited. New fields use the Vue3 <flowable:string> form.
       httpFieldRepresentations: {}
     }
   },
@@ -221,7 +221,10 @@ export default {
       values.forEach((item) => {
         const isField = item && item.$type === this.flowableFieldType && HTTP_FIELD_NAMES.indexOf(item.name) !== -1
         if (!isField) {
-          otherExtensions.push(item)
+          // Keep only moddle objects. A null item can come from malformed
+          // imported extension JSON and would make updateElementExtensions
+          // reject an otherwise valid HTTP task edit.
+          if (item) otherExtensions.push(item)
           return
         }
         const parsed = this.getFieldValue(item)
@@ -299,7 +302,7 @@ export default {
       if (this.isExpression(text)) {
         return instances.moddle.create(this.flowableFieldType, { name, expression: text })
       }
-      // Existing stringValue fields are retained for backward compatibility;
+      // Existing stringValue fields are retained for persisted BPMN data;
       // fields created by the Vue3 panel use the nested string property.
       if (existingRepresentation === 'stringValue') {
         return instances.moddle.create(this.flowableFieldType, { name, stringValue: text })

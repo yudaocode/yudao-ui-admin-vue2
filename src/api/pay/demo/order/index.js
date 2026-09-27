@@ -1,0 +1,27 @@
+import request from '@/utils/request'
+
+// 创建示例订单
+export function createDemoOrder(data) {
+  return request({
+    url: '/pay/demo-order/create',
+    method: 'post',
+    data
+  })
+}
+
+// 获得示例订单分页
+export function getDemoOrderPage(params) {
+  return request({
+    url: '/pay/demo-order/page',
+    method: 'get',
+    params
+  })
+}
+
+// 退款示例订单
+export function refundDemoOrder(id) {
+  return request({
+    url: '/pay/demo-order/refund?id=' + id,
+    method: 'put'
+  })
+}

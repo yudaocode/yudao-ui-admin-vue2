@@ -2,6 +2,19 @@
  * form-create 相关工具方法（Vue2 版本，与 vue3 的 components/FormCreate/src/utils 对齐）
  */
 
+export function makeRequiredRule() {
+  return { type: 'Required', field: 'formCreate$required', title: '是否必填' }
+}
+
+export function localeProps(t, prefix, rules) {
+  if (typeof t !== 'function') return rules
+  return rules.map(rule => {
+    if (rule.field === 'formCreate$required') rule.title = t('props.required') || rule.title
+    else if (rule.field && rule.field !== '_optionType') rule.title = t('components.' + prefix + '.' + rule.field) || rule.title
+    return rule
+  })
+}
+
 /**
  * 解析表单组件的 field、title 等字段（递归，如果组件包含子组件）
  *

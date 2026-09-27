@@ -10,7 +10,7 @@ export default {
     if (id) {
       this.$router.replace({
         name: 'BpmModelUpdate',
-        params: { id }
+        params: { type: 'update', id }
       })
       return
     }

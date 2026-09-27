@@ -26,6 +26,15 @@ export function deleteMailAccount(id) {
   })
 }
 
+// 批量删除邮箱账号
+export function deleteMailAccountList(ids) {
+  return request({
+    url: '/system/mail-account/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
+  })
+}
+
 // 获得邮箱账号
 export function getMailAccount(id) {
   return request({
@@ -46,7 +55,7 @@ export function getMailAccountPage(query) {
 // 获取邮箱账号的精简信息列表
 export function getSimpleMailAccountList() {
   return request({
-    url: '/system/mail-account/list-all-simple',
-    method: 'get',
+    url: '/system/mail-account/simple-list',
+    method: 'get'
   })
 }

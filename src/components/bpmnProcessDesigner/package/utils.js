@@ -17,8 +17,8 @@ export function createListenerObject(options, isTask, prefix) {
       listenerObj.class = options.class;
   }
   // 注入字段
-  if (options.fields) {
-    listenerObj.fields = options.fields.map(field => {
+  if (Array.isArray(options.fields)) {
+    listenerObj.fields = options.fields.filter(Boolean).map(field => {
       return createFieldObject(field, prefix);
     });
   }
@@ -50,10 +50,16 @@ export function createScriptObject(options, prefix) {
 
 // 更新元素扩展属性
 export function updateElementExtensions(element, extensionList) {
-  const extensions = window.bpmnInstances.moddle.create("bpmn:ExtensionElements", {
-    values: extensionList
+  const instances = typeof window !== 'undefined' ? window.bpmnInstances : null;
+  if (!instances || !instances.moddle || !instances.modeling || !element) return;
+  // Imported XML/JSON can leave sparse extension arrays.  bpmn-moddle rejects
+  // null values, so sanitize once at the shared write boundary rather than
+  // requiring every panel to duplicate the guard.
+  const values = (Array.isArray(extensionList) ? extensionList : []).filter(Boolean);
+  const extensions = instances.moddle.create("bpmn:ExtensionElements", {
+    values
   });
-  window.bpmnInstances.modeling.updateProperties(element, {
+  instances.modeling.updateProperties(element, {
     extensionElements: extensions
   });
 }

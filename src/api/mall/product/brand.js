@@ -34,30 +34,19 @@ export function getBrand(id) {
   })
 }
 
-// 获得品牌list
-export function getBrandList() {
+// 获得商品品牌精简信息列表
+export function getSimpleBrandList() {
   return request({
-    url: '/product/brand/list',
+    url: '/product/brand/list-all-simple',
     method: 'get'
   })
 }
 
-
 // 获得品牌分页
-export function getBrandPage(query) {
+export function getBrandParam(query) {
   return request({
     url: '/product/brand/page',
     method: 'get',
     params: query
-  })
-}
-
-// 导出品牌 Excel
-export function exportBrandExcel(query) {
-  return request({
-    url: '/product/brand/export-excel',
-    method: 'get',
-    params: query,
-    responseType: 'blob'
   })
 }

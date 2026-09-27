@@ -1,19 +1,19 @@
 import request from '@/utils/request'
 
+// 查询菜单（精简）列表
+export function getSimpleMenusList() {
+  return request({
+    url: '/system/menu/simple-list',
+    method: 'get'
+  })
+}
+
 // 查询菜单列表
-export function listMenu(query) {
+export function getMenuList(query) {
   return request({
     url: '/system/menu/list',
     method: 'get',
     params: query
-  })
-}
-
-// 查询菜单（精简)列表
-export function listSimpleMenus() {
-  return request({
-    url: '/system/menu/list-all-simple',
-    method: 'get'
   })
 }
 
@@ -26,7 +26,7 @@ export function getMenu(id) {
 }
 
 // 新增菜单
-export function addMenu(data) {
+export function createMenu(data) {
   return request({
     url: '/system/menu/create',
     method: 'post',
@@ -44,17 +44,9 @@ export function updateMenu(data) {
 }
 
 // 删除菜单
-export function delMenu(id) {
+export function deleteMenu(id) {
   return request({
     url: '/system/menu/delete?id=' + id,
-    method: 'delete'
-  })
-}
-
-// 批量删除菜单
-export function delMenuList(ids) {
-  return request({
-    url: `/system/menu/delete-batch?ids=${ids.join(',')}`,
     method: 'delete'
   })
 }

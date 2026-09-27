@@ -5,7 +5,7 @@
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="公众号" prop="accountId">
-        <el-select v-model="queryParams.accountId" placeholder="请选择公众号">
+        <el-select v-model="queryParams.accountId" placeholder="请选择公众号" @change="handleQuery">
           <el-option v-for="item in accounts" :key="parseInt(item.id)" :label="item.name" :value="parseInt(item.id)" />
         </el-select>
       </el-form-item>
@@ -145,7 +145,7 @@ import WxLocation from '@/views/mp/components/wx-location/main.vue';
 import WxMusic from '@/views/mp/components/wx-music/main.vue';
 import WxNews from '@/views/mp/components/wx-news/main.vue';
 import { getMessagePage } from "@/api/mp/message";
-import { getSimpleAccounts } from "@/api/mp/account";
+import { getSimpleAccountList } from "@/api/mp/account";
 
 export default {
   name: "MpMessage",
@@ -186,7 +186,7 @@ export default {
     };
   },
   created() {
-    getSimpleAccounts().then(response => {
+    getSimpleAccountList().then(response => {
       this.accounts = response.data;
       // 默认选中第一个
       if (this.accounts.length > 0) {
@@ -198,7 +198,7 @@ export default {
   },
   methods: {
     /** 查询列表 */
-    getList() {
+    async getList() {
       // 如果没有选中公众号账号，则进行提示。
       if (!this.queryParams.accountId) {
         this.$message.error('未选中公众号，无法查询消息')
@@ -207,11 +207,13 @@ export default {
 
       this.loading = true;
       // 执行查询
-      getMessagePage(this.queryParams).then(response => {
+      try {
+        const response = await getMessagePage(this.queryParams)
         this.list = response.data.list;
         this.total = response.data.total;
+      } finally {
         this.loading = false;
-      });
+      }
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -220,11 +222,9 @@ export default {
     },
     /** 重置按钮操作 */
     resetQuery() {
+      const accountId = this.queryParams.accountId;
       this.resetForm("queryForm");
-      // 默认选中第一个
-      if (this.accounts.length > 0) {
-        this.queryParams.accountId = this.accounts[0].id;
-      }
+      this.queryParams.accountId = accountId;
       this.handleQuery();
     },
     handleSend(row) {

@@ -3,14 +3,31 @@
 -->
 <template>
   <div>
-    <el-link type="success" :underline="false" target="_blank" :href="hqMusicUrl ? hqMusicUrl : musicUrl">
-      <div class="avue-card__body" style="padding:10px;background-color: #fff;border-radius: 5px">
+    <el-link
+      type="success"
+      :underline="false"
+      target="_blank"
+      :href="hqMusicUrl ? hqMusicUrl : musicUrl"
+    >
+      <div
+        class="avue-card__body"
+        style="padding:10px;background-color: #fff;border-radius: 5px"
+      >
         <div class="avue-card__avatar">
-          <img :src="thumbMediaUrl" alt=""/>
+          <img
+            :src="thumbMediaUrl"
+            alt=""
+          />
         </div>
         <div class="avue-card__detail">
-          <div class="avue-card__title" style="margin-bottom:unset">{{ title }}</div>
-          <div class="avue-card__info" style="height: unset">{{ description }}</div>
+          <div
+            class="avue-card__title"
+            style="margin-bottom:unset"
+          >{{ title }}</div>
+          <div
+            class="avue-card__info"
+            style="height: unset"
+          >{{ description }}</div>
         </div>
       </div>
     </el-link>
@@ -20,30 +37,34 @@
 <script>
 
 export default {
-  name: "wxMusic",
+  name: 'WxMusic',
   props: {
     title: {
       required: false,
-      type: String
+      type: String,
+      default: ''
     },
     description: {
       required: false,
-      type: String
+      type: String,
+      default: ''
     },
     musicUrl: {
       required: false,
-      type: String
+      type: String,
+      default: ''
     },
     hqMusicUrl: {
       required: false,
-      type: String
+      type: String,
+      default: ''
     },
     thumbMediaUrl: {
       required: true,
       type: String
-    },
+    }
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>

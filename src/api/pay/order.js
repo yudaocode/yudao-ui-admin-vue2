@@ -1,18 +1,11 @@
 import request from '@/utils/request'
 
-// 删除支付订单
-export function deleteOrder(id) {
-  return request({
-    url: '/pay/order/delete?id=' + id,
-    method: 'delete'
-  })
-}
-
 // 获得支付订单
-export function getOrder(id) {
+export function getOrder(id, sync) {
   return request({
-    url: '/pay/order/get?id=' + id,
-    method: 'get'
+    url: '/pay/order/get',
+    method: 'get',
+    params: { id, sync }
   })
 }
 
@@ -42,8 +35,8 @@ export function getOrderPage(query) {
   })
 }
 
-// 导出支付订单 Excel
-export function exportOrderExcel(query) {
+// 导出支付订单
+export function exportOrder(query) {
   return request({
     url: '/pay/order/export-excel',
     method: 'get',

@@ -73,24 +73,7 @@
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <!-- 预览界面 -->
-    <el-dialog :title="preview.title" :visible.sync="preview.open" width="90%" top="5vh" append-to-body class="scrollbar">
-      <el-row>
-        <el-col :span="7">
-          <el-tree :data="preview.fileTree" :expand-on-click-node="false" default-expand-all highlight-current
-                   @node-click="handleNodeClick"/>
-        </el-col>
-        <el-col :span="17">
-          <el-tabs v-model="preview.activeName">
-            <el-tab-pane v-for="item in preview.data" :label="item.filePath.substring(item.filePath.lastIndexOf('/') + 1)"
-                         :name="item.filePath" :key="item.filePath">
-              <el-link :underline="false" icon="el-icon-document-copy" v-clipboard:copy="item.code" v-clipboard:success="clipboardSuccess" style="float:right">复制</el-link>
-              <pre><code class="hljs" v-html="highlightedCode(item)"></code></pre>
-            </el-tab-pane>
-          </el-tabs>
-        </el-col>
-      </el-row>
-    </el-dialog>
+    <preview-code ref="preview" />
 
     <!-- 基于 DB 导入 -->
     <import-table ref="import" @ok="handleQuery" />
@@ -98,24 +81,15 @@
 </template>
 
 <script>
-import { getCodegenTablePage, previewCodegen, downloadCodegen, deleteCodegen,
-  syncCodegenFromDB, deleteCodegenList } from "@/api/infra/codegen";
+import { getCodegenTablePage, downloadCodegen, deleteCodegenTable,
+  syncCodegenFromDB, deleteCodegenTableList } from "@/api/infra/codegen";
 
 import importTable from "./importTable";
-// 代码高亮插件
-import hljs from "highlight.js/lib/highlight";
-import "highlight.js/styles/github-gist.css";
+import PreviewCode from './PreviewCode.vue'
 import {getDataSourceConfigList} from "@/api/infra/dataSourceConfig";
-hljs.registerLanguage("java", require("highlight.js/lib/languages/java"));
-hljs.registerLanguage("xml", require("highlight.js/lib/languages/xml"));
-hljs.registerLanguage("html", require("highlight.js/lib/languages/xml"));
-hljs.registerLanguage("vue", require("highlight.js/lib/languages/xml"));
-hljs.registerLanguage("javascript", require("highlight.js/lib/languages/javascript"));
-hljs.registerLanguage("sql", require("highlight.js/lib/languages/sql"));
-hljs.registerLanguage("typescript", require("highlight.js/lib/languages/typescript"));
 export default {
   name: "InfraCodegen",
-  components: { importTable },
+  components: { importTable, PreviewCode },
   data() {
     return {
       // 遮罩层
@@ -139,14 +113,6 @@ export default {
         tableName: undefined,
         tableComment: undefined,
         createTime: []
-      },
-      // 预览参数
-      preview: {
-        open: false,
-        title: "代码预览",
-        fileTree: [],
-        data: {},
-        activeName: "",
       },
       // 数据源列表
       dataSourceConfigs: [],
@@ -202,7 +168,7 @@ export default {
     },
     /** 打开导入表弹窗 */
     openImportTable() {
-      this.$refs.import.show();
+      this.$refs.import.open();
     },
     /** 重置按钮操作 */
     resetQuery() {
@@ -211,109 +177,20 @@ export default {
     },
     /** 预览按钮 */
     handlePreview(row) {
-      previewCodegen(row.id).then(response => {
-        this.preview.data = response.data;
-        let files = this.handleFiles(response.data);
-        this.preview.fileTree = this.handleTree(files, "id", "parentId", "children",
-            "/"); // "/" 为根节点
-        // console.log(this.preview.fileTree)
-        this.preview.activeName = response.data[0].filePath;
-        this.preview.open = true;
-      });
-    },
-    /** 高亮显示 */
-    highlightedCode(item) {
-      // const vmName = key.substring(key.lastIndexOf("/") + 1, key.indexOf(".vm"));
-      // var language = vmName.substring(vmName.indexOf(".") + 1, vmName.length);
-      const language = item.filePath.substring(item.filePath.lastIndexOf('.') + 1)
-      const result = hljs.highlight(language, item.code || "", true);
-      return result.value || '&nbsp;';
-    },
-    /** 复制代码成功 */
-    clipboardSuccess() {
-      this.$modal.msgSuccess("复制成功");
-    },
-    /** 生成 files 目录 **/
-    handleFiles(datas) {
-      let exists = {}; // key：file 的 id；value：true
-      let files = [];
-      // 遍历每个元素
-      for (const data of datas) {
-        let paths = data.filePath.split('/');
-        let fullPath = ''; // 从头开始的路径，用于生成 id
-        // 特殊处理 java 文件
-        if (paths[paths.length - 1].indexOf('.java') >= 0) {
-          let newPaths = [];
-          for (let i = 0; i < paths.length; i++) {
-            let path = paths[i];
-            if (path !== 'java') {
-              newPaths.push(path);
-              continue;
-            }
-            newPaths.push(path);
-            // 特殊处理中间的 package，进行合并
-            let tmp = undefined;
-            while (i < paths.length) {
-              path = paths[i + 1];
-              if (path === 'controller'
-                || path === 'convert'
-                || path === 'dal'
-                || path === 'enums'
-                || path === 'service'
-                || path === 'vo' // 下面三个，主要是兜底。可能考虑到有人改了包结构
-                || path === 'mysql'
-                || path === 'dataobject') {
-                break;
-              }
-              tmp = tmp ? tmp + '.' + path : path;
-              i++;
-            }
-            if (tmp) {
-              newPaths.push(tmp);
-            }
-          }
-          paths = newPaths;
-        }
-        // 遍历每个 path， 拼接成树
-        for (let i = 0; i < paths.length; i++) {
-          // 已经添加到 files 中，则跳过
-          let oldFullPath = fullPath;
-          // 下面的 replaceAll 的原因，是因为上面包处理了，导致和 tabs 不匹配，所以 replaceAll 下
-          fullPath = fullPath.length === 0 ? paths[i] : fullPath.replaceAll('.', '/') + '/' + paths[i];
-          if (exists[fullPath]) {
-            continue;
-          }
-          // 添加到 files 中
-          exists[fullPath] = true;
-          files.push({
-            id: fullPath,
-            label: paths[i],
-            parentId: oldFullPath || '/'  // "/" 为根节点
-          });
-        }
-      }
-      return files;
-    },
-    /** 节点单击事件 **/
-    handleNodeClick(data, node) {
-      if (node && !node.isLeaf) {
-        return false;
-      }
-      // 判断，如果非子节点，不允许选中
-      this.preview.activeName = data.id;
+      this.$refs.preview.open(row.id);
     },
     /** 修改按钮操作 */
     handleEditTable(row) {
       const tableId = row.id;
       const tableName = row.tableName || this.tableNames[0];
-      const params = { pageNum: this.queryParams.pageNum };
-      this.$tab.openPage("修改[" + tableName + "]生成配置", '/codegen/edit/' + tableId, params);
+      const params = { id: tableId, pageNum: this.queryParams.pageNo };
+      this.$tab.openPage("修改[" + tableName + "]生成配置", '/codegen/edit', params);
     },
     /** 删除按钮操作 */
     handleDelete(row) {
       const tableIds = row.id;
       this.$modal.confirm('是否确认删除表名称为"' + row.tableName + '"的数据项?').then(function() {
-          return deleteCodegen(tableIds);
+          return deleteCodegenTable(tableIds);
       }).then(() => {
           this.getList();
           this.$modal.msgSuccess("删除成功");
@@ -326,7 +203,7 @@ export default {
           return config.name;
         }
       }
-      return '未知【' + row.leaderUserId + '】';
+      return '';
     },
     /** 选中行变化 */
     handleRowCheckboxChange(selection) {
@@ -334,8 +211,9 @@ export default {
     },
     /** 批量删除 */
     handleDeleteBatch() {
-      this.$modal.confirm('是否确认删除选中的数据项?').then(function() {
-          return deleteCodegenList(this.checkedIds);
+      const ids = this.checkedIds;
+      this.$modal.confirm('是否确认删除选中的数据项?').then(() => {
+          return deleteCodegenTableList(ids);
       }).then(() => {
           this.checkedIds = [];
           this.getList();

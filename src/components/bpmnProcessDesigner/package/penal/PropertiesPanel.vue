@@ -6,7 +6,10 @@
         <element-base-info :id-edit-disabled="idEditDisabled" :business-object="elementBusinessObject" :type="elementType"
                            :model="model" />
       </el-collapse-item>
-      <el-collapse-item name="condition" v-if="elementType === 'Process'" key="message">
+      <!-- Keep each collapse key unique.  Reusing `condition` here couples the
+           process-level message panel to the sequence-flow condition panel
+           in Element UI, so opening one unexpectedly toggles the other. -->
+      <el-collapse-item name="signalMessage" v-if="elementType === 'Process'" key="message">
         <div slot="title" class="panel-tab__title"><i class="el-icon-s-comment"></i>消息与信号</div>
         <signal-and-massage />
       </el-collapse-item>
@@ -14,11 +17,14 @@
         <div slot="title" class="panel-tab__title"><i class="el-icon-s-promotion"></i>流转条件</div>
         <flow-condition :business-object="elementBusinessObject" :type="elementType" />
       </el-collapse-item>
-      <el-collapse-item name="condition" v-if="formVisible" key="form">
+      <el-collapse-item name="form" v-if="formVisible" key="form">
         <div slot="title" class="panel-tab__title"><i class="el-icon-s-order"></i>表单</div>
-<!--        <element-form :id="elementId" :type="elementType" />-->
-        友情提示：使用 <router-link target="_blank" :to="{path:'/bpm/manager/form'}"><el-link type="danger">流程表单</el-link> </router-link>
-        替代，提供更好的表单设计功能
+        <!--
+          Keep the element-level form selector enabled.  Vue3 uses this
+          panel for both StartEvent and UserTask; the previous Vue2 hint sent
+          users to a separate page and left `bpmn:formKey` unset.
+        -->
+        <element-form :id="elementId" :type="elementType" />
       </el-collapse-item>
       <el-collapse-item name="task" v-if="isTaskCollapseItemShow(elementType)" key="task">
         <div slot="title" class="panel-tab__title"><i class="el-icon-s-claim"></i>{{ getTaskCollapseItemName(elementType) }}</div>
@@ -178,14 +184,14 @@ export default {
     model: {
       deep: true,
       immediate: true,
-      handler(value) {
+      async handler(value) {
         const formId = value && value.formId
         const formType = value && value.formType
         this.formTypeRef.value = formType === undefined ? BpmModelFormType.NORMAL : formType
         if (formId === this.formFieldsLastId && formType === this.formFieldsLastType) return
         this.formFieldsLastId = formId
         this.formFieldsLastType = formType
-        this.loadModelFormFields(formId, formType)
+        await this.loadModelFormFields(formId, formType)
       }
     }
   },
@@ -208,15 +214,11 @@ export default {
       try {
         const response = await getForm(formId);
         if (requestId !== this.formFieldsRequestId) return;
-        const data = response && response.data !== undefined ? response.data : response;
-        this.formFieldsRef.value = data && Array.isArray(data.fields) ? data.fields : [];
+        this.formFieldsRef.value = response.data && Array.isArray(response.data.fields) ? response.data.fields : [];
       } catch (error) {
         if (requestId !== this.formFieldsRequestId) return;
         this.formFieldsRef.value = [];
-        // Keep failures visible in the console; the BPMN editor itself can
-        // still be used and existing FieldsPermission extensions are kept.
-        // eslint-disable-next-line no-console
-        console.error('[bpmn] failed to load process form fields', error);
+        throw error;
       }
     },
     initModels() {

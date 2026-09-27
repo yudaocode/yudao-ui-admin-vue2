@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 创建商品分类
-export function createProductCategory(data) {
+export function createCategory(data) {
   return request({
     url: '/product/category/create',
     method: 'post',
@@ -10,7 +10,7 @@ export function createProductCategory(data) {
 }
 
 // 更新商品分类
-export function updateProductCategory(data) {
+export function updateCategory(data) {
   return request({
     url: '/product/category/update',
     method: 'put',
@@ -19,7 +19,7 @@ export function updateProductCategory(data) {
 }
 
 // 删除商品分类
-export function deleteProductCategory(id) {
+export function deleteCategory(id) {
   return request({
     url: '/product/category/delete?id=' + id,
     method: 'delete'
@@ -27,7 +27,7 @@ export function deleteProductCategory(id) {
 }
 
 // 获得商品分类
-export function getProductCategory(id) {
+export function getCategory(id) {
   return request({
     url: '/product/category/get?id=' + id,
     method: 'get'
@@ -35,7 +35,7 @@ export function getProductCategory(id) {
 }
 
 // 获得商品分类列表
-export function getProductCategoryList(query) {
+export function getCategoryList(query) {
   return request({
     url: '/product/category/list',
     method: 'get',

@@ -12,7 +12,7 @@
     </div>
 
     <!-- 表单保存的弹窗 -->
-    <el-dialog title="保存表单" :visible.sync="dialogVisible" width="600px" append-to-body>
+    <Dialog title="保存表单" v-model="dialogVisible" width="600px">
       <el-form ref="form" :model="formData" :rules="formRules" label-width="80px">
         <el-form-item label="表单名" prop="name">
           <el-input v-model="formData.name" placeholder="请输入表单名" />
@@ -31,11 +31,12 @@
         <el-button type="primary" :disabled="formLoading" @click="submitForm">确 定</el-button>
         <el-button @click="dialogVisible = false">取 消</el-button>
       </div>
-    </el-dialog>
+    </Dialog>
   </div>
 </template>
 
 <script>
+import Dialog from '@/components/Dialog'
 import { createForm, updateForm, getForm } from "@/api/bpm/form";
 import { CommonStatusEnum } from "@/utils/constants";
 import { encodeConf, encodeFields, setConfAndFields } from "@/utils/formCreate";
@@ -43,6 +44,7 @@ import { useFormCreateDesigner } from "@/components/FormCreate/src/useFormCreate
 
 export default {
   name: "BpmFormEditor",
+  components: { Dialog },
   data() {
     return {
       // 表单设计器配置
@@ -91,8 +93,7 @@ export default {
     };
   },
   created() {
-    // Accept both the historical formId query and the Vue3 id/type contract.
-    const formId = this.$route.query.formId || this.$route.query.id;
+    const formId = this.$route.query.id;
     if (formId) {
       getForm(formId).then(response => {
         const data = response.data;

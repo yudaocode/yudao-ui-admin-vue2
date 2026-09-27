@@ -61,13 +61,17 @@ export default {
     };
   },
   methods: {
+    // Vue3 对齐入口；保留 show 作为既有调用的公开方法
+    open() {
+      this.show();
+    },
     // 显示弹框
     show() {
       this.visible = true;
       // 加载数据源
       getDataSourceConfigList().then(response => {
         this.dataSourceConfigs = response.data;
-        this.queryParams.dataSourceConfigId = this.dataSourceConfigs[0].id;
+        this.queryParams.dataSourceConfigId = this.dataSourceConfigs.length ? this.dataSourceConfigs[0].id : undefined;
         // 加载表列表
         this.getList();
       });
@@ -95,7 +99,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
-      this.queryParams.dataSourceConfigId = this.dataSourceConfigs[0].id;
+      this.queryParams.dataSourceConfigId = this.dataSourceConfigs.length ? this.dataSourceConfigs[0].id : undefined;
       this.handleQuery();
     },
     /** 导入按钮操作 */

@@ -1,15 +1,121 @@
-<template>
-  <div class="app-container">
-    <doc-alert title="【采购】采购订单、入库、退货" url="https://doc.iocoder.cn/erp/purchase/" />
-
-    <el-link type="danger" target="_blank" href="https://github.com/yudaocode/yudao-ui-admin-vue3">
-      该功能支持 Vue3 + element-plus 版本！
-    </el-link>
-    <br />
-    <el-text>
-      可参考 https://github.com/yudaocode/yudao-ui-admin-vue3/blob/master/src/views/erp/purchase/supplier/index.vue 代码，pull request 贡献给我们！
-    </el-text>
-  </div>
-</template>
+<template><div class="app-container"><doc-alert
+  title="【采购】采购订单、入库、退货"
+  url="https://doc.iocoder.cn/erp/purchase/"
+/><el-form
+  ref="queryForm"
+  :model="queryParams"
+  :inline="true"
+  label-width="80px"
+><el-form-item
+  label="名称"
+  prop="name"
+><el-input
+  v-model="queryParams.name"
+  placeholder="请输入名称"
+  clearable
+  @keyup.enter.native="handleQuery"
+/></el-form-item><el-form-item
+  label="手机号码"
+  prop="mobile"
+><el-input
+  v-model="queryParams.mobile"
+  placeholder="请输入手机号码"
+  clearable
+  @keyup.enter.native="handleQuery"
+/></el-form-item><el-form-item
+  label="联系电话"
+  prop="telephone"
+><el-input
+  v-model="queryParams.telephone"
+  placeholder="请输入联系电话"
+  clearable
+  @keyup.enter.native="handleQuery"
+/></el-form-item><el-form-item><el-button
+  type="primary"
+  icon="el-icon-search"
+  @click="handleQuery"
+>搜索</el-button><el-button
+  icon="el-icon-refresh"
+  @click="resetQuery"
+>重置</el-button><el-button
+  v-hasPermi="['erp:supplier:create']"
+  type="primary"
+  plain
+  icon="el-icon-plus"
+  @click="openForm('create')"
+>新增</el-button><el-button
+  v-hasPermi="['erp:supplier:export']"
+  type="success"
+  plain
+  icon="el-icon-download"
+  :loading="exportLoading"
+  @click="handleExport"
+>导出</el-button></el-form-item></el-form><el-table
+  v-loading="loading"
+  :data="list"
+  :stripe="true"
+  :show-overflow-tooltip="true"
+><el-table-column
+  label="名称"
+  prop="name"
+  align="center"
+/><el-table-column
+  label="联系人"
+  prop="contact"
+  align="center"
+/><el-table-column
+  label="手机号码"
+  prop="mobile"
+  align="center"
+/><el-table-column
+  label="联系电话"
+  prop="telephone"
+  align="center"
+/><el-table-column
+  label="电子邮箱"
+  prop="email"
+  align="center"
+/><el-table-column
+  label="备注"
+  prop="remark"
+  align="center"
+/><el-table-column
+  label="排序"
+  prop="sort"
+  align="center"
+/><el-table-column
+  label="状态"
+  prop="status"
+  align="center"
+><template #default="scope"><dict-tag
+  :type="DICT_TYPE.COMMON_STATUS"
+  :value="scope.row.status"
+/></template></el-table-column><el-table-column
+  label="操作"
+  align="center"
+><template #default="scope"><el-button
+  v-hasPermi="['erp:supplier:update']"
+  size="mini"
+  type="text"
+  @click="openForm('update', scope.row.id)"
+>修改</el-button><el-button
+  v-hasPermi="['erp:supplier:delete']"
+  size="mini"
+  type="text"
+  @click="handleDelete(scope.row.id)"
+>删除</el-button></template></el-table-column></el-table><pagination
+  v-show="total > 0"
+  :total="total"
+  :page.sync="queryParams.pageNo"
+  :limit.sync="queryParams.pageSize"
+  @pagination="getList"
+/><SupplierForm
+  ref="form"
+  @success="getList"
+/></div></template>
 <script>
+import { DICT_TYPE } from '@/utils/dict'
+import { getSupplierPage, deleteSupplier, exportSupplier } from '@/api/erp/purchase/supplier'
+import SupplierForm from './SupplierForm.vue'
+export default { name: 'ErpSupplier', components: { SupplierForm }, data() { return { DICT_TYPE, loading: true, exportLoading: false, list: [], total: 0, queryParams: { pageNo: 1, pageSize: 10, name: undefined, mobile: undefined, telephone: undefined }} }, created() { this.getList() }, methods: { getList() { this.loading = true; return getSupplierPage(this.queryParams).then(response => { this.list = response.data.list; this.total = response.data.total }).finally(() => { this.loading = false }) }, handleQuery() { this.queryParams.pageNo = 1; this.getList() }, resetQuery() { this.resetForm('queryForm'); this.handleQuery() }, openForm(type, id) { this.$refs.form.open(type, id) }, handleDelete(id) { this.$modal.confirm('是否确认删除供应商编号为"' + id + '"的数据项?').then(() => deleteSupplier(id)).then(() => { this.$modal.msgSuccess('删除成功'); this.getList() }).catch(() => {}) }, handleExport() { this.$modal.confirm('是否确认导出所有供应商数据项?').then(() => { this.exportLoading = true; return exportSupplier(this.queryParams) }).then(response => this.$download.excel(response.data, '供应商.xls')).catch(() => {}).finally(() => { this.exportLoading = false }) } }}
 </script>

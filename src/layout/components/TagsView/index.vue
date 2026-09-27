@@ -140,11 +140,13 @@ export default {
       return false
     },
     moveToCurrentTag() {
-      const tags = this.$refs.tag
       this.$nextTick(() => {
+        const tags = this.$refs.tag
+        const scrollPane = this.$refs.scrollPane
+        if (this._isDestroyed || !tags || !scrollPane) return
         for (const tag of tags) {
           if (tag.to.path === this.$route.path) {
-            this.$refs.scrollPane.moveToTarget(tag)
+            scrollPane.moveToTarget(tag)
             // when query is different then update
             if (tag.to.fullPath !== this.$route.fullPath) {
               this.$store.dispatch('tagsView/updateVisitedView', this.$route)

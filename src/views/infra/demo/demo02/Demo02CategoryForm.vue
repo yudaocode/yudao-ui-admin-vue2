@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import * as Demo02CategoryApi from '@/api/infra/demo02';
+import * as Demo02CategoryApi from '@/api/infra/demo/demo02';
 import TreeSelect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 export default {
@@ -59,18 +59,18 @@ export default {
     async open(id) {
       this.dialogVisible = true;
       this.reset();
+      this.dialogTitle = "新增示例分类";
       // 修改时，设置数据
       if (id) {
         this.formLoading = true;
         try {
           const res = await Demo02CategoryApi.getDemo02Category(id);
           this.formData = res.data;
-          this.title = "修改示例分类";
+          this.dialogTitle = "修改示例分类";
         } finally {
           this.formLoading = false;
         }
       }
-      this.title = "新增示例分类";
       await this.getDemo02CategoryTree();
     },
     /** 提交按钮 */

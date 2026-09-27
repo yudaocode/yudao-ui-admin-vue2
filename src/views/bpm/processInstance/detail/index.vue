@@ -26,7 +26,7 @@
             <el-col :span="16">
               <el-card shadow="never">
                 <div slot="header">申请信息</div>
-                <template v-if="processDefinition.formType === BpmModelFormType.NORMAL">
+                <template v-if="isNormalForm">
                   <form-create
                     v-if="detailForm.rule.length"
                     v-model="fApi"
@@ -35,7 +35,7 @@
                   />
                   <el-empty v-else description="暂无表单信息" />
                 </template>
-                <template v-else-if="BusinessFormComponent">
+                <template v-else-if="isCustomForm && BusinessFormComponent">
                   <component :is="BusinessFormComponent" :id="processInstance.businessKey" />
                 </template>
                 <el-empty v-else description="暂无业务表单" />
@@ -50,7 +50,7 @@
           </el-row>
         </el-tab-pane>
 
-        <el-tab-pane label="流程图" name="diagram">
+        <el-tab-pane label="流程图" name="diagram" lazy>
           <ProcessInstanceSimpleViewer
             v-if="isSimpleModel"
             :loading="processInstanceLoading"
@@ -100,7 +100,7 @@ import {
   getApprovalDetail,
   getProcessInstanceBpmnModelView
 } from '@/api/bpm/processInstance'
-import { listSimpleUsers } from '@/api/system/user'
+import { getSimpleUserList } from '@/api/system/user'
 import ProcessInstanceTimeline from './ProcessInstanceTimeline.vue'
 import ProcessInstanceBpmnViewer from './ProcessInstanceBpmnViewer.vue'
 import ProcessInstanceSimpleViewer from './ProcessInstanceSimpleViewer.vue'
@@ -163,21 +163,27 @@ export default {
   },
   computed: {
     currentId() {
-      return this.id || this.$route.query.id
+      return this.id !== undefined && this.id !== null && this.id !== '' ? this.id : this.$route.query.id
     },
     currentTaskId() {
-      return this.taskId || this.$route.query.taskId
+      return this.taskId !== undefined && this.taskId !== null && this.taskId !== '' ? this.taskId : this.$route.query.taskId
     },
     currentActivityId() {
-      return this.activityId || this.$route.query.activityId
+      return this.activityId !== undefined && this.activityId !== null && this.activityId !== '' ? this.activityId : this.$route.query.activityId
+    },
+    isNormalForm() {
+      return Number(this.processDefinition.formType) === Number(BpmModelFormType.NORMAL)
+    },
+    isCustomForm() {
+      return Number(this.processDefinition.formType) === Number(BpmModelFormType.CUSTOM)
     },
     startUserName() {
       const user = this.processInstance.startUser || {}
       return user.nickname || user.name || this.processInstance.startUserNickname || '-'
     },
     isSimpleModel() {
-      return this.processDefinition.modelType === BpmModelType.SIMPLE ||
-        this.processDefinition.type === BpmModelType.SIMPLE ||
+      return Number(this.processDefinition.modelType) === Number(BpmModelType.SIMPLE) ||
+        Number(this.processDefinition.type) === Number(BpmModelType.SIMPLE) ||
         !!(this.processModelView && this.processModelView.simpleModel)
     }
   },
@@ -196,23 +202,38 @@ export default {
     // 从任务/抄送列表连续打开两个流程时页面会继续展示上一个实例。
     '$route.query.id': {
       handler(value, oldValue) {
-        if (value && value !== oldValue && !this.id) {
+        if (value !== oldValue && (this.id === undefined || this.id === null)) {
           this.reloadForRouteChange()
         }
       }
     },
     '$route.query.taskId': {
       handler(value, oldValue) {
-        if (value !== oldValue && !this.id) {
+        if (value !== oldValue && (this.taskId === undefined || this.taskId === null)) {
           this.reloadForRouteChange()
         }
       }
     },
     '$route.query.activityId': {
       handler(value, oldValue) {
-        if (value !== oldValue && !this.id) {
+        if (value !== oldValue && (this.activityId === undefined || this.activityId === null)) {
           this.reloadForRouteChange()
         }
+      }
+    },
+    id(value, oldValue) {
+      if (value !== oldValue) {
+        this.reloadForRouteChange()
+      }
+    },
+    taskId(value, oldValue) {
+      if (value !== oldValue) {
+        this.reloadForRouteChange()
+      }
+    },
+    activityId(value, oldValue) {
+      if (value !== oldValue) {
+        this.reloadForRouteChange()
       }
     },
     activeTab(value) {
@@ -227,12 +248,8 @@ export default {
   },
   methods: {
     async loadUsers() {
-      try {
-        const response = await listSimpleUsers()
-        this.userOptions = response.data || []
-      } catch (e) {
-        this.userOptions = []
-      }
+      const response = await getSimpleUserList()
+      this.userOptions = response.data
     },
     async getDetail() {
       const requestId = ++this.detailRequestId
@@ -331,8 +348,9 @@ export default {
       // form (or an empty form), where otherwise stale controls remain visible.
       this.detailForm.rule = []
       this.detailForm.value = {}
+      this.fApi = {}
       this.BusinessFormComponent = null
-      if (this.processDefinition.formType === BpmModelFormType.NORMAL) {
+      if (this.isNormalForm) {
         if (this.processDefinition.formConf && this.processDefinition.formFields) {
           setConfAndFields2(
             this.detailForm,
@@ -352,7 +370,7 @@ export default {
             this.applyFormFieldsPermission(data.formFieldsPermission)
           })
         }
-      } else if (this.processDefinition.formCustomViewPath) {
+      } else if (this.isCustomForm && this.processDefinition.formCustomViewPath) {
         this.BusinessFormComponent = this.loadBusinessComponent(this.processDefinition.formCustomViewPath)
       }
     },
@@ -393,7 +411,7 @@ export default {
           }
         }
       } catch (e) {
-        // 兼容不同 form-create 字段类型的校验清理能力。
+        // Different form-create field types expose validation cleanup differently.
       }
     },
     loadBusinessComponent(path) {
@@ -418,15 +436,9 @@ export default {
       }
     },
     async getProcessModelView(instanceId = this.currentId, requestId = this.detailRequestId) {
-      try {
-        const response = await getProcessInstanceBpmnModelView(instanceId)
-        if (requestId === this.detailRequestId && instanceId === this.currentId) {
-          this.processModelView = response.data || {}
-        }
-      } catch (e) {
-        if (requestId === this.detailRequestId && instanceId === this.currentId) {
-          this.processModelView = {}
-        }
+      const response = await getProcessInstanceBpmnModelView(instanceId)
+      if (requestId === this.detailRequestId && instanceId === this.currentId) {
+        this.processModelView = response.data
       }
     },
     refresh() {

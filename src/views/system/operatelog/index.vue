@@ -57,7 +57,7 @@
       <el-table-column label="操作 IP" align="center" prop="userIp" width="120" />
       <el-table-column label="操作" align="center" width="60" class-name="small-padding fixed-width">
         <template v-slot="scope">
-          <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row,scope.index)"
+                  <el-button size="mini" type="text" icon="el-icon-view" @click="openDetail(scope.row)"
                      v-hasPermi="['system:operate-log:query']">详细</el-button>
         </template>
       </el-table-column>
@@ -115,15 +115,18 @@
         <el-button @click="open = false">关 闭</el-button>
       </div>
     </el-dialog>
+    <OperateLogDetail ref="operateLogDetail" />
   </div>
 </template>
 
 <script>
-import { listOperateLog, exportOperateLog } from "@/api/system/operatelog";
-import { listSimpleUsers } from "@/api/system/user";
+import OperateLogDetail from './OperateLogDetail.vue'
+import { getOperateLogPage, exportOperateLog } from "@/api/system/operatelog";
+import { getSimpleUserList } from "@/api/system/user";
 
 export default {
   name: "SystemOperateLog",
+  components: { OperateLogDetail },
   data() {
     return {
       // 遮罩层
@@ -159,7 +162,7 @@ export default {
   created() {
     this.getList();
     // 获取用户精简信息列表
-    listSimpleUsers().then(res => {
+    getSimpleUserList().then(res => {
       this.userList = res.data;
     });
   },
@@ -167,12 +170,13 @@ export default {
     /** 查询登录日志 */
     getList() {
       this.loading = true;
-      listOperateLog(this.queryParams).then( response => {
-          this.list = response.data.list;
-          this.total = response.data.total;
+      return getOperateLogPage(this.queryParams).then(response => {
+          const data = response.data;
+          this.list = data.list;
+          this.total = data.total;
+        }).finally(() => {
           this.loading = false;
-        }
-      );
+        });
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -185,9 +189,8 @@ export default {
       this.handleQuery();
     },
     /** 详细按钮操作 */
-    handleView(row) {
-      this.open = true;
-      this.form = row;
+    openDetail(row) {
+      this.$refs.operateLogDetail.open(row);
     },
     /** 导出按钮操作 */
     handleExport() {
@@ -207,4 +210,3 @@ export default {
   }
 };
 </script>
-

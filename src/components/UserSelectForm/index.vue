@@ -49,8 +49,8 @@
 </template>
 
 <script>
-import { listSimpleDepts } from '@/api/system/dept'
-import { listSimpleUsers } from '@/api/system/user'
+import { getSimpleDeptList } from '@/api/system/dept'
+import { getSimpleUserList } from '@/api/system/user'
 import { handleTree } from '@/utils/ruoyi'
 
 export default {
@@ -94,8 +94,8 @@ export default {
       this.formLoading = true
       try {
         const [deptResp, userResp] = await Promise.all([
-          listSimpleDepts(),
-          listSimpleUsers()
+          getSimpleDeptList(),
+          getSimpleUserList()
         ])
         this.deptList = deptResp.data || []
         this.deptTree = handleTree(this.deptList, 'id')

@@ -100,18 +100,19 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <TenantPackageForm ref="tenantPackageForm" @success="getList" />
   </div>
 </template>
 
 <script>
+import TenantPackageForm from './TenantPackageForm.vue'
 import { createTenantPackage, updateTenantPackage, deleteTenantPackage, getTenantPackage, getTenantPackagePage, deleteTenantPackageList} from "@/api/system/tenantPackage";
 import {CommonStatusEnum} from "@/utils/constants";
-import {listSimpleMenus} from "@/api/system/menu";
+import { getSimpleMenusList } from '@/api/system/menu'
 
 export default {
   name: "SystemTenantPackage",
-  components: {
-  },
+  components: { TenantPackageForm },
   data() {
     return {
       // 遮罩层
@@ -207,33 +208,15 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加租户套餐";
-      // 设置为非严格，继续使用半选中
-      this.menuCheckStrictly = false;
+      this.$refs.tenantPackageForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      this.open = true;
-      this.title = "修改租户套餐";
-      // 获得菜单列表
-      getTenantPackage(id).then(response => {
-        this.form = response.data;
-        // 设置菜单项
-        // 设置为严格，避免设置父节点自动选中子节点，解决半选中问题
-        this.menuCheckStrictly = true
-        // 设置选中
-        this.$refs.menu.setCheckedKeys(response.data.menuIds);
-        // 设置为非严格，继续使用半选中
-        this.menuCheckStrictly = false
-      });
+      this.$refs.tenantPackageForm.open('update', row.id);
     },
     /** 获得菜单 */
     getMenus() {
-      listSimpleMenus().then(response => {
+      getSimpleMenusList().then(response => {
         // 处理 menuOptions 参数
         this.menuOptions = [];
         // 只需要配置

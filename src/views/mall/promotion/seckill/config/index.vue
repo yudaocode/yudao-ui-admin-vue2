@@ -1,196 +1,236 @@
 <template>
   <div class="app-container">
-    <doc-alert title="【营销】秒杀活动" url="https://doc.iocoder.cn/mall/promotion-seckill/" />
+    <doc-alert
+      title="【营销】秒杀活动"
+      url="https://doc.iocoder.cn/mall/promotion-seckill/"
+    />
 
-    <!-- 操作工具栏 -->
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
-          v-hasPermi="['promotion:seckill-time:create']">新增秒杀时段</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
+    <el-form
+      ref="queryForm"
+      :inline="true"
+      :model="queryParams"
+      label-width="108px"
+    >
+      <el-form-item
+        label="秒杀时段名称"
+        prop="name"
+      >
+        <el-input
+          v-model="queryParams.name"
+          clearable
+          placeholder="请输入秒杀时段名称"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item
+        label="活动状态"
+        prop="status"
+      >
+        <el-select
+          v-model="queryParams.status"
+          clearable
+          placeholder="请选择活动状态"
+        >
+          <el-option
+            v-for="dict in statusDictDatas"
+            :key="parseInt(dict.value)"
+            :label="dict.label"
+            :value="parseInt(dict.value)"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button
+          icon="el-icon-search"
+          @click="handleQuery"
+        >搜索</el-button>
+        <el-button
+          icon="el-icon-refresh"
+          @click="resetQuery"
+        >重置</el-button>
+        <el-button
+          v-hasPermi="['promotion:seckill-config:create']"
+          type="primary"
+          plain
+          icon="el-icon-plus"
+          @click="openForm('create')"
+        >新增</el-button>
+      </el-form-item>
+    </el-form>
 
-    <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="秒杀时段名称" align="center" prop="name" />
-      <el-table-column label="开始时间点" align="center" prop="startTime" width="180">
+    <el-table
+      v-loading="loading"
+      :data="list"
+      stripe
+    >
+      <el-table-column
+        label="秒杀时段名称"
+        align="center"
+        prop="name"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="开始时间点"
+        align="center"
+        prop="startTime"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="结束时间点"
+        align="center"
+        prop="endTime"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="秒杀轮播图"
+        align="center"
+        prop="sliderPicUrls"
+        show-overflow-tooltip
+      >
         <template v-slot="scope">
-          <span>{{ scope.row.startTime }}</span>
+          <el-image
+            v-for="(url, index) in scope.row.sliderPicUrls"
+            :key="index"
+            :src="url"
+            :preview-src-list="scope.row.sliderPicUrls"
+            class="slider-image"
+          />
         </template>
       </el-table-column>
-      <el-table-column label="结束时间点" align="center" prop="endTime" width="180">
+      <el-table-column
+        label="活动状态"
+        align="center"
+        prop="status"
+        show-overflow-tooltip
+      >
         <template v-slot="scope">
-          <span>{{ scope.row.endTime }}</span>
+          <el-switch
+            v-model="scope.row.status"
+            :active-value="CommonStatusEnum.ENABLE"
+            :inactive-value="CommonStatusEnum.DISABLE"
+            @change="handleStatusChange(scope.row)"
+          />
         </template>
       </el-table-column>
-      <el-table-column label="秒杀活动数量" align="center" prop="seckillActivityCount" />
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-        <template v-slot="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
+      <el-table-column
+        label="创建时间"
+        align="center"
+        prop="createTime"
+        width="180"
+        show-overflow-tooltip
+      >
+        <template v-slot="scope">{{ parseTime(scope.row.createTime) }}</template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column
+        label="操作"
+        align="center"
+      >
         <template v-slot="scope">
-          <el-button size="mini" type="text" icon="el-icon-view" @click="handleOpenSeckillActivity(scope.row)">
-            查看秒杀活动</el-button>
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
-            v-hasPermi="['promotion:seckill-time:update']">修改</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
-            v-hasPermi="['promotion:seckill-time:delete']">删除</el-button>
+          <el-button
+            v-hasPermi="['promotion:seckill-config:update']"
+            type="text"
+            @click="openForm('update', scope.row.id)"
+          >编辑</el-button>
+          <el-button
+            v-hasPermi="['promotion:seckill-config:delete']"
+            type="text"
+            class="danger-text"
+            @click="handleDelete(scope.row.id)"
+          >删除</el-button>
         </template>
       </el-table-column>
     </el-table>
+    <pagination
+      v-show="total > 0"
+      :limit.sync="queryParams.pageSize"
+      :page.sync="queryParams.pageNo"
+      :total="total"
+      @pagination="getList"
+    />
 
-    <!-- 对话框(添加 / 修改) -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" v-dialogDrag append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="140px">
-        <el-form-item label="秒杀场次名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入秒杀时段名称" clearable />
-        </el-form-item>
-        <el-form-item label="秒杀时间段" prop="startAndEndTime">
-          <el-time-picker is-range v-model="form.startAndEndTime" range-separator="至" start-placeholder="开始时间"
-            end-placeholder="结束时间" placeholder="选择时间范围" value-format="HH:mm:ss">
-          </el-time-picker>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <SeckillConfigForm
+      ref="form"
+      @success="getList"
+    />
   </div>
 </template>
 
 <script>
-import { createSeckillTime, updateSeckillTime, deleteSeckillTime, getSeckillTime, getSeckillTimePage, exportSeckillTimeExcel, getSeckillTimeList } from "@/api/mall/promotion/seckillTime";
-import router from "@/router";
-import { deepClone } from "@/utils";
+import { getDictDatas, DICT_TYPE } from '@/utils/dict'
+import { CommonStatusEnum } from '@/utils/constants'
+import { parseTime } from '@/utils/ruoyi'
+import { SeckillConfigApi } from '@/api/mall/promotion/seckill/seckillConfig'
+import SeckillConfigForm from './SeckillConfigForm.vue'
 
 export default {
-  name: "PromotionSeckillTime",
-  components: {
-  },
+  name: 'SeckillConfig',
+  components: { SeckillConfigForm },
   data() {
     return {
-      // 遮罩层
+      CommonStatusEnum,
       loading: true,
-      // 显示搜索条件
-      showSearch: true,
-      // 总条数
-      // total: 0,
-      // 秒杀时段列表
       list: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        name: [{ required: true, message: "秒杀时段名称不能为空", trigger: "blur" }],
-        startAndEndTime: [{ required: true, message: "秒杀时间段不能为空", trigger: "blur" }],
+      total: 0,
+      statusDictDatas: getDictDatas(DICT_TYPE.COMMON_STATUS),
+      queryParams: {
+        pageNo: 1,
+        pageSize: 10,
+        name: undefined,
+        status: undefined
       }
-    };
+    }
   },
   created() {
-    this.getList();
+    this.getList()
   },
   methods: {
-    /** 查询列表 */
     getList() {
-      this.loading = true;
-      // 执行查询
-      getSeckillTimeList().then(response => {
-        this.list = response.data;
-        this.loading = false;
-      });
+      this.loading = true
+      return SeckillConfigApi.getSeckillConfigPage(this.queryParams).then(response => {
+        const data = response.data
+        this.list = data.list
+        this.total = data.total
+      }).finally(() => {
+        this.loading = false
+      })
     },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        id: undefined,
-        name: undefined,
-        startAndEndTime: undefined,
-        startTime: undefined,
-        endTime: undefined,
-      };
-      this.resetForm("form");
-    },
-    /** 搜索按钮操作 */
     handleQuery() {
-      this.getList();
+      this.queryParams.pageNo = 1
+      return this.getList()
     },
-    /** 重置按钮操作 */
     resetQuery() {
-      this.resetForm("queryForm");
-      this.handleQuery();
+      this.$refs.queryForm.resetFields()
+      return this.handleQuery()
     },
-    /**查看当前秒杀时段的秒杀活动 */
-    handleOpenSeckillActivity(row) {
-      router.push({ name: 'SeckillActivity', params: { timeId: row.id } })
+    openForm(type, id) {
+      return this.$refs.form.open(type, id)
     },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加秒杀时段";
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getSeckillTime(id).then(response => {
-        response.data.startAndEndTime = [response.data.startTime, response.data.endTime]
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改秒杀时段";
-      });
-    },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        console.log(valid, "是否通过");
-        if (!valid) {
-          return;
-        }
-        // 处理数据
-        const data = deepClone(this.form);
-        data.startTime = this.form.startAndEndTime[0];
-        data.endTime = this.form.startAndEndTime[1];
-        // 修改的提交
-        if (this.form.id != null) {
-          updateSeckillTime(data).then(response => {
-            this.$modal.msgSuccess("修改成功");
-            this.open = false;
-            this.getList();
-          });
-          return;
-        }
-        // 添加的提交
-        createSeckillTime(data).then(response => {
-          this.$modal.msgSuccess("新增成功");
-          this.open = false;
-          this.getList();
-        });
-      });
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      const id = row.id;
-      this.$modal.confirm('是否确认删除秒杀时段编号为"' + id + '"的数据项?').then(function () {
-        return deleteSeckillTime(id);
+    handleDelete(id) {
+      return this.$modal.confirm('是否删除所选中数据？').then(() => {
+        return SeckillConfigApi.deleteSeckillConfig(id)
       }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => { });
+        this.$modal.msgSuccess('删除成功')
+        return this.getList()
+      }).catch(() => {})
     },
+    handleStatusChange(row) {
+      const text = row.status === CommonStatusEnum.ENABLE ? '启用' : '停用'
+      return this.$modal.confirm('确认要' + text + '"' + row.name + '"活动吗?').then(() => {
+        return SeckillConfigApi.updateSeckillConfigStatus(row.id, row.status)
+      }).then(() => {
+        return this.getList()
+      }).catch(() => {
+        row.status = row.status === CommonStatusEnum.ENABLE
+          ? CommonStatusEnum.DISABLE
+          : CommonStatusEnum.ENABLE
+      })
+    },
+    parseTime
   }
-};
+}
 </script>
+
+<style scoped>
+.slider-image { max-width: 40px; height: 40px; }
+.danger-text { color: #f56c6c; }
+</style>

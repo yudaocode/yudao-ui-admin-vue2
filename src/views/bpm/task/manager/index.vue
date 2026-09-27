@@ -113,8 +113,8 @@ export default {
       this.loading = true
       try {
         const response = await getTaskManagerPage(this.queryParams)
-        this.list = response.data.list || []
-        this.total = response.data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }

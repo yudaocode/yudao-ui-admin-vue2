@@ -93,7 +93,7 @@
 </template>
 
 <script>
-import { getJobLogPage, exportJobLogExcel } from "@/api/infra/jobLog";
+import { getJobLogPage, exportJobLog } from "@/api/infra/jobLog";
 
 export default {
   name: "InfraJobLog",
@@ -170,7 +170,7 @@ export default {
       // 执行导出
       this.$modal.confirm('是否确认导出所有定时任务日志数据项?').then(() => {
         this.exportLoading = true;
-        return exportJobLogExcel(params);
+        return exportJobLog(params);
       }).then(response => {
         this.$download.excel(response, '定时任务日志.xls');
         this.exportLoading = false;

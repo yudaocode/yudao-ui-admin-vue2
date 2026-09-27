@@ -1,10 +1,7 @@
 <template>
-  <el-dialog
+  <Dialog
     :title="dialogTitle"
-    :visible.sync="dialogVisible"
-    width="500px"
-    append-to-body
-    :close-on-click-modal="false"
+    v-model="dialogVisible"
     @closed="handleClosed"
   >
     <el-form
@@ -17,16 +14,16 @@
       <el-form-item label="组名" prop="name">
         <el-input v-model="form.name" placeholder="请输入组名" />
       </el-form-item>
-      <el-form-item label="描述" prop="description">
+      <el-form-item label="描述">
         <el-input v-model="form.description" placeholder="请输入描述" type="textarea" />
       </el-form-item>
       <el-form-item label="成员" prop="userIds">
         <el-select v-model="form.userIds" multiple filterable placeholder="请选择成员" style="width: 100%">
           <el-option
             v-for="user in userList"
-            :key="String(user.id)"
+            :key="user.id"
             :label="user.nickname"
-            :value="normalizeId(user.id)"
+            :value="user.id"
           />
         </el-select>
       </el-form-item>
@@ -43,15 +40,16 @@
       </el-form-item>
     </el-form>
     <div slot="footer" class="dialog-footer">
-      <el-button type="primary" :loading="formLoading" :disabled="formLoading" @click="submitForm">
+      <el-button type="primary" :disabled="formLoading" @click="submitForm">
         确 定
       </el-button>
-      <el-button :disabled="formLoading" @click="dialogVisible = false">取 消</el-button>
+      <el-button @click="dialogVisible = false">取 消</el-button>
     </div>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script>
+import Dialog from '@/components/Dialog'
 import {
   createUserGroup,
   getUserGroup,
@@ -65,7 +63,7 @@ function createDefaultForm() {
     id: undefined,
     name: undefined,
     description: undefined,
-    userIds: [],
+    userIds: undefined,
     status: CommonStatusEnum.ENABLE
   }
 }
@@ -73,6 +71,7 @@ function createDefaultForm() {
 /** 可复用的 BPM 用户组表单。 */
 export default {
   name: 'UserGroupForm',
+  components: { Dialog },
   data() {
     return {
       dialogVisible: false,
@@ -99,31 +98,18 @@ export default {
       this.dialogTitle = this.formType === 'create' ? '添加用户组' : '修改用户组'
       this.resetForm()
       this.dialogVisible = true
-      this.formLoading = true
-      try {
-        const requests = [getSimpleUserList()]
-        if (id !== undefined && id !== null) {
-          requests.push(getUserGroup(id))
+      if (id) {
+        this.formLoading = true
+        try {
+          const response = await getUserGroup(id)
+          this.form = response.data
+        } finally {
+          this.formLoading = false
         }
-        const responses = await Promise.all(requests)
-        this.userList = this.normalizeList(responses[0])
-        if (id !== undefined && id !== null) {
-          const data = this.normalizeData(responses[1])
-          this.form = {
-            ...createDefaultForm(),
-            ...data,
-            userIds: this.normalizeIds(data.userIds),
-            status: data.status === undefined || data.status === null
-              ? CommonStatusEnum.ENABLE
-              : Number(data.status)
-          }
-        }
-      } catch (e) {
-        // request 拦截器已统一提示错误，保留弹窗以便用户取消或重试。
-      } finally {
-        this.formLoading = false
-        this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
       }
+      const response = await getSimpleUserList()
+      this.userList = response.data
+      this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
     },
     async submitForm() {
       if (this.formLoading) {
@@ -139,48 +125,18 @@ export default {
       }
       this.formLoading = true
       try {
-        const data = {
-          ...this.form,
-          userIds: this.normalizeIds(this.form.userIds)
-        }
         if (this.formType === 'create') {
-          await createUserGroup(data)
+          await createUserGroup(this.form)
           this.showSuccess('新增成功')
         } else {
-          await updateUserGroup(data)
+          await updateUserGroup(this.form)
           this.showSuccess('修改成功')
         }
         this.dialogVisible = false
         this.$emit('success')
-      } catch (e) {
-        // request 拦截器已统一展示错误信息。
       } finally {
         this.formLoading = false
       }
-    },
-    normalizeData(response) {
-      return (response && response.data) || {}
-    },
-    normalizeList(response) {
-      const data = response && response.data !== undefined ? response.data : response
-      return Array.isArray(data) ? data : []
-    },
-    normalizeIds(ids) {
-      if (!Array.isArray(ids)) {
-        return []
-      }
-      return ids
-        .map(id => this.normalizeId(id))
-        .filter(id => id !== null)
-    },
-    // Snowflake IDs exceed JavaScript's safe integer range. Keep those IDs as
-    // decimal strings so selection and submission do not silently round them.
-    normalizeId(id) {
-      if (id === undefined || id === null || String(id).trim() === '') return null
-      const text = String(id).trim()
-      const number = Number(text)
-      if (!Number.isFinite(number)) return null
-      return Number.isSafeInteger(number) ? number : text
     },
     showSuccess(message) {
       if (this.$modal && this.$modal.msgSuccess) {

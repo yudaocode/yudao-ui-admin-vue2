@@ -10,19 +10,33 @@
   ② 体验优化：弹窗关闭后，自动暂停视频的播放
 -->
 <template>
-  <div>
+  <div class="wx-video-player">
     <!-- 提示 -->
     <div @click="playVideo()">
-      <i class="el-icon-video-play" style="font-size: 40px!important;" ></i>
+      <i
+        class="el-icon-video-play"
+        style="font-size: 40px!important;"
+      />
       <p>点击播放视频</p>
     </div>
 
     <!-- 弹窗播放 -->
-    <el-dialog title="视频播放" :visible.sync="dialogVideo" width="40%" append-to-body @close="closeDialog">
-      <video-player v-if="playerOptions.sources[0].src" class="video-player vjs-custom-skin" ref="videoPlayer"
-                    :playsinline="true" :options="playerOptions"
-                    @play="onPlayerPlay($event)" @pause="onPlayerPause($event)">
-      </video-player>
+    <el-dialog
+      title="视频播放"
+      :visible.sync="dialogVideo"
+      width="40%"
+      append-to-body
+      @close="closeDialog"
+    >
+      <video-player
+        v-if="dialogVideo && playerOptions.sources[0].src"
+        ref="videoPlayer"
+        class="video-player vjs-custom-skin"
+        :playsinline="true"
+        :options="playerOptions"
+        @play="onPlayerPlay($event)"
+        @pause="onPlayerPause($event)"
+      />
     </el-dialog>
   </div>
 </template>
@@ -34,19 +48,19 @@ require('video.js/dist/video-js.css')
 require('vue-video-player/src/custom-theme.css')
 
 export default {
-  name: "wxVideoPlayer",
+  name: 'WxVideoPlayer',
+  components: {
+    videoPlayer
+  },
   props: {
     url: { // 视频地址，例如说：https://www.iocoder.cn/xxx.mp4
       type: String,
       required: true
-    },
-  },
-  components: {
-    videoPlayer
+    }
   },
   data() {
     return {
-      dialogVideo:false,
+      dialogVideo: false,
       playerOptions: {
         playbackRates: [0.5, 1.0, 1.5, 2.0], // 播放速度
         autoplay: false, // 如果 true,浏览器准备好时开始回放。
@@ -57,35 +71,39 @@ export default {
         aspectRatio: '16:9', // 将播放器置于流畅模式，并在计算播放器的动态大小时使用该值。值应该代表一个比例 - 用冒号分隔的两个数字（例如"16:9"或"4:3"）
         fluid: true, // 当true时，Video.js player 将拥有流体大小。换句话说，它将按比例缩放以适应其容器。
         sources: [{
-          type: "video/mp4",
-          src: "" // 你的视频地址（必填）【重要】
+          type: 'video/mp4',
+          src: '' // 你的视频地址（必填）【重要】
         }],
-        poster: "", // 你的封面地址
+        poster: '', // 你的封面地址
         width: document.documentElement.clientWidth,
-        notSupportedMessage: '此视频暂无法播放，请稍后再试', //允许覆盖 Video.js 无法播放媒体源时显示的默认信息。
+        notSupportedMessage: '此视频暂无法播放，请稍后再试', // 允许覆盖 Video.js 无法播放媒体源时显示的默认信息。
         controlBar: {
           timeDivider: true,
           durationDisplay: true,
           remainingTimeDisplay: false,
-          fullscreenToggle: true  //全屏按钮
+          fullscreenToggle: true // 全屏按钮
         }
       }
     }
   },
   methods: {
-    playVideo(){
+    playVideo() {
       this.dialogVideo = true
       // 设置地址
       this.$set(this.playerOptions.sources[0], 'src', this.url)
     },
-    closeDialog(){
+    closeDialog() {
       // 暂停播放
-      this.$refs.videoPlayer.player.pause()
+      const videoPlayer = this.$refs.videoPlayer
+      if (videoPlayer && videoPlayer.player) {
+        videoPlayer.player.pause()
+      }
+      this.$set(this.playerOptions.sources[0], 'src', '')
     },
     onPlayerPlay(player) {
     },
     onPlayerPause(player) {
-    },
+    }
   }
-};
+}
 </script>

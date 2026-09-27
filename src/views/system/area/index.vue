@@ -32,16 +32,17 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <AreaForm ref="areaForm" />
   </div>
 </template>
 
 <script>
 import {getAreaByIp, getAreaTree} from "@/api/system/area";
+import AreaForm from './AreaForm.vue';
 
 export default {
   name: "SystemArea",
-  components: {
-  },
+  components: { AreaForm },
   data() {
     return {
       // 遮罩层
@@ -94,8 +95,7 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
+      this.$refs.areaForm.open();
     },
     /** 提交按钮 */
     submitForm() {

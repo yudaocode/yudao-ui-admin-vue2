@@ -18,7 +18,7 @@ export const getCodegenTableList = (dataSourceConfigId) => {
 }
 
 // 获得表和字段的明细
-export function getCodegenDetail(tableId) {
+export function getCodegenTable(tableId) {
   return request({
     url: '/infra/codegen/detail?tableId=' + tableId,
     method: 'get',
@@ -26,7 +26,7 @@ export function getCodegenDetail(tableId) {
 }
 
 // 修改代码生成信息
-export function updateCodegen(data) {
+export function updateCodegenTable(data) {
   return request({
     url: '/infra/codegen/update',
     method: 'put',
@@ -39,18 +39,6 @@ export function syncCodegenFromDB(tableId) {
   return request({
     url: '/infra/codegen/sync-from-db?tableId=' + tableId,
     method: 'put'
-  })
-}
-
-// 基于 SQL 建表语句，同步数据库的表和字段定义
-export function syncCodegenFromSQL(tableId, sql) {
-  return request({
-    url: '/infra/codegen/sync-from-sql?tableId=' + tableId,
-    method: 'put',
-    headers:{
-      'Content-type': 'application/x-www-form-urlencoded'
-    },
-    data: 'tableId=' + tableId + "&sql=" + sql,
   })
 }
 
@@ -90,7 +78,7 @@ export function createCodegenList(data) {
 }
 
 // 删除数据库的表和字段定义
-export function deleteCodegen(tableId) {
+export function deleteCodegenTable(tableId) {
   return request({
     url: '/infra/codegen/delete?tableId=' + tableId,
     method: 'delete'
@@ -98,9 +86,10 @@ export function deleteCodegen(tableId) {
 }
 
 // 批量删除数据库的表和字段定义
-export function deleteCodegenList(tableIds) {
+export function deleteCodegenTableList(tableIds) {
   return request({
-    url: `/infra/codegen/delete-list?tableIds=${tableIds.join(',')}`,
-    method: 'delete'
+    url: '/infra/codegen/delete-list',
+    method: 'delete',
+    params: { tableIds: tableIds.join(',') }
   })
 }

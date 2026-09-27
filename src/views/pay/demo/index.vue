@@ -8,7 +8,7 @@
     <!-- 操作工具栏 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">发起订单</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" :loading="formLoading" @click="handleAdd">发起订单</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -65,7 +65,7 @@
 
     <!-- 对话框(添加 / 修改) -->
     <el-dialog :title="title" :visible.sync="open" width="500px" v-dialogDrag append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="80px" v-loading="formLoading">
         <el-form-item label="商品" prop="spuId">
           <el-select v-model="form.spuId" placeholder="请输入下单商品" clearable size="small" style="width: 380px" >
             <el-option v-for="item in spus" :key="item.id" :label="item.name" :value="item.id">
@@ -76,7 +76,7 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button type="primary" :loading="formLoading" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import { createDemoOrder, getDemoOrderPage, refundDemoOrder } from "@/api/pay/demo";
+import { createDemoOrder, getDemoOrderPage, refundDemoOrder } from "@/api/pay/demo/order";
 
 export default {
   name: "PayDemoOrder",
@@ -102,6 +102,7 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      formLoading: false,
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -146,8 +147,10 @@ export default {
       this.loading = true;
       // 执行查询
       getDemoOrderPage(this.queryParams).then(response => {
-        this.list = response.data.list;
-        this.total = response.data.total;
+        const page = response.data;
+        this.list = page.list;
+        this.total = page.total;
+      }).finally(() => {
         this.loading = false;
       });
     },
@@ -186,10 +189,13 @@ export default {
           return;
         }
         // 添加的提交
+        this.formLoading = true;
         createDemoOrder(this.form).then(response => {
           this.$modal.msgSuccess("新增成功");
           this.open = false;
           this.getList();
+        }).finally(() => {
+          this.formLoading = false;
         });
       });
     },
@@ -199,7 +205,7 @@ export default {
           name: 'PayCashier',
           query:{
             id: row.payOrderId,
-            returnUrl: encodeURIComponent('/pay/demo-order?id=' + row.id)
+            returnUrl: encodeURIComponent('/pay/demo/order?id=' + row.id)
           }
       })
     },

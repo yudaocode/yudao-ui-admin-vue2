@@ -1,10 +1,8 @@
 <template>
-  <el-dialog
+  <Dialog
     title="导入流程模型"
-    :visible.sync="dialogVisible"
+    v-model="dialogVisible"
     :width="width"
-    append-to-body
-    :close-on-click-modal="false"
     @closed="handleClosed"
   >
     <el-alert
@@ -51,10 +49,11 @@
       </el-button>
       <el-button :disabled="formLoading" @click="dialogVisible = false">取 消</el-button>
     </div>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script>
+import Dialog from '@/components/Dialog'
 import { importModel } from '@/api/bpm/model'
 
 function createDefaultForm() {
@@ -67,6 +66,7 @@ function createDefaultForm() {
 /** 可复用的 BPM JSON 模型导入表单。 */
 export default {
   name: 'ModelImportForm',
+  components: { Dialog },
   props: {
     width: {
       type: String,
@@ -139,7 +139,7 @@ export default {
       }
       reader.readAsText(raw)
     },
-    // 保留 Vue3 表单使用的 handleChange 命名，便于旧页面/二次复用直接接入。
+    // Keep the Vue3 upload-event name so the form contract stays uniform.
     handleChange(uploadFile, uploadFiles) {
       return this.handleFileChange(uploadFile, uploadFiles)
     },
@@ -185,8 +185,6 @@ export default {
       this.readToken += 1
       this.file = null
       this.fileList = []
-      this.formData.key = ''
-      this.formData.name = ''
       if (clearUpload) {
         const upload = this.$refs.upload
         if (upload && upload.clearFiles) {

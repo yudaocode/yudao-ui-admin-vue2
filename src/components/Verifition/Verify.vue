@@ -36,12 +36,14 @@
  * */
 import VerifySlide from './Verify/VerifySlide'
 import VerifyPoints from './Verify/VerifyPoints'
+import VerifyPictureWord from './Verify/VerifyPictureWord'
 
 export default {
   name: 'Vue2Verify',
   components: {
     VerifySlide,
-    VerifyPoints
+    VerifyPoints,
+    VerifyPictureWord
   },
   props: {
     captchaType: {
@@ -116,6 +118,10 @@ export default {
           case 'clickWord':
             this.verifyType = ''
             this.componentType = 'VerifyPoints'
+            break
+          case 'pictureWord':
+            this.verifyType = ''
+            this.componentType = 'VerifyPictureWord'
             break
         }
       }

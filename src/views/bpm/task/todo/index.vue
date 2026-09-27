@@ -143,8 +143,8 @@ export default {
       this.loading = true
       try {
         const response = await getTaskTodoPage(this.queryParams)
-        this.list = response.data.list || []
-        this.total = response.data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }
@@ -159,17 +159,12 @@ export default {
       return this.userName(processInstance.startUser) || processInstance.startUserNickname || ''
     },
     async loadSearchOptions() {
-      try {
-        const [categoryResp, definitionResp] = await Promise.all([
-          getCategorySimpleList(),
-          getSimpleProcessDefinitionList()
-        ])
-        this.categoryList = categoryResp.data || []
-        this.processDefinitionList = definitionResp.data || []
-      } catch (e) {
-        this.categoryList = []
-        this.processDefinitionList = []
-      }
+      const [categoryResp, definitionResp] = await Promise.all([
+        getCategorySimpleList(),
+        getSimpleProcessDefinitionList()
+      ])
+      this.categoryList = categoryResp.data
+      this.processDefinitionList = definitionResp.data
     },
     handleQuery() {
       this.queryParams.pageNo = 1

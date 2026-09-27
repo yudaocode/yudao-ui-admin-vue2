@@ -50,7 +50,7 @@
           </div>
           <el-tabs v-model="activeTab">
             <el-tab-pane label="基本资料" name="userinfo">
-              <userInfo :user="user" />
+              <userInfo :user="user" @success="getUser" />
             </el-tab-pane>
             <el-tab-pane label="修改密码" name="resetPwd">
               <resetPwd :user="user" />
@@ -70,7 +70,7 @@ import userAvatar from "./userAvatar";
 import userInfo from "./userInfo";
 import resetPwd from "./resetPwd";
 import userSocial from "./userSocial";
-import { getUserProfile } from "@/api/system/user";
+import { getUserProfile } from "@/api/system/user/profile";
 
 export default {
   name: "Profile",
@@ -88,8 +88,9 @@ export default {
   },
   methods: {
     getUser() {
-      getUserProfile().then(response => {
+      return getUserProfile().then(response => {
         this.user = response.data;
+        return this.user;
       });
     },
     setActiveTab(activeTab) {

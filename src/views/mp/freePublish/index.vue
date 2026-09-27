@@ -60,7 +60,7 @@ SOFTWARE.
 
 <script>
 import { getFreePublishPage, deleteFreePublish } from "@/api/mp/freePublish";
-import { getSimpleAccounts } from "@/api/mp/account";
+import { getSimpleAccountList } from "@/api/mp/account";
 import WxNews from '@/views/mp/components/wx-news/main.vue';
 
 export default {
@@ -90,7 +90,7 @@ export default {
     }
   },
   created() {
-    getSimpleAccounts().then(response => {
+    getSimpleAccountList().then(response => {
       this.accounts = response.data;
       // 默认选中第一个
       if (this.accounts.length > 0) {

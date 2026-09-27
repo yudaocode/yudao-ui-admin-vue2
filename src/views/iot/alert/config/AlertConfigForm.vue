@@ -1,0 +1,292 @@
+<template>
+<div class="iot-vue2-root">
+
+  <el-dialog :title="dialogTitle" :visible.sync="dialogVisible">
+    <el-form
+      ref="formRef"
+      :model="formData"
+      :rules="formRules"
+      label-width="140px"
+      v-loading="formLoading"
+    >
+      <el-form-item label="配置名称" prop="name">
+        <el-input v-model="formData.name" placeholder="请输入配置名称" />
+      </el-form-item>
+      <el-form-item label="配置描述" prop="description">
+        <el-input v-model="formData.description" placeholder="请输入配置描述" />
+      </el-form-item>
+      <el-form-item label="告警级别" prop="level">
+        <el-select v-model="formData.level" placeholder="请选择告警级别">
+          <el-option
+            v-for="dict in getIntDictOptions(DICT_TYPE.IOT_ALERT_LEVEL)"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="配置状态" prop="status">
+        <el-select v-model="formData.status">
+          <el-option
+            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="关联场景联动规则" prop="sceneRuleIds">
+        <el-select
+          v-model="formData.sceneRuleIds"
+          multiple
+          placeholder="请选择关联的场景联动规则"
+          class="w-full"
+        >
+          <el-option
+            v-for="scene in sceneRuleOptions"
+            :key="scene.id"
+            :label="scene.name"
+            :value="scene.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="接收的用户" prop="receiveUserIds">
+        <el-select
+          v-model="formData.receiveUserIds"
+          multiple
+          placeholder="请选择接收的用户"
+          class="w-full"
+        >
+          <el-option
+            v-for="user in userOptions"
+            :key="user.id"
+            :label="user.nickname"
+            :value="user.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="接收类型" prop="receiveTypes">
+        <el-select
+          v-model="formData.receiveTypes"
+          multiple
+          placeholder="请选择接收类型"
+          class="w-full"
+        >
+          <el-option
+            v-for="dict in getIntDictOptions(DICT_TYPE.IOT_ALERT_RECEIVE_TYPE)"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item
+        v-if="formData.receiveTypes?.includes(IotAlertReceiveTypeEnum.SMS)"
+        label="短信模板"
+        prop="smsTemplateCode"
+      >
+        <SmsTemplateSelect v-model="formData.smsTemplateCode" />
+      </el-form-item>
+      <el-form-item
+        v-if="formData.receiveTypes?.includes(IotAlertReceiveTypeEnum.MAIL)"
+        label="邮件模板"
+        prop="mailTemplateCode"
+      >
+        <MailTemplateSelect v-model="formData.mailTemplateCode" />
+      </el-form-item>
+      <el-form-item
+        v-if="formData.receiveTypes?.includes(IotAlertReceiveTypeEnum.NOTIFY)"
+        label="站内信模板"
+        prop="notifyTemplateCode"
+      >
+        <NotifyTemplateSelect v-model="formData.notifyTemplateCode" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
+      <el-button @click="dialogVisible = false">取 消</el-button>
+    </template>
+  </el-dialog>
+
+</div>
+</template>
+<script>
+import '@/views/iot/styles/vue2.css';
+import { createIotMessage } from '@/views/iot/utils/ui';
+import { useIotI18n } from '@/views/iot/utils/ui';
+import { ref, reactive, watch } from 'vue';
+import { defineComponent as _defineComponent } from 'vue';
+import { AlertConfigApi } from '@/api/iot/alert/config';
+import { DICT_TYPE, getIntDictOptions } from '@/utils/dict';
+import { CommonStatusEnum } from '@/utils/constants';
+import { RuleSceneApi } from '@/api/iot/rule/scene';
+import { IotAlertReceiveTypeEnum } from '@/views/iot/utils/constants';
+import * as UserApi from '@/api/system/user';
+import MailTemplateSelect from '@/views/system/mail/template/components/MailTemplateSelect.vue';
+import NotifyTemplateSelect from '@/views/system/notify/template/components/NotifyTemplateSelect.vue';
+import SmsTemplateSelect from '@/views/system/sms/template/components/SmsTemplateSelect.vue';
+/** IoT 告警配置 表单 */
+export default /*@__PURE__*/ _defineComponent({
+    ...{ name: 'AlertConfigForm' },
+    components: {
+        SmsTemplateSelect,
+        MailTemplateSelect,
+        NotifyTemplateSelect,
+    },
+    __name: 'AlertConfigForm',
+    emits: ['success'],
+    setup(__props, { expose: __expose, emit: __emit }) {
+        const { t } = useIotI18n(); // 国际化
+        const message = createIotMessage(); // 消息弹窗
+        const dialogVisible = ref(false); // 弹窗的是否展示
+        const dialogTitle = ref(''); // 弹窗的标题
+        const formLoading = ref(false); // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
+        const formType = ref(''); // 表单的类型：create - 新增；update - 修改
+        const formData = ref({
+            id: undefined,
+            name: undefined,
+            description: undefined,
+            level: undefined,
+            status: CommonStatusEnum.ENABLE,
+            sceneRuleIds: [],
+            receiveUserIds: [],
+            receiveTypes: [],
+            smsTemplateCode: undefined,
+            mailTemplateCode: undefined,
+            notifyTemplateCode: undefined
+        });
+        const formRules = reactive({
+            name: [{ required: true, message: '配置名称不能为空', trigger: 'blur' }],
+            level: [{ required: true, message: '告警级别不能为空', trigger: 'blur' }],
+            status: [{ required: true, message: '配置状态不能为空', trigger: 'blur' }],
+            sceneRuleIds: [{ required: true, message: '关联场景联动规则不能为空', trigger: 'blur' }],
+            receiveUserIds: [{ required: true, message: '接收用户不能为空', trigger: 'blur' }],
+            receiveTypes: [{ required: true, message: '接收类型不能为空', trigger: 'blur' }]
+        });
+        const formRef = ref(); // 表单 Ref
+        // 选项数据
+        const sceneRuleOptions = ref([]);
+        const userOptions = ref([]);
+        /** 按接收类型同步模板校验规则 */
+        const syncTemplateFormRules = () => {
+            const types = formData.value.receiveTypes || [];
+            if (types.includes(IotAlertReceiveTypeEnum.SMS)) {
+                formRules.smsTemplateCode = [{ required: true, message: '短信模板不能为空', trigger: 'change' }];
+            }
+            else {
+                delete formRules.smsTemplateCode;
+            }
+            if (types.includes(IotAlertReceiveTypeEnum.MAIL)) {
+                formRules.mailTemplateCode = [
+                    { required: true, message: '邮件模板不能为空', trigger: 'change' }
+                ];
+            }
+            else {
+                delete formRules.mailTemplateCode;
+            }
+            if (types.includes(IotAlertReceiveTypeEnum.NOTIFY)) {
+                formRules.notifyTemplateCode = [
+                    { required: true, message: '站内信模板不能为空', trigger: 'change' }
+                ];
+            }
+            else {
+                delete formRules.notifyTemplateCode;
+            }
+        };
+        watch(() => formData.value.receiveTypes, (types) => {
+            if (!types?.includes(IotAlertReceiveTypeEnum.SMS)) {
+                formData.value.smsTemplateCode = undefined;
+            }
+            if (!types?.includes(IotAlertReceiveTypeEnum.MAIL)) {
+                formData.value.mailTemplateCode = undefined;
+            }
+            if (!types?.includes(IotAlertReceiveTypeEnum.NOTIFY)) {
+                formData.value.notifyTemplateCode = undefined;
+            }
+            syncTemplateFormRules();
+        }, { deep: true });
+        /** 打开弹窗 */
+        const open = async (type, id) => {
+            dialogVisible.value = true;
+            dialogTitle.value = t('action.' + type);
+            formType.value = type;
+            resetForm();
+            // 修改时，设置数据
+            if (id) {
+                formLoading.value = true;
+                try {
+                    formData.value = (await AlertConfigApi.getAlertConfig(id)).data;
+                    syncTemplateFormRules();
+                }
+                finally {
+                    formLoading.value = false;
+                }
+            }
+            // 加载选项数据
+            await loadOptions();
+        };
+        __expose({ open }); // 提供 open 方法，用于打开弹窗
+        /** 加载选项数据 */
+        const loadOptions = async () => {
+            try {
+                const [scenes, users] = await Promise.all([
+                    RuleSceneApi.getSimpleRuleSceneList().then(response => response.data),
+                    UserApi.getSimpleUserList().then(response => response.data)
+                ]);
+                sceneRuleOptions.value = scenes;
+                userOptions.value = users;
+            }
+            catch (error) {
+                console.error('加载选项数据失败:', error);
+            }
+        };
+        /** 提交表单 */
+        const emit = __emit; // 定义 success 事件，用于操作成功后的回调
+        const submitForm = async () => {
+            // 校验表单
+            await formRef.value.validate();
+            // 提交请求
+            formLoading.value = true;
+            try {
+                const data = formData.value;
+                if (formType.value === 'create') {
+                    (await AlertConfigApi.createAlertConfig(data)).data;
+                    message.success(t('common.createSuccess'));
+                }
+                else {
+                    (await AlertConfigApi.updateAlertConfig(data)).data;
+                    message.success(t('common.updateSuccess'));
+                }
+                dialogVisible.value = false;
+                // 发送操作成功的事件
+                emit('success');
+            }
+            finally {
+                formLoading.value = false;
+            }
+        };
+        /** 重置表单 */
+        const resetForm = () => {
+            formData.value = {
+                id: undefined,
+                name: undefined,
+                description: undefined,
+                level: undefined,
+                status: CommonStatusEnum.ENABLE,
+                sceneRuleIds: [],
+                receiveUserIds: [],
+                receiveTypes: [],
+                smsTemplateCode: undefined,
+                mailTemplateCode: undefined,
+                notifyTemplateCode: undefined
+            };
+            syncTemplateFormRules();
+            formRef.value?.resetFields();
+        };
+        const __returned__ = { t, message, dialogVisible, dialogTitle, formLoading, formType, formData, formRules, formRef, sceneRuleOptions, userOptions, syncTemplateFormRules, open, loadOptions, emit, submitForm, resetForm, get DICT_TYPE() { return DICT_TYPE; }, get getIntDictOptions() { return getIntDictOptions; }, get IotAlertReceiveTypeEnum() { return IotAlertReceiveTypeEnum; }, MailTemplateSelect, NotifyTemplateSelect, SmsTemplateSelect };
+        Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true });
+        return __returned__;
+    }
+});
+
+</script>

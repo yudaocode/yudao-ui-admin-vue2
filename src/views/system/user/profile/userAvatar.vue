@@ -55,8 +55,8 @@
 <script>
 import store from "@/store";
 import { VueCropper } from "vue-cropper";
-import { updateUserProfile } from "@/api/system/user";
-import { uploadFile } from "@/api/infra/file";
+import { updateUserProfile } from "@/api/system/user/profile";
+import { updateFile } from "@/api/infra/file";
 
 export default {
   components: { VueCropper },
@@ -125,7 +125,7 @@ export default {
       try {
         this.$refs.cropper.getCropBlob(async (data) => {
           // 先上传文件
-          const response = await uploadFile(data, 'user/avatar');
+          const response = await updateFile({ file: data, directory: 'user/avatar' });
           const avatar = response.data;
           
           // 然后更新用户信息

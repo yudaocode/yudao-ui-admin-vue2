@@ -6,6 +6,7 @@
     <top-nav id="topmenu-container" class="topmenu-container" v-if="topNav"/>
 
     <div class="right-menu">
+      <fms-account-set-switch />
       <template v-if="device!=='mobile'">
         <!-- 租户下拉框 -->
         <tenant-visit v-if="tenantEnable" v-hasPermi="['system:tenant:visit']" class="right-menu-item" />
@@ -66,6 +67,7 @@ import RuoYiGit from '@/components/RuoYi/Git'
 import RuoYiDoc from '@/components/RuoYi/Doc'
 import NotifyMessage from '@/layout/components/Message'
 import TenantVisit from '@/components/TenantVisit'
+import FmsAccountSetSwitch from '@/views/fms/components/account-set/FmsAccountSetSwitch.vue'
 import {getPath, getTenantEnable} from "@/utils/ruoyi";
 
 export default {
@@ -79,7 +81,8 @@ export default {
     RuoYiGit,
     RuoYiDoc,
     NotifyMessage,
-    TenantVisit
+    TenantVisit,
+    FmsAccountSetSwitch
   },
   computed: {
     ...mapGetters([

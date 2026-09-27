@@ -67,7 +67,7 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
 
-    <!-- 表单弹窗：添加/修改。成员加载与 userIds 规范化由子表单统一负责。 -->
+    <!-- 表单弹窗：添加/修改。成员列表与编辑详情由子表单加载。 -->
     <UserGroupForm ref="userGroupForm" @success="getList" />
   </div>
 </template>
@@ -104,15 +104,11 @@ export default {
       }
     }
   },
-  created() {
-    this.getList()
+  async created() {
+    await this.getList()
     // 获得用户列表
-    getSimpleUserList().then(response => {
-      const data = response && response.data !== undefined ? response.data : response
-      this.users = Array.isArray(data) ? data : []
-    }).catch(() => {
-      this.users = []
-    })
+    const response = await getSimpleUserList()
+    this.users = response.data
   },
   methods: {
     /** 查询列表 */
@@ -120,9 +116,8 @@ export default {
       this.loading = true
       try {
         const response = await getUserGroupPage(this.queryParams)
-        const data = response && response.data ? response.data : {}
-        this.list = data.list || []
-        this.total = data.total || 0
+        this.list = response.data.list
+        this.total = response.data.total
       } finally {
         this.loading = false
       }
@@ -163,12 +158,8 @@ export default {
       }).catch(() => {})
     },
     getUserNickname(userId) {
-      for (const user of this.users) {
-        if (String(user.id) === String(userId)) {
-          return user.nickname
-        }
-      }
-      return '未知(' + userId + ')'
+      const user = this.users.find(item => item.id === userId)
+      return user && user.nickname
     }
   }
 }

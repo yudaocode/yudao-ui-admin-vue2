@@ -30,8 +30,8 @@
       {{ supportsApproveMethod ? '除了 UserTask 以外节点的多实例待实现' : '当前 BPMN 方言不支持 Flowable 多人审批方式' }}
     </div>
 
-    <!-- 与 Simple 设计器配置合并，保留以前的代码。业务面板默认隐藏，
-         但方法仍支持旧 XML 中的 StandardLoop/异步属性。 -->
+    <!-- 与 Simple 设计器配置合并。业务面板默认隐藏，方法仍解析已持久化
+         XML 中的 StandardLoop/异步属性。 -->
     <el-form label-width="90px" style="display: none" @submit.native.prevent>
       <el-form-item label="快捷配置">
         <el-button size="small" @click="changeConfig('依次审批')">依次审批</el-button>
@@ -215,10 +215,11 @@ export default {
         completionCondition: loop.completionCondition && loop.completionCondition.body || '',
         loopCardinality: loop.loopCardinality && loop.loopCardinality.body || ''
       }
-      const instances = this.getBpmnInstances()
-      this.multiLoopInstance = instances && instances.bpmnElement && instances.bpmnElement.businessObject
-        ? instances.bpmnElement.businessObject.loopCharacteristics
-        : loop
+      // Use the element resolved for this panel, rather than the global
+      // selection blindly.  The properties panel can receive a new id before
+      // bpmnInstances.bpmnElement is updated; retaining the old selection here
+      // would make subsequent loop edits write to the wrong task.
+      this.multiLoopInstance = loop
       const values = loop.extensionElements && loop.extensionElements.values
       if (values && values.length) this.$set(this.loopInstanceForm, 'timeCycle', values[0].body)
     },
@@ -293,7 +294,10 @@ export default {
       const values = asArray(element.businessObject && element.businessObject.extensionElements && element.businessObject.extensionElements.values)
       const approve = values.find(item => item && item.$type === `${this.prefix}:ApproveMethod`)
       this.approveMethodConfigured = !!approve
-      this.otherExtensions = values.filter(item => !item || item.$type !== `${this.prefix}:ApproveMethod`)
+      // Null extension entries are not valid moddle values.  Do not carry one
+      // into the rebuilt ExtensionElements collection when the approval mode
+      // is changed.
+      this.otherExtensions = values.filter(item => item && item.$type !== `${this.prefix}:ApproveMethod`)
       this.approveMethodUnsupported = !this.supportsApproveMethod
       const ratio = this.readApproveRatio(element.businessObject && element.businessObject.loopCharacteristics)
       this.approveRatio = ratio || 100

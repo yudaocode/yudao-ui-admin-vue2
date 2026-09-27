@@ -1,10 +1,7 @@
 <template>
-  <el-dialog
+  <Dialog
     :title="dialogTitle"
-    :visible.sync="dialogVisible"
-    width="500px"
-    append-to-body
-    :close-on-click-modal="false"
+    v-model="dialogVisible"
     @closed="handleClosed"
   >
     <el-form
@@ -32,7 +29,6 @@
         <el-input
           v-model="form.expression"
           type="textarea"
-          :rows="4"
           placeholder="请输入表达式"
         />
       </el-form-item>
@@ -43,10 +39,11 @@
       </el-button>
       <el-button :disabled="formLoading" @click="dialogVisible = false">取 消</el-button>
     </div>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script>
+import Dialog from '@/components/Dialog'
 import {
   createProcessExpression,
   getProcessExpression,
@@ -66,6 +63,7 @@ function createDefaultForm() {
 /** 可复用的 BPM 流程表达式表单。 */
 export default {
   name: 'ProcessExpressionForm',
+  components: { Dialog },
   data() {
     return {
       dialogVisible: false,
@@ -96,15 +94,7 @@ export default {
       this.formLoading = true
       try {
         const response = await getProcessExpression(id)
-        this.form = {
-          ...createDefaultForm(),
-          ...((response && response.data) || {})
-        }
-        if (this.form.status !== undefined && this.form.status !== null) {
-          this.form.status = Number(this.form.status)
-        }
-      } catch (e) {
-        // request 拦截器已提示后端错误，保留弹窗以便取消或重试。
+        this.form = response.data
       } finally {
         this.formLoading = false
         this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
@@ -133,8 +123,6 @@ export default {
         }
         this.dialogVisible = false
         this.$emit('success')
-      } catch (e) {
-        // request 拦截器已统一展示错误信息。
       } finally {
         this.formLoading = false
       }

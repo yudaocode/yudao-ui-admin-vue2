@@ -16,7 +16,7 @@
       <div v-if="dialogVisible">
         <el-button style="float: right" @click="copy">复制</el-button>
         <el-scrollbar style="height: 560px">
-          <pre><code class="hljs">{{ formDataText }}</code></pre>
+          <pre><code class="hljs" v-dompurify-html="highlightedCode"></code></pre>
         </el-scrollbar>
       </div>
     </el-dialog>
@@ -26,6 +26,11 @@
 <script>
 import formCreate from '@form-create/element-ui'
 import { useFormCreateDesigner } from '@/components/FormCreate/src/useFormCreateDesigner'
+import hljs from 'highlight.js/lib/highlight'
+import 'highlight.js/styles/github.css'
+
+hljs.registerLanguage('json', require('highlight.js/lib/languages/json'))
+hljs.registerLanguage('xml', require('highlight.js/lib/languages/xml'))
 
 export default {
   name: 'InfraBuild',
@@ -70,6 +75,9 @@ export default {
     };
   },
   computed: {
+    highlightedCode() {
+      return hljs.highlight(this.formType === 2 ? 'xml' : 'json', this.formDataText || '', true).value || '&nbsp;'
+    },
     // 预览文本：JSON / Options 序列化为字符串，组件直接展示模板字符串
     formDataText() {
       if (this.formType === 2) {

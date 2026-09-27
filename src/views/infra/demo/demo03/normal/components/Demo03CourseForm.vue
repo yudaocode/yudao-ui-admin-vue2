@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-normal';
+import * as Demo03StudentApi from '@/api/infra/demo/demo03/normal';
 
 export default {
   name: "Demo03CourseForm",

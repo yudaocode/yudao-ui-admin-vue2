@@ -36,43 +36,27 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
-                     v-hasPermi="['infra:data-source-config:update']">修改</el-button>
+                     v-hasPermi="['infra:data-source-config:update']"
+                     :disabled="scope.row.id === 0">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
-                     v-hasPermi="['infra:data-source-config:delete']">删除</el-button>
+                     v-hasPermi="['infra:data-source-config:delete']"
+                     :disabled="scope.row.id === 0">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- 对话框(添加 / 修改) -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="数据源名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入参数名称" />
-        </el-form-item>
-        <el-form-item label="数据源连接" prop="url">
-          <el-input v-model="form.url" placeholder="请输入数据源连接" />
-        </el-form-item>
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" placeholder="请输入密码" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <data-source-config-form ref="form" @success="getList" />
   </div>
 </template>
 
 <script>
-import { createDataSourceConfig, updateDataSourceConfig, deleteDataSourceConfig, getDataSourceConfig, getDataSourceConfigList, deleteDataSourceConfigList } from "@/api/infra/dataSourceConfig";
+import { deleteDataSourceConfig, getDataSourceConfigList, deleteDataSourceConfigList } from "@/api/infra/dataSourceConfig";
+import DataSourceConfigForm from './DataSourceConfigForm.vue'
 
 export default {
   name: "InfraDataSourceConfig",
   components: {
+    DataSourceConfigForm
   },
   data() {
     return {
@@ -82,19 +66,6 @@ export default {
       total: 0,
       // 数据源配置列表
       list: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        name: [{ required: true, message: "数据源名称不能为空", trigger: "blur" }],
-        url: [{ required: true, message: "数据源连接不能为空", trigger: "blur" }],
-        username: [{ required: true, message: "用户名不能为空", trigger: "blur" }],
-        password: [{ required: true, message: "密码不能为空", trigger: "blur" }],
-      },
       checkedIds: []
     };
   },
@@ -111,60 +82,13 @@ export default {
         this.loading = false;
       });
     },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        id: undefined,
-        name: undefined,
-        url: undefined,
-        username: undefined,
-        password: undefined,
-      };
-      this.resetForm("form");
-    },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加数据源配置";
+      this.$refs.form.open('create')
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getDataSourceConfig(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改数据源配置";
-      });
-    },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (!valid) {
-          return;
-        }
-        // 修改的提交
-        if (this.form.id != null) {
-          updateDataSourceConfig(this.form).then(response => {
-            this.$modal.msgSuccess("修改成功");
-            this.open = false;
-            this.getList();
-          });
-          return;
-        }
-        // 添加的提交
-        createDataSourceConfig(this.form).then(response => {
-          this.$modal.msgSuccess("新增成功");
-          this.open = false;
-          this.getList();
-        });
-      });
+      this.$refs.form.open('update', row.id)
     },
     /** 删除按钮操作 */
     handleDelete(row) {
@@ -177,7 +101,8 @@ export default {
         }).catch(() => {});
     },
     handleRowCheckboxChange(val) {
-      this.checkedIds = val.map(item => item.id);
+      // 与 Vue3 源一致：过滤掉 id 为 0 的主数据源
+      this.checkedIds = val.map(item => item.id).filter(id => id !== 0 && Boolean(id))
     },
     handleDeleteBatch() {
       const ids = this.checkedIds;

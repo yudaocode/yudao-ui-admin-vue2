@@ -109,62 +109,18 @@
                 @pagination="getList"/>
 
     <!-- 对话框(添加 / 修改) -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="租户名" prop="name">
-          <el-input v-model="form.name" placeholder="请输入租户名" />
-        </el-form-item>
-        <el-form-item label="租户套餐" prop="packageId">
-          <el-select v-model="form.packageId" placeholder="请选择租户套餐" clearable size="small">
-            <el-option v-for="item in packageList" :key="item.id" :label="item.name" :value="item.id"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="联系人" prop="contactName">
-          <el-input v-model="form.contactName" placeholder="请输入联系人" />
-        </el-form-item>
-        <el-form-item label="联系手机" prop="contactMobile">
-          <el-input v-model="form.contactMobile" placeholder="请输入联系手机" />
-        </el-form-item>
-        <el-form-item v-if="form.id === undefined" label="用户名称" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名称" />
-        </el-form-item>
-        <el-form-item v-if="form.id === undefined" label="用户密码" prop="password">
-          <el-input v-model="form.password" placeholder="请输入用户密码" type="password" show-password />
-        </el-form-item>
-        <el-form-item label="账号额度" prop="accountCount">
-          <el-input-number v-model="form.accountCount" placeholder="请输入账号额度" controls-position="right" :min="0" />
-        </el-form-item>
-        <el-form-item label="过期时间" prop="expireTime">
-          <el-date-picker clearable size="small" v-model="form.expireTime" type="date"
-                          value-format="timestamp" placeholder="请选择过期时间" />
-        </el-form-item>
-        <el-form-item label="绑定域名" prop="websites">
-          <el-input v-model="form.websites" type="textarea" rows="2" placeholder="请输入网站，多个网站请换行分隔" />
-        </el-form-item>
-        <el-form-item label="租户状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.COMMON_STATUS)"
-                      :key="dict.value" :label="parseInt(dict.value)">{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <TenantForm ref="tenantForm" @success="getList" />
   </div>
 </template>
 
 <script>
-import { createTenant, updateTenant, deleteTenant, getTenant, getTenantPage, exportTenantExcel, deleteTenantList } from "@/api/system/tenant";
-import { CommonStatusEnum } from '@/utils/constants'
+import TenantForm from './TenantForm.vue'
+import { deleteTenant, getTenantPage, exportTenant, deleteTenantList } from "@/api/system/tenant";
 import {getTenantPackageList} from "@/api/system/tenantPackage";
 
 export default {
   name: "SystemTenant",
-  components: {
-  },
+  components: { TenantForm },
   data() {
     return {
       // 遮罩层
@@ -179,10 +135,6 @@ export default {
       list: [],
       // 租户套餐列表
       packageList: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 选中行
       checkedIds: [],
       // 查询参数
@@ -194,19 +146,6 @@ export default {
         contactMobile: null,
         status: undefined,
         createTime: []
-      },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        name: [{ required: true, message: "租户名不能为空", trigger: "blur" }],
-        packageId: [{ required: true, message: "租户套餐不能为空", trigger: "blur" }],
-        contactName: [{ required: true, message: "联系人不能为空", trigger: "blur" }],
-        status: [{ required: true, message: "租户状态不能为空", trigger: "blur" }],
-        accountCount: [{ required: true, message: "账号额度不能为空", trigger: "blur" }],
-        expireTime: [{ required: true, message: "过期时间不能为空", trigger: "blur" }],
-        username: [{ required: true, message: "用户名称不能为空", trigger: "blur" }],
-        password: [{ required: true, message: "用户密码不能为空", trigger: "blur" }],
       }
     };
   },
@@ -222,31 +161,12 @@ export default {
     getList() {
       this.loading = true;
       // 执行查询
-      getTenantPage(this.queryParams).then(response => {
+      return getTenantPage(this.queryParams).then(response => {
         this.list = response.data.list;
         this.total = response.data.total;
+      }).finally(() => {
         this.loading = false;
       });
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        id: undefined,
-        name: undefined,
-        packageId: undefined,
-        contactName: undefined,
-        contactMobile: undefined,
-        accountCount: undefined,
-        expireTime: undefined,
-        websites: undefined,
-        status: CommonStatusEnum.ENABLE,
-      };
-      this.resetForm("form");
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -260,54 +180,11 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加租户";
+      this.$refs.tenantForm.open('create');
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const id = row.id;
-      getTenant(id).then(response => {
-        this.form = response.data;
-        // websites 数组转为换行分隔字符串，便于文本域展示
-        if (Array.isArray(this.form.websites)) {
-          this.form.websites = this.form.websites.join('\n');
-        }
-        this.open = true;
-        this.title = "修改租户";
-      });
-    },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (!valid) {
-          return;
-        }
-        // 处理 websites，将换行分隔的字符串转换为数组
-        const submitData = { ...this.form };
-        if (submitData.websites) {
-          submitData.websites = submitData.websites
-            .split('\n')
-            .filter(item => item.trim() !== '')
-            .map(item => item.trim());
-        }
-        // 修改的提交
-        if (this.form.id != null) {
-          updateTenant(submitData).then(response => {
-            this.$modal.msgSuccess("修改成功");
-            this.open = false;
-            this.getList();
-          });
-          return;
-        }
-        // 添加的提交
-        createTenant(submitData).then(response => {
-          this.$modal.msgSuccess("新增成功");
-          this.open = false;
-          this.getList();
-        });
-      });
+      this.$refs.tenantForm.open('update', row.id);
     },
     /** 删除按钮操作 */
     handleDelete(row) {
@@ -328,7 +205,7 @@ export default {
       // 执行导出
       this.$modal.confirm('是否确认导出所有租户数据项?').then(() => {
         this.exportLoading = true;
-        return exportTenantExcel(params);
+        return exportTenant(params);
       }).then(response => {
         this.$download.excel(response, '租户.xls');
       }).catch(() => {

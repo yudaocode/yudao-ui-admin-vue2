@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 查询定时任务调度列表
-export function listJob(query) {
+export function getJobPage(query) {
   return request({
     url: '/infra/job/page',
     method: 'get',
@@ -18,7 +18,7 @@ export function getJob(jobId) {
 }
 
 // 新增定时任务调度
-export function addJob(data) {
+export function createJob(data) {
   return request({
     url: '/infra/job/create',
     method: 'post',
@@ -36,7 +36,7 @@ export function updateJob(data) {
 }
 
 // 删除定时任务调度
-export function delJob(jobId) {
+export function deleteJob(jobId) {
   return request({
     url: '/infra/job/delete?id=' + jobId,
     method: 'delete'
@@ -44,10 +44,11 @@ export function delJob(jobId) {
 }
 
 // 批量删除定时任务调度
-export function delJobList(ids) {
+export function deleteJobList(ids) {
   return request({
-    url: `/infra/job/delete-list?ids=${ids.join(',')}`,
-    method: 'delete'
+    url: '/infra/job/delete-list',
+    method: 'delete',
+    params: { ids: ids.join(',') }
   })
 }
 
@@ -66,10 +67,7 @@ export function updateJobStatus(jobId, status) {
   return request({
     url: '/infra/job/update-status',
     method: 'put',
-    headers:{
-      'Content-type': 'application/x-www-form-urlencoded'
-    },
-    data: 'id=' + jobId + "&status=" + status,
+    params: { id: jobId, status: status }
   })
 }
 

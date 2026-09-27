@@ -82,18 +82,20 @@ export default {
     this.getList();
   },
   methods: {
-    /** 查询登录日志列表 */
-    getList() {
+    /** 查询访问令牌列表 */
+    async getList() {
       this.loading = true;
-      getAccessTokenPage(this.queryParams).then(response => {
+      try {
+        const response = await getAccessTokenPage(this.queryParams);
         this.list = response.data.list;
         this.total = response.data.total;
+      } finally {
         this.loading = false;
-      });
+      }
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.pageNo = 1;
+      this.queryParams.pageNo = 1;
       this.getList();
     },
     /** 重置按钮操作 */
@@ -113,4 +115,3 @@ export default {
   }
 };
 </script>
-

@@ -110,7 +110,7 @@
 </template>
 
 <script>
-import * as Demo03StudentApi from '@/api/infra/demo03-erp';
+import * as Demo03StudentApi from '@/api/infra/demo/demo03/erp';
 import Demo03StudentForm from './Demo03StudentForm.vue';
 import Demo03CourseList from './components/Demo03CourseList.vue';
 import Demo03GradeList from './components/Demo03GradeList.vue';
@@ -213,7 +213,7 @@ export default {
       await this.$modal.confirm('是否确认导出所有学生数据项?');
       try {
         this.exportLoading = true;
-        const data = await Demo03StudentApi.exportDemo03StudentExcel(this.queryParams);
+        const data = await Demo03StudentApi.exportDemo03Student(this.queryParams);
         this.$download.excel(data, '学生.xls');
       } catch {
       } finally {

@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, provide, onMounted } from 'vue'
+import { ref, provide, onMounted, watch } from 'vue'
 import ProcessNodeTree from './ProcessNodeTree.vue'
 import { NodeType, NODE_DEFAULT_TEXT } from './consts'
 import { useWatchNode } from './node'
@@ -80,6 +80,19 @@ const props = defineProps({
 const emits = defineEmits(['save'])
 
 const processNodeTree = useWatchNode(props)
+
+// Normalize imported enum strings before the first render. The node
+// templates intentionally use strict comparisons for performance and visual
+// dispatch, so waiting until save would leave an otherwise valid imported
+// model blank and uneditable.  The adapter only canonicalizes known node
+// types and preserves unknown extensions.
+normalizeNodeTree(processNodeTree.value)
+watch(
+  () => props.flowNode,
+  (value) => {
+    if (value) normalizeNodeTree(value)
+  }
+)
 
 provide('readonly', props.readonly)
 
@@ -206,7 +219,7 @@ const getCurrentFlowData = async() => {
       return undefined
     }
     // Normalize every nested node, not only the drawer currently being edited.
-    // Imported models may contain legacy delay/trigger/child-process shapes in
+    // Imported models may contain older delay/trigger/child-process shapes in
     // untouched branches; the backend validates the complete tree on save.
     normalizeNodeTree(processNodeTree.value)
     return processNodeTree.value
@@ -246,6 +259,7 @@ const importLocalFile = () => {
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
           throw new Error('流程模型必须是 JSON 对象')
         }
+        normalizeNodeTree(parsed)
         processNodeTree.value = parsed
         importKey.value++
         emits('save', processNodeTree.value)

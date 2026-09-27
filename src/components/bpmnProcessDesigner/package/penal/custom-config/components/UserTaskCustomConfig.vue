@@ -308,8 +308,8 @@ export default {
       if (this.element) this.buildFieldsPermission()
     }
   },
-  created() {
-    this.loadUsers()
+  async created() {
+    await this.loadUsers()
   },
   methods: {
     bpmn() {
@@ -348,17 +348,9 @@ export default {
       return OPERATION_BUTTON_NAME.get(asNumber(id, id)) || `按钮${id}`
     },
     async loadUsers() {
-      try {
-        const response = await getSimpleUserList()
-        const data = response && response.data !== undefined ? response.data : response
-        this.userOptions = Array.isArray(data) ? data : []
-        this.loadError = ''
-      } catch (error) {
-        this.loadError = '用户列表加载失败，指定用户仍可保留已有编号'
-        // Keep the API failure observable without blocking BPMN editing.
-        // eslint-disable-next-line no-console
-        console.error('[bpmn] failed to load simple users', error)
-      }
+      const response = await getSimpleUserList()
+      this.userOptions = Array.isArray(response.data) ? response.data : []
+      this.loadError = ''
     },
     actualElement() {
       const instance = this.bpmn()
@@ -516,7 +508,11 @@ export default {
         this.findExtension(values, 'ReasonRequire') || this.moddleCreate('ReasonRequire', { value: false })
       this.reasonRequireEl.value = asBoolean(extensionValue(this.reasonRequireEl, false), false)
 
-      this.otherExtensions = values.filter((item) => !this.isManagedExtension(item))
+      // ExtensionElements.values should contain moddle objects only.  A
+      // malformed imported JSON may nevertheless leave null entries; passing
+      // those through to moddle.create makes later saves fail even though the
+      // visible custom settings are valid.
+      this.otherExtensions = values.filter((item) => item && !this.isManagedExtension(item))
       this.buildFieldsPermission()
       this.updateElementExtensions()
     },

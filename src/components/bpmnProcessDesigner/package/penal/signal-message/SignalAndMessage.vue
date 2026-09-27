@@ -228,7 +228,7 @@ export default {
           if (key === '$model' || key === '$parent') return
           const child = value[key]
           // bpmn-moddle normally stores references as the root object.  A few
-          // imported legacy models retain the old id as a string/object clone;
+          // imported models may retain the id as a string/object clone;
           // normalize those references so an id edit cannot leave stale refs.
           if (key === 'messageRef' || key === 'signalRef') {
             if (child === root || child === oldId || (child && child.id === oldId)) {

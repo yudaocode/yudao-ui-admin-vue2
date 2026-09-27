@@ -1,20 +1,37 @@
 import request from '@/utils/request'
 
-// 创建退款订单
+// 查询列表退款订单
+export function getRefundPage(query) {
+  return request({
+    url: '/pay/refund/page',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询详情退款订单
+export function getRefund(id) {
+  return request({
+    url: '/pay/refund/get?id=' + id,
+    method: 'get'
+  })
+}
+
+// 新增退款订单
 export function createRefund(data) {
   return request({
     url: '/pay/refund/create',
     method: 'post',
-    data: data
+    data
   })
 }
 
-// 更新退款订单
+// 修改退款订单
 export function updateRefund(data) {
   return request({
     url: '/pay/refund/update',
     method: 'put',
-    data: data
+    data
   })
 }
 
@@ -26,25 +43,8 @@ export function deleteRefund(id) {
   })
 }
 
-// 获得退款订单
-export function getRefund(id) {
-  return request({
-    url: '/pay/refund/get?id=' + id,
-    method: 'get'
-  })
-}
-
-// 获得退款订单分页
-export function getRefundPage(query) {
-  return request({
-    url: '/pay/refund/page',
-    method: 'get',
-    params: query
-  })
-}
-
-// 导出退款订单 Excel
-export function exportRefundExcel(query) {
+// 导出退款订单
+export function exportRefund(query) {
   return request({
     url: '/pay/refund/export-excel',
     method: 'get',

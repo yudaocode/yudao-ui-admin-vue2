@@ -62,7 +62,7 @@ export default {
       if (!text) {
         return []
       }
-      // Some legacy responses serialized the array as JSON. Prefer that
+      // Some saved responses serialized the array as JSON. Prefer that
       // representation before falling back to comma-separated parsing.
       if (text.charAt(0) === '[') {
         try {
@@ -73,7 +73,7 @@ export default {
               .map((item) => String(item).trim())
           }
         } catch (e) {
-          // Fall through to comma-separated parsing for malformed legacy data.
+          // Fall through to comma-separated parsing for malformed saved data.
         }
       }
       return text.split(',').map((item) => item.trim()).filter(Boolean)

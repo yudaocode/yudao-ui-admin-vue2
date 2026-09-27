@@ -1,0 +1,69 @@
+<template><div><div class="toolbar"><el-button
+  v-hasPermi="['hrm:employee:update']"
+  type="primary"
+  plain
+  icon="el-icon-plus"
+  @click="openForm"
+>新增</el-button></div><el-table
+  v-loading="loading"
+  :data="list"
+  stripe
+><el-table-column
+  label="异动类型"
+  prop="type"
+  width="120"
+><template slot-scope="scope">{{ formatEmployeeChangeType(scope.row.type) }}</template></el-table-column><el-table-column
+  label="原部门"
+  prop="oldDeptName"
+  min-width="120"
+/><el-table-column
+  label="新部门"
+  prop="newDeptName"
+  min-width="120"
+/><el-table-column
+  label="原岗位"
+  prop="oldPostName"
+  min-width="120"
+/><el-table-column
+  label="新岗位"
+  prop="newPostName"
+  min-width="120"
+/><el-table-column
+  label="原职级"
+  prop="oldPostLevel"
+  min-width="100"
+/><el-table-column
+  label="新职级"
+  prop="newPostLevel"
+  min-width="100"
+/><el-table-column
+  label="原工作地点"
+  prop="oldWorkAddress"
+  min-width="140"
+/><el-table-column
+  label="新工作地点"
+  prop="newWorkAddress"
+  min-width="140"
+/><el-table-column
+  label="原直属上级"
+  prop="oldLeaderEmployeeName"
+  min-width="120"
+/><el-table-column
+  label="新直属上级"
+  prop="newLeaderEmployeeName"
+  min-width="120"
+/><el-table-column
+  label="生效日期"
+  prop="effectTime"
+  width="120"
+  :formatter="dateFormatter2"
+/><el-table-column
+  label="备注"
+  prop="remark"
+  min-width="160"
+/></el-table><employee-transfer-form
+  ref="form"
+  @success="handleSuccess"
+/></div></template>
+<script>import { dateFormatter2 } from '@/utils'; import { getEmployeeChangeRecordList } from '@/api/hrm/employee/change-record'; import { formatEmployeeChangeType } from '@/views/hrm/utils/format'; import EmployeeTransferForm from '../EmployeeTransferForm.vue'; export default { name: 'HrmEmployeeChangeRecordList', components: { EmployeeTransferForm }, props: { employee: { type: Object, required: true }, employeeId: { type: Number, required: true }}, data() { return { loading: true, list: [] } }, created() { this.getList() }, methods: { dateFormatter2, formatEmployeeChangeType, async getList() { this.loading = true; try { const response = await getEmployeeChangeRecordList(this.employeeId); this.list = response.data } finally { this.loading = false } }, openForm() { this.$refs.form.open(this.employee) }, async handleSuccess() { await this.getList(); this.$emit('success') } }}</script>
+<style scoped>.toolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }</style>

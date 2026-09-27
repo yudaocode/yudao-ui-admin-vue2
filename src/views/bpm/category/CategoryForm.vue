@@ -1,10 +1,9 @@
 <template>
-  <el-dialog
+  <Dialog
     :title="dialogTitle"
-    :visible.sync="dialogVisible"
-    :width="width"
-    append-to-body
-    :close-on-click-modal="false"
+    v-model="dialogVisible"
+    :width="compact ? '400px' : width"
+    :fullscreen="!compact"
     @closed="handleClosed"
   >
     <el-form
@@ -12,9 +11,9 @@
       v-loading="formLoading"
       :model="form"
       :rules="formRules"
-      label-width="100px"
+      :label-width="compact ? '0px' : '100px'"
     >
-      <el-form-item label="分类名" prop="name">
+      <el-form-item :label="compact ? undefined : '分类名'" prop="name">
         <el-input v-model="form.name" placeholder="请输入分类名" />
       </el-form-item>
       <template v-if="!compact">
@@ -46,15 +45,17 @@
       </template>
     </el-form>
     <div slot="footer" class="dialog-footer">
+      <el-button v-if="compact" :disabled="formLoading" @click="dialogVisible = false">取 消</el-button>
       <el-button type="primary" :loading="formLoading" :disabled="formLoading" @click="submitForm">
         确 定
       </el-button>
-      <el-button :disabled="formLoading" @click="dialogVisible = false">取 消</el-button>
+      <el-button v-if="!compact" :disabled="formLoading" @click="dialogVisible = false">取 消</el-button>
     </div>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script>
+import Dialog from '@/components/Dialog'
 import {
   createCategory,
   getCategory,
@@ -69,18 +70,18 @@ function createDefaultForm() {
     code: undefined,
     description: undefined,
     status: CommonStatusEnum.ENABLE,
-    // 后端 DTO 要求排序非空；新增时从 0 开始，用户仍可调整。
-    sort: 0
+    sort: undefined
   }
 }
 
 /** 可复用的 BPM 流程分类表单。 */
 export default {
   name: 'CategoryForm',
+  components: { Dialog },
   props: {
     width: {
       type: String,
-      default: '500px'
+      default: '40%'
     }
   },
   data() {
@@ -127,18 +128,7 @@ export default {
         this.formLoading = true
         try {
           const response = await getCategory(id)
-          this.form = {
-            ...createDefaultForm(),
-            ...((response && response.data) || {})
-          }
-          if (this.form.status !== undefined && this.form.status !== null) {
-            this.form.status = Number(this.form.status)
-          }
-          if (this.form.sort !== undefined && this.form.sort !== null) {
-            this.form.sort = Number(this.form.sort)
-          }
-        } catch (e) {
-          // request 拦截器已提示后端错误，保留弹窗便于用户重试或取消。
+          this.form = response.data
         } finally {
           this.formLoading = false
           this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
@@ -170,8 +160,6 @@ export default {
         }
         this.dialogVisible = false
         this.$emit('success')
-      } catch (e) {
-        // request 拦截器已统一展示错误信息。
       } finally {
         this.formLoading = false
       }

@@ -100,10 +100,10 @@
 
 <script>
 import { CANDIDATE_STRATEGY, CandidateStrategy, MULTI_LEVEL_DEPT } from '@/components/SimpleProcessDesignerV2/src/consts'
-import { listSimpleRoles } from '@/api/system/role'
-import { listSimplePosts } from '@/api/system/post'
-import { listSimpleUsers } from '@/api/system/user'
-import { listSimpleDepts } from '@/api/system/dept'
+import { getSimpleRoleList } from '@/api/system/role'
+import { getSimplePostList } from '@/api/system/post'
+import { getSimpleUserList } from '@/api/system/user'
+import { getSimpleDeptList } from '@/api/system/dept'
 import { getUserGroupSimpleList } from '@/api/bpm/userGroup'
 import { parseFields } from '@/components/SimpleProcessDesignerV2/src/nodes-config/components/node-config-utils'
 import ProcessExpressionDialog from './ProcessExpressionDialog.vue'
@@ -118,8 +118,7 @@ function unwrap(value) {
 }
 
 function responseData(response) {
-  const data = response && response.data !== undefined ? response.data : response
-  return Array.isArray(data) ? data : []
+  return Array.isArray(response.data) ? response.data : []
 }
 
 function idList(value) {
@@ -214,8 +213,8 @@ export default {
       }
     }
   },
-  mounted() {
-    this.loadOptions()
+  async mounted() {
+    await this.loadOptions()
   },
   methods: {
     strategyIs(strategy) {
@@ -225,10 +224,10 @@ export default {
       this.loadingOptions = true
       try {
         const responses = await Promise.all([
-          listSimpleRoles(),
-          listSimpleDepts(),
-          listSimplePosts(),
-          listSimpleUsers(),
+          getSimpleRoleList(),
+          getSimpleDeptList(),
+          getSimplePostList(),
+          getSimpleUserList(),
           getUserGroupSimpleList()
         ])
         this.roleOptions = responseData(responses[0])
@@ -237,11 +236,8 @@ export default {
         this.postOptions = responseData(responses[2])
         this.userOptions = responseData(responses[3])
         this.userGroupOptions = responseData(responses[4])
-      } catch (e) {
-        // A missing option endpoint must not make the BPMN panel disappear;
-        // existing candidate IDs remain editable through the JSON/XML view.
       } finally {
-      this.loadingOptions = false
+        this.loadingOptions = false
       }
     },
     normalizeDept(node) {

@@ -1,10 +1,7 @@
 <template>
-  <el-dialog
+  <Dialog
     :title="dialogTitle"
-    :visible.sync="dialogVisible"
-    width="500px"
-    append-to-body
-    :close-on-click-modal="false"
+    v-model="dialogVisible"
     @closed="handleClosed"
   >
     <el-form
@@ -42,9 +39,9 @@
         <el-select v-model="form.event" placeholder="请选择事件" style="width: 100%">
           <el-option
             v-for="event in eventOptions"
-            :key="event.value"
-            :label="event.label"
-            :value="event.value"
+            :key="event"
+            :label="event"
+            :value="event"
           />
         </el-select>
       </el-form-item>
@@ -53,7 +50,6 @@
           v-model="form.valueType"
           placeholder="请选择值类型"
           style="width: 100%"
-          @change="handleValueTypeChange"
         >
           <el-option
             v-for="dict in getDictDatas(DICT_TYPE.BPM_PROCESS_LISTENER_VALUE_TYPE)"
@@ -71,12 +67,13 @@
       <el-button type="primary" :loading="formLoading" :disabled="formLoading" @click="submitForm">
         确 定
       </el-button>
-      <el-button :disabled="formLoading" @click="dialogVisible = false">取 消</el-button>
+      <el-button @click="dialogVisible = false">取 消</el-button>
     </div>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script>
+import Dialog from '@/components/Dialog'
 import {
   createProcessListener,
   getProcessListener,
@@ -96,23 +93,13 @@ function createDefaultForm() {
   }
 }
 
-// Flowable expects event codes, while the UI displays their Chinese labels.
-const EVENT_EXECUTION_OPTIONS = [
-  { label: '开始', value: 'start' },
-  { label: '结束', value: 'end' }
-]
-const EVENT_TASK_OPTIONS = [
-  { label: '创建', value: 'create' },
-  { label: '指派', value: 'assignment' },
-  { label: '完成', value: 'complete' },
-  { label: '删除', value: 'delete' },
-  { label: '更新', value: 'update' },
-  { label: '超时', value: 'timeout' }
-]
+const EVENT_EXECUTION_OPTIONS = ['开始', '结束']
+const EVENT_TASK_OPTIONS = ['创建', '指派', '完成', '删除', '更新', '超时']
 
 /** 可复用的 BPM 流程监听器表单。 */
 export default {
   name: 'ProcessListenerForm',
+  components: { Dialog },
   data() {
     return {
       dialogVisible: false,
@@ -137,10 +124,10 @@ export default {
         : EVENT_TASK_OPTIONS
     },
     valueLabel() {
-      return this.form.valueType === 'class' ? '类路径' : '表达式'
+      return this.form.type === 'class' ? '类路径' : '表达式'
     },
     valuePlaceholder() {
-      return this.form.valueType === 'class' ? '请输入类路径' : '请输入表达式'
+      return this.form.type === 'class' ? '请输入类路径' : '请输入表达式'
     }
   },
   methods: {
@@ -159,16 +146,7 @@ export default {
       this.formLoading = true
       try {
         const response = await getProcessListener(id)
-        this.form = {
-          ...createDefaultForm(),
-          ...((response && response.data) || {})
-        }
-        this.form.event = this.normalizeEvent(this.form.event)
-        if (this.form.status !== undefined && this.form.status !== null) {
-          this.form.status = Number(this.form.status)
-        }
-      } catch (e) {
-        // request 拦截器已提示后端错误，保留弹窗以便取消或重试。
+        this.form = response.data
       } finally {
         this.formLoading = false
         this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
@@ -177,23 +155,6 @@ export default {
     handleTypeChange() {
       this.form.event = undefined
       this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate('event'))
-    },
-    handleValueTypeChange() {
-      this.form.value = undefined
-      this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate('value'))
-    },
-    normalizeEvent(event) {
-      const legacyEventMap = {
-        开始: 'start',
-        结束: 'end',
-        创建: 'create',
-        指派: 'assignment',
-        完成: 'complete',
-        删除: 'delete',
-        更新: 'update',
-        超时: 'timeout'
-      }
-      return legacyEventMap[event] || event
     },
     async submitForm() {
       if (this.formLoading) {
@@ -218,8 +179,6 @@ export default {
         }
         this.dialogVisible = false
         this.$emit('success')
-      } catch (e) {
-        // request 拦截器已统一展示错误信息。
       } finally {
         this.formLoading = false
       }

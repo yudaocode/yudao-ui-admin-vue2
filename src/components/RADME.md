@@ -1,4 +1,8 @@
-## form-generator
+## Legacy form-generator assets
+
+The BPM pages now use the Vue3-aligned `form-create` integration. The original
+generator/parser/render packages remain only for the standalone infra builder
+and external imports; they are not part of the BPM runtime contract.
 
 github 地址：https://github.com/JakHuang/form-generator
 

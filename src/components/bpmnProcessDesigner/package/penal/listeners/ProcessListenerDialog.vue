@@ -17,7 +17,16 @@ export default {
   data() { return { visible: false, loading: false, list: [], total: 0, query: { pageNo: 1, pageSize: 10, type: 'execution', status: 0 } } },
   methods: {
     open(type) { this.query.pageNo = 1; this.query.type = type || 'execution'; this.visible = true; this.getList() },
-    async getList() { this.loading = true; try { const response = await getProcessListenerPage(this.query); const data = response && response.data ? response.data : response; this.list = data && (data.list || data.records) || []; this.total = data && data.total || 0 } finally { this.loading = false } },
+    async getList() {
+      this.loading = true
+      try {
+        const response = await getProcessListenerPage(this.query)
+        this.list = response.data.list
+        this.total = response.data.total
+      } finally {
+        this.loading = false
+      }
+    },
     select(row) { this.visible = false; this.$emit('select', row) }
   }
 }

@@ -1,0 +1,63 @@
+<template><div><div class="toolbar"><el-button
+  v-hasPermi="['hrm:employee:update']"
+  type="primary"
+  plain
+  icon="el-icon-plus"
+  @click="openForm()"
+>新增</el-button></div><el-table
+  v-loading="loading"
+  :data="list"
+  stripe
+><el-table-column
+  label="培训课程"
+  prop="course"
+  min-width="150"
+/><el-table-column
+  label="培训机构"
+  prop="organizationName"
+  min-width="150"
+/><el-table-column
+  label="开始日期"
+  prop="startTime"
+  width="120"
+  :formatter="dateFormatter2"
+/><el-table-column
+  label="结束日期"
+  prop="endTime"
+  width="120"
+  :formatter="dateFormatter2"
+/><el-table-column
+  label="培训时长"
+  prop="duration"
+  min-width="100"
+/><el-table-column
+  label="培训成绩"
+  prop="result"
+  min-width="100"
+/><el-table-column
+  label="证书名称"
+  prop="certificateName"
+  min-width="140"
+/><el-table-column
+  label="备注"
+  prop="remark"
+  min-width="160"
+/><el-table-column
+  label="操作"
+  fixed="right"
+  width="120"
+><template slot-scope="scope"><el-button
+  v-hasPermi="['hrm:employee:update']"
+  type="text"
+  @click="openForm(scope.row)"
+>编辑</el-button><el-button
+  v-hasPermi="['hrm:employee:delete']"
+  type="text"
+  class="danger-button"
+  @click="handleDelete(scope.row.id)"
+>删除</el-button></template></el-table-column></el-table><employee-training-experience-form
+  ref="form"
+  @success="getList"
+/></div></template>
+<script>import { dateFormatter2 } from '@/utils'; import { getEmployeeTrainingExperienceList, deleteEmployeeTrainingExperience } from '@/api/hrm/employee/training-experience'; import EmployeeTrainingExperienceForm from './EmployeeTrainingExperienceForm.vue'; export default { name: 'HrmEmployeeTrainingExperienceList', components: { EmployeeTrainingExperienceForm }, props: { employeeId: { type: Number, required: true }}, data() { return { loading: true, list: [] } }, created() { this.getList() }, methods: { dateFormatter2, async getList() { this.loading = true; try { const response = await getEmployeeTrainingExperienceList(this.employeeId); this.list = response.data } finally { this.loading = false } }, openForm(row) { this.$refs.form.open(this.employeeId, row) }, async handleDelete(id) { if (!id) return; try { await this.$modal.confirm('是否确认删除该培训经历?'); await deleteEmployeeTrainingExperience(id); this.$modal.msgSuccess('删除成功'); await this.getList() } catch (error) {} } }}</script>
+<style scoped>.toolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }.danger-button { color:#f56c6c; }</style>

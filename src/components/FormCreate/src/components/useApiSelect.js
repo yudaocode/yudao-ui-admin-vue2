@@ -30,7 +30,7 @@ function parseFunc(funcText) {
     return null
   }
   try {
-    // Compatible with Vue3 form-create parseFunc string.
+    // Evaluate the Vue3 form-create parseFunc string contract in Vue2.
     return new Function(`return ${funcText}`)()
   } catch (e) {
     return null

@@ -51,7 +51,7 @@
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType"/>
         </template>
-      </el-table-column>>
+      </el-table-column>
       <el-table-column label="应用名" align="center" prop="applicationName" />
       <el-table-column label="请求方法名" align="center" prop="requestMethod" />
       <el-table-column label="请求地址" align="center" prop="requestUrl" width="250" />
@@ -69,7 +69,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row,scope.index)"
-                     v-hasPermi="['infra:api-access-log:query']">详细</el-button>
+                     v-hasPermi="['infra:api-error-log:query']">详细</el-button>
           <el-button type="text" size="mini" icon="el-icon-check"
               v-if="scope.row.processStatus === InfApiErrorLogProcessStatusEnum.INIT" v-hasPermi="['infra:api-error-log:update-status']"
               @click="handleProcessClick(scope.row, InfApiErrorLogProcessStatusEnum.DONE)">已处理</el-button>
@@ -83,48 +83,19 @@
     <!-- 分页组件 -->
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                 @pagination="getList"/>
-
-    <!-- 查看明细 -->
-    <el-dialog title="API 异常日志详细" :visible.sync="open" width="1280px" append-to-body>
-      <el-form ref="form" :model="form" label-width="100px" size="mini">
-        <el-row>
-          <el-col :span="24">
-            <el-form-item label="日志主键：">{{ form.id }}</el-form-item>
-            <el-form-item label="链路追踪：">{{ form.traceId }}</el-form-item>
-            <el-form-item label="应用名：">{{ form.applicationName }}</el-form-item>
-            <el-form-item label="用户信息：">
-              {{ form.userId }} <dict-tag :type="DICT_TYPE.USER_TYPE" :value="form.userType" /> | {{ form.userIp }} | {{ form.userAgent}}
-            </el-form-item>
-            <el-form-item label="请求信息：">{{ form.requestMethod }} | {{ form.requestUrl }} </el-form-item>
-            <el-form-item label="请求参数：">{{ form.requestParams }}</el-form-item>
-            <el-form-item label="异常时间：">{{ parseTime(form.exceptionTime) }}</el-form-item>
-            <el-form-item label="异常名">{{ form.exceptionName }}</el-form-item>
-            <el-form-item label="异常名">
-              <el-input type="textarea" :readonly="true" :autosize="{ maxRows: 20}" v-model="form.exceptionStackTrace"></el-input>
-            </el-form-item>
-            <el-form-item label="处理状态">
-              <dict-tag :type="DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS" :value="form.processStatus" />
-            </el-form-item>
-            <el-form-item label="处理人">{{ form.processUserId }}</el-form-item>
-            <el-form-item label="处理时间">{{ parseTime(form.processTime) }}</el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="open = false">关 闭</el-button>
-      </div>
-    </el-dialog>
-
+    <api-error-log-detail ref="detailRef" />
   </div>
 </template>
 
 <script>
-import { updateApiErrorLogProcess, getApiErrorLogPage, exportApiErrorLogExcel } from "@/api/infra/apiErrorLog";
+import { updateApiErrorLogPage, getApiErrorLogPage, exportApiErrorLog } from "@/api/infra/apiErrorLog";
 import { InfraApiErrorLogProcessStatusEnum } from '@/utils/constants'
+import ApiErrorLogDetail from './ApiErrorLogDetail.vue'
 
 export default {
   name: "InfraApiErrorLog",
   components: {
+    ApiErrorLogDetail
   },
   data() {
     return {
@@ -138,10 +109,6 @@ export default {
       total: 0,
       // API 错误日志列表
       list: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -153,8 +120,6 @@ export default {
         processStatus: null,
         exceptionTime: []
       },
-      // 表单参数
-      form: {},
       // 枚举
       InfApiErrorLogProcessStatusEnum: InfraApiErrorLogProcessStatusEnum,
     };
@@ -173,16 +138,6 @@ export default {
         this.loading = false;
       });
     },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 表单重置 */
-    reset() {
-      this.form = {};
-      this.resetForm("form");
-    },
     /** 搜索按钮操作 */
     handleQuery() {
       this.queryParams.pageNo = 1;
@@ -195,14 +150,13 @@ export default {
     },
     /** 详细按钮操作 */
     handleView(row) {
-      this.open = true;
-      this.form = row;
+      this.$refs.detailRef.open(row);
     },
     /** 处理已处理 / 已忽略的操作 **/
     handleProcessClick(row, processStatus) {
       const processStatusText = this.getDictDataLabel(this.DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS, processStatus)
       this.$modal.confirm('确认标记为' + processStatusText).then(() => {
-        updateApiErrorLogProcess(row.id, processStatus).then(() => {
+        updateApiErrorLogPage(row.id, processStatus).then(() => {
           this.$modal.msgSuccess("修改成功");
           this.getList();
         });
@@ -217,7 +171,7 @@ export default {
       // 执行导出
       this.$modal.confirm('是否确认导出所有API 错误日志数据项?').then(() => {
         this.exportLoading = true;
-        return exportApiErrorLogExcel(params);
+        return exportApiErrorLog(params);
       }).then(response => {
         this.$download.excel(response, 'API 错误日志.xls');
       }).finally(() => {

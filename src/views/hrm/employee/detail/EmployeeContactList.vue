@@ -1,0 +1,53 @@
+<template><div><div class="toolbar"><el-button
+  v-hasPermi="['hrm:employee:update']"
+  type="primary"
+  plain
+  icon="el-icon-plus"
+  @click="openForm()"
+>新增</el-button></div><el-table
+  v-loading="loading"
+  :data="list"
+  stripe
+><el-table-column
+  label="联系人"
+  prop="name"
+  min-width="110"
+/><el-table-column
+  label="关系"
+  prop="relation"
+  min-width="100"
+/><el-table-column
+  label="电话"
+  prop="phone"
+  min-width="130"
+/><el-table-column
+  label="工作单位"
+  prop="workUnit"
+  min-width="150"
+/><el-table-column
+  label="职务"
+  prop="postName"
+  min-width="120"
+/><el-table-column
+  label="地址"
+  prop="address"
+  min-width="180"
+/><el-table-column
+  label="操作"
+  fixed="right"
+  width="120"
+><template slot-scope="scope"><el-button
+  v-hasPermi="['hrm:employee:update']"
+  type="text"
+  @click="openForm(scope.row)"
+>编辑</el-button><el-button
+  v-hasPermi="['hrm:employee:delete']"
+  type="text"
+  class="danger-button"
+  @click="handleDelete(scope.row.id)"
+>删除</el-button></template></el-table-column></el-table><employee-contact-form
+  ref="form"
+  @success="getList"
+/></div></template>
+<script>import { getEmployeeContactList, deleteEmployeeContact } from '@/api/hrm/employee/contact'; import EmployeeContactForm from './EmployeeContactForm.vue'; export default { name: 'HrmEmployeeContactList', components: { EmployeeContactForm }, props: { employeeId: { type: Number, required: true }}, data() { return { loading: true, list: [] } }, created() { this.getList() }, methods: { async getList() { this.loading = true; try { const response = await getEmployeeContactList(this.employeeId); this.list = response.data } finally { this.loading = false } }, openForm(row) { this.$refs.form.open(this.employeeId, row) }, async handleDelete(id) { if (!id) return; try { await this.$modal.confirm('是否确认删除该联系人?'); await deleteEmployeeContact(id); this.$modal.msgSuccess('删除成功'); await this.getList() } catch (error) {} } }}</script>
+<style scoped>.toolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }.danger-button { color:#f56c6c; }</style>

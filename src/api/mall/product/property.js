@@ -45,21 +45,11 @@ export function getPropertyPage(query) {
   })
 }
 
-// 获得属性项列表
-export function getPropertyList(query) {
+// 获得属性项精简列表
+export function getPropertySimpleList() {
   return request({
-    url: '/product/property/list',
-    method: 'get',
-    params: query
-  })
-}
-
-// 获得属性项列表
-export function getPropertyListAndValue(query) {
-  return request({
-    url: '/product/property/get-value-list',
-    method: 'get',
-    params: query
+    url: '/product/property/simple-list',
+    method: 'get'
   })
 }
 
@@ -82,6 +72,13 @@ export function getPropertyValue(id) {
   })
 }
 
+// 获得指定属性的精简属性值列表（用于 SKU 属性编辑）
+export function getPropertyValueSimpleList(propertyId) {
+  return request({
+    url: '/product/property/value/simple-list?propertyId=' + propertyId,
+    method: 'get'
+  })
+}
 
 // 创建属性值
 export function createPropertyValue(data) {
@@ -107,7 +104,4 @@ export function deletePropertyValue(id) {
     url: '/product/property/value/delete?id=' + id,
     method: 'delete'
   })
-}
-
-export class exportPropertyExcel {
 }

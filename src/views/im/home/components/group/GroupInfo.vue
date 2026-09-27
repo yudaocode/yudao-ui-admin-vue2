@@ -1,0 +1,190 @@
+<template>
+  <!--
+    群信息内容组件（与 UserInfo 对位）
+    - 头像 + 群名 + 成员数 + 成员宫格 + 动作区，纯展示 + 抛事件，业务由父级承接
+    - relation 走 groupStore 缓存推导：命中 = member（已加群），否则 = stranger（未加群），无 id = readonly
+    - 成员宫格仅 member 时拉取（陌生群拉不到，所有信息走 props.group 卡片快照）
+  -->
+  <div class="flex justify-center">
+    <div class="w-full max-w-[320px] flex flex-col gap-3 items-center">
+      <GroupAvatar
+        :group-id="group.id"
+        :url="group.showImage || group.showImageThumb"
+        :name="group.showGroupName || group.name"
+        :size="72"
+        :previewable="isMember"
+      />
+      <div
+        class="w-full text-lg font-semibold leading-snug text-[var(--el-text-color-primary)] truncate text-center"
+      >
+        {{ group.showGroupName || group.name }}
+      </div>
+      <div
+        v-if="memberCountText"
+        class="text-13px text-[var(--el-text-color-secondary)]"
+      >
+        {{ memberCountText }}
+      </div>
+
+      <!-- 成员宫格：仅 member 渲染（陌生群拉不到成员） -->
+      <div
+        v-if="isMember && members.length"
+        class="flex flex-wrap gap-2 justify-center w-full pt-2"
+      >
+        <GroupMemberGrid
+          v-for="member in members"
+          :key="member.userId"
+          :member="member"
+          :group-name="group.name"
+        />
+      </div>
+
+      <!-- 动作区：member 进入群聊 / stranger 加入群聊 / readonly 不渲染 -->
+      <div
+        v-if="isMember"
+        class="mt-4"
+      >
+        <el-button
+          type="primary"
+          @click="emit('chat', group)"
+        >进入群聊</el-button>
+      </div>
+      <div
+        v-else-if="isStranger"
+        class="mt-4"
+      >
+        <el-button
+          type="primary"
+          @click="emit('apply', group)"
+        >加入群聊</el-button>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import { defineComponent as _defineComponent } from 'vue'
+import { computed, ref, watch } from 'vue'
+import GroupAvatar from './GroupAvatar.vue'
+import GroupMemberGrid from './GroupMemberGrid.vue'
+import { getCurrentUserId } from '../../../utils/session'
+import { CommonStatusEnum } from '@/utils/constants'
+import { useFriendStore } from '../../store/friendStore'
+import { useGroupStore } from '../../store/groupStore'
+import { getMemberDisplayName, isGroupQuit } from '../../../utils/user'
+const __sfc__ = /* @__PURE__*/_defineComponent({
+  ...{
+    name: 'ImGroupInfo'
+  },
+  components: {
+    GroupAvatar,
+    GroupMemberGrid
+  },
+  __name: 'GroupInfo',
+  props: {
+    group: {
+      type: null,
+      required: true
+    }
+  },
+  emits: ['chat', 'apply'],
+  setup(__props, {
+    expose: __expose,
+    emit: __emit
+  }) {
+    __expose()
+    const props = __props
+    const emit = __emit
+    const groupStore = useGroupStore()
+    const friendStore = useFriendStore()
+    const members = ref([])
+
+    /**
+     * 是否已加群：基于"自己确实在成员列表里"判断
+     * - 缓存未命中：直接 false（陌生群）
+     * - 命中且 members 已拉：精准查 self.userId 在不在
+     * - 命中但 members 未拉：fetchGroupList 接口语义即「我加入的群」，命中视为 member（拉成员后会自动收敛）
+     */
+    const isMember = computed(() => {
+      if (!props.group?.id) {
+        return false
+      }
+      const cached = groupStore.getGroup(props.group.id)
+      if (!cached) {
+        return false
+      }
+      // 历史退群群：直接判 false，避免成员未加载时误显示「进入群聊」
+      if (isGroupQuit(cached)) {
+        return false
+      }
+      if (cached.membersLoaded && cached.members) {
+        const myId = getCurrentUserId()
+        return cached.members.some(m => m.userId === myId && m.status === CommonStatusEnum.ENABLE)
+      }
+      return true
+    })
+    /** 历史退群群：只读，动作区两个按钮都不渲染（既不「进入群聊」也不「加入群聊」） */
+    const isQuitGroup = computed(() => {
+      const id = props.group?.id
+      return id != null && isGroupQuit(groupStore.getGroup(id))
+    })
+    /** 是否未加群：有 id、非成员、且非历史退群群；只有真·陌生人才给「加入群聊」 */
+    const isStranger = computed(() => !!props.group?.id && !isMember.value && !isQuitGroup.value)
+
+    /** 成员数文案：member 优先用本地拉到的列表长度，stranger 用 props.group.memberCount 卡片快照 */
+    const memberCountText = computed(() => {
+      const count = isMember.value ? props.group.memberCount || members.value.length : props.group.memberCount
+      return count ? `${count} 位成员` : ''
+    })
+
+    /** member 切群 / 首挂：拉取群成员 */
+    watch(() => [props.group?.id, isMember.value], async([id, member]) => {
+      members.value = []
+      if (!id || !member) {
+        return
+      }
+      try {
+        const list = await groupStore.fetchGroupMemberList(id, true)
+        members.value = list.map(m => convertGroupMemberLite(m, friendStore.getFriend(m.userId)))
+      } catch (error) {
+        console.warn('[IM GroupInfo] 群成员加载失败', {
+          groupId: id
+        }, error)
+      }
+    }, {
+      immediate: true
+    })
+
+    /** 群成员 → 列表项 */
+    function convertGroupMemberLite(member, friend) {
+      return {
+        userId: member.userId,
+        showName: getMemberDisplayName(member, friend),
+        nickname: member.nickname,
+        avatar: member.avatar,
+        status: member.status,
+        role: member.role
+      }
+    }
+    const __returned__ = {
+      props,
+      emit,
+      groupStore,
+      friendStore,
+      members,
+      isMember,
+      isQuitGroup,
+      isStranger,
+      memberCountText,
+      convertGroupMemberLite,
+      GroupAvatar,
+      GroupMemberGrid
+    }
+    Object.defineProperty(__returned__, '__isScriptSetup', {
+      enumerable: false,
+      value: true
+    })
+    return __returned__
+  }
+})
+export default __sfc__
+</script>

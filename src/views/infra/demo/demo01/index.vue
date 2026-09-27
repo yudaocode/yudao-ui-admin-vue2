@@ -99,7 +99,7 @@
 </template>
 
 <script>
-import * as Demo01ContactApi from '@/api/infra/demo01';
+import * as Demo01ContactApi from '@/api/infra/demo/demo01';
 import Demo01ContactForm from './Demo01ContactForm.vue';
 export default {
   name: "Demo01Contact",
@@ -194,7 +194,7 @@ export default {
       await this.$modal.confirm('是否确认导出所有示例联系人数据项?');
       try {
         this.exportLoading = true;
-        const data = await Demo01ContactApi.exportDemo01ContactExcel(this.queryParams);
+        const data = await Demo01ContactApi.exportDemo01Contact(this.queryParams);
         this.$download.excel(data, '示例联系人.xls');
       } catch {
       } finally {

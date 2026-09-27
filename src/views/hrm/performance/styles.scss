@@ -1,0 +1,121 @@
+.hrm-performance-page {
+  box-sizing: border-box;
+
+  .flex { display: flex; }
+  .flex-wrap { flex-wrap: wrap; }
+  .flex-none { flex: none; }
+  .grid { display: grid; }
+  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .items-center { align-items: center; }
+  .items-start { align-items: flex-start; }
+  .justify-between { justify-content: space-between; }
+  .shrink-0 { flex-shrink: 0; }
+  .min-w-0 { min-width: 0; }
+  .min-h-40px { min-height: 40px; }
+  .min-h-180px { min-height: 180px; }
+  .w-full,
+  .w-1\/1 { width: 100%; }
+  .\!w-1\/1 { width: 100% !important; }
+  .\!w-140px { width: 140px !important; }
+  .\!w-150px { width: 150px !important; }
+  .\!w-180px { width: 180px !important; }
+  .\!w-220px { width: 220px !important; }
+  .\!w-240px { width: 240px !important; }
+  .\!w-260px { width: 260px !important; }
+  .\!w-280px { width: 280px !important; }
+  .max-w-900px { max-width: 900px; }
+  .max-w-1100px { max-width: 1100px; }
+  .max-w-1200px { max-width: 1200px; }
+  .mx-auto { margin-right: auto; margin-left: auto; }
+  .-mt-10px { margin-top: -10px; }
+  .-mb-15px { margin-bottom: -15px; }
+  .mt-4px { margin-top: 4px; }
+  .mt-6px { margin-top: 6px; }
+  .mt-10px { margin-top: 10px; }
+  .mt-12px { margin-top: 12px; }
+  .mt-24px { margin-top: 24px; }
+  .mt-28px { margin-top: 28px; }
+  .mb-8px { margin-bottom: 8px; }
+  .mb-10px { margin-bottom: 10px; }
+  .mb-12px { margin-bottom: 12px; }
+  .mb-16px { margin-bottom: 16px; }
+  .mb-20px { margin-bottom: 20px; }
+  .mb-22px { margin-bottom: 22px; }
+  .mb-24px { margin-bottom: 24px; }
+  .mb-28px { margin-bottom: 28px; }
+  .mb-32px { margin-bottom: 32px; }
+  .ml-5px { margin-left: 5px; }
+  .ml-16px { margin-left: 16px; }
+  .mr-4px { margin-right: 4px; }
+  .mr-5px { margin-right: 5px; }
+  .mr-10px { margin-right: 10px; }
+  .p-16px { padding: 16px; }
+  .px-8px { padding-right: 8px; padding-left: 8px; }
+  .px-16px { padding-right: 16px; padding-left: 16px; }
+  .py-12px { padding-top: 12px; padding-bottom: 12px; }
+  .pt-12px { padding-top: 12px; }
+  .pl-10px { padding-left: 10px; }
+  .gap-6px { gap: 6px; }
+  .gap-8px { gap: 8px; }
+  .gap-10px { gap: 10px; }
+  .gap-12px { gap: 12px; }
+  .gap-16px { gap: 16px; }
+  .gap-24px { gap: 24px; }
+  .gap-32px { gap: 32px; }
+  .border { border-width: 1px; }
+  .border-solid { border-style: solid; }
+  .border-b { border-bottom-width: 1px; }
+  .border-b-solid { border-bottom-style: solid; }
+  .border-l-3 { border-left-width: 3px; }
+  .border-\[var\(--el-border-color\)\],
+  .border-b-\[var\(--el-border-color\)\] { border-color: #dcdfe6; }
+  .border-\[var\(--el-color-primary\)\] { border-color: #409eff; }
+  .bg-\[var\(--el-fill-color-light\)\] { background-color: #f5f7fa; }
+  .rounded-4px { border-radius: 4px; }
+  .cursor-pointer { cursor: pointer; }
+  .overflow-hidden { overflow: hidden; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .break-all { word-break: break-all; }
+  .whitespace-pre-wrap { white-space: pre-wrap; }
+  .text-center { text-align: center; }
+  .leading-\[1\.6\] { line-height: 1.6; }
+  .text-12px { font-size: 12px; }
+  .text-13px { font-size: 13px; }
+  .text-16px,
+  .text-base { font-size: 16px; }
+  .text-18px { font-size: 18px; }
+  .text-20px,
+  .text-xl { font-size: 20px; }
+  .text-24px { font-size: 24px; }
+  .text-sm { font-size: 14px; }
+  .font-400 { font-weight: 400; }
+  .font-600,
+  .font-bold { font-weight: 600; }
+  .text-gray-500,
+  .text-\[var\(--el-text-color-secondary\)\] { color: #909399; }
+  .text-\[var\(--el-text-color-regular\)\] { color: #606266; }
+  .text-\[var\(--el-color-danger\)\] { color: #f56c6c; }
+  .text-\[var\(--el-color-success\)\] { color: #67c23a; }
+  .text-\[var\(--el-color-warning\)\] { color: #e6a23c; }
+
+  .performance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .el-card + .el-card { margin-top: 16px; }
+}
+
+@media (max-width: 768px) {
+  .hrm-performance-page {
+    .grid-cols-2 { grid-template-columns: 1fr; }
+    .\!w-140px,
+    .\!w-150px,
+    .\!w-180px,
+    .\!w-220px,
+    .\!w-240px,
+    .\!w-260px,
+    .\!w-280px { width: 100% !important; }
+  }
+}

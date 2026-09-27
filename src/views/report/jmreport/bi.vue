@@ -5,15 +5,17 @@
   </div>
 </template>
 <script>
-import iFrame from "@/components/iFrame/index";
-import {getAccessToken} from "@/utils/auth";
+import iFrame from '@/components/iFrame/index'
+import { getRefreshToken } from '@/utils/auth'
+import { getBackendBaseUrl } from '@/utils/backendUrl'
+
 export default {
-  name: "JimuBI",
+  name: 'JimuBI',
   components: { iFrame },
   data() {
     return {
-      url: process.env.VUE_APP_BASE_API + "/drag/list?token=" + getAccessToken(),
-    };
-  },
-};
+      url: getBackendBaseUrl() + '/drag/list?token=' + getRefreshToken()
+    }
+  }
+}
 </script>

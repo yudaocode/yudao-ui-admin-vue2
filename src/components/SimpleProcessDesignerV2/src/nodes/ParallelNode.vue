@@ -28,7 +28,7 @@
           <div class="node-container">
             <div class="node-box" :class="`${useTaskStatusClass(item.activityStatus)}`">
               <div class="branch-node-title-container">
-                <div v-if="showInputs[index]">
+                <div v-if="!readonly && showInputs[index]">
                   <input
                     type="text"
                     class="input-max-width editable-title-input"
@@ -117,10 +117,12 @@ const blurEvent = (index) => {
 
 // 点击条件名称
 const clickEvent = (index) => {
+  if (readonly) return
   showInputs.value[index] = true
 }
 
 const conditionNodeConfig = (nodeId) => {
+  if (readonly) return
   const conditionNode = proxy.$refs[nodeId][0]
   conditionNode.open()
 }
