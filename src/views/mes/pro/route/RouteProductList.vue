@@ -142,7 +142,7 @@ export default {
   methods: {
     getStrDictOptions,
     async getList() { this.loading = true; try { const response = await ProRouteProductApi.getRouteProductListByRoute(this.routeId); this.list = response.data } finally { this.loading = false } },
-    openForm(type, row) { this.formVisible = true; this.formTitle = type === 'create' ? '关联产品' : '编辑产品'; this.formType2 = type; this.formData = type === 'create' ? { routeId: this.routeId, quantity: 1, productionTime: 1, timeUnitType: 'MINUTE' } : { ...row }; this.$nextTick(() => { if (this.$refs.form) this.$refs.form.resetFields() }) },
+    openForm(type, row) { this.formVisible = true; this.formTitle = type === 'create' ? '关联产品' : '编辑产品'; this.formType2 = type; this.formData = type === 'create' ? { routeId: this.routeId, itemId: undefined, quantity: 1, productionTime: 1, timeUnitType: 'MINUTE', remark: undefined } : { ...row }; this.$nextTick(() => { if (this.$refs.form) this.$refs.form.resetFields() }) },
     submitForm() { this.$refs.form.validate(async valid => { if (!valid) return; this.formLoading = true; try { if (this.formType2 === 'create') { await ProRouteProductApi.createRouteProduct(this.formData); this.$modal.msgSuccess('新增成功') } else { await ProRouteProductApi.updateRouteProduct(this.formData); this.$modal.msgSuccess('修改成功') } this.formVisible = false; await this.getList() } finally { this.formLoading = false } }) },
     async handleDelete(id) { try { await this.$modal.confirm('是否确认删除该关联产品？'); await ProRouteProductApi.deleteRouteProduct(id); this.$modal.msgSuccess('删除成功'); await this.getList() } catch (error) { /* canceled */ } }
   }

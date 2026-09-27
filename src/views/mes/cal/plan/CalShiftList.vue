@@ -177,7 +177,10 @@ export default {
     },
     resetFormData() {
       this.formData = this.getDefaultForm()
-      this.$nextTick(() => this.$refs.form && this.$refs.form.resetFields())
+      if (this.$refs.form) {
+        // 弹窗已挂载时同步重置，避免 nextTick 晚于随后的回填赋值而覆盖数据（对齐 Vue3 源行为）
+        this.$refs.form.resetFields()
+      }
     }
   }
 }

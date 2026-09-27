@@ -88,7 +88,8 @@ export default {
     resetFormData() {
       this.formData = this.getDefaultForm()
       this.dayDisplay = ''
-      this.$nextTick(() => this.$refs.form && this.$refs.form.resetFields())
+      // 弹窗已挂载时同步重置，避免 nextTick 晚于 open 中的日期赋值而把 day 重置为首次打开的值（对齐 Vue3 源行为）
+      if (this.$refs.form) this.$refs.form.resetFields()
     }
   }
 }

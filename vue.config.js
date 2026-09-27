@@ -11,6 +11,7 @@ const CompressionPlugin = require('compression-webpack-plugin')
 const name = process.env.VUE_APP_TITLE || '芋道管理系统' // 网页标题
 
 const port = process.env.port || process.env.npm_config_port || 80 // 端口
+const proxyTarget = process.env.VUE_APP_PROXY_TARGET || 'http://localhost:48080'
 
 // vue.config.js 配置说明
 //官方vue.config.js 参考文档 https://cli.vuejs.org/zh/config/#css-loaderoptions
@@ -28,6 +29,8 @@ module.exports = {
   lintOnSave: process.env.NODE_ENV === 'development',
   // 如果你不需要生产环境的 source map，可以将其设置为 false 以加速生产环境构建。
   productionSourceMap: false,
+  // Markmap 0.18 使用空值合并等现代语法，Vue CLI 4 / Webpack 4 需要先转译依赖源码。
+  transpileDependencies: [/@vscode[\\/]markdown-it-katex/, /markmap-(common|lib|toolbar|view)/, /tyme4ts/, /@wangeditor-next/, /snabbdom/],
   // webpack-dev-server 相关配置
   devServer: {
     host: '0.0.0.0',
@@ -36,7 +39,11 @@ module.exports = {
     proxy: {
       // detail: https://cli.vuejs.org/config/#devserver-proxy
       ['/proxy-api']: {
-        target: `http://localhost:48080`,
+        // Keep the existing local default while allowing isolated BPM smoke
+        // runs to point at their own gateway. Without this override the dev
+        // server silently talks to the shared 48080 instance even when
+        // VUE_APP_PROXY_TARGET is supplied at startup.
+        target: proxyTarget,
         // target: `http://api-dashboard.yudao.iocoder.cn`,
         changeOrigin: true,
         pathRewrite: {
@@ -60,7 +67,10 @@ module.exports = {
         '@': resolve('src'),
         // 强制所有依赖使用同一份 vue，避免 @form-create/designer 自带的 vue 2.7.16
         // 与项目的 vue 2.7.14 产生两份实例，导致 Composition API（getCurrentInstance）失效
-        'vue$': resolve('node_modules/vue/dist/vue.runtime.esm.js')
+        'vue$': resolve('node_modules/vue/dist/vue.runtime.esm.js'),
+        // markdown-it 的 CommonJS 构建在 Webpack 4 中会误取 linkify-it 的 ESM namespace，
+        // 导致 Markmap 初始化时报 “LinkifyIt is not a constructor”。固定到 CJS 构造函数入口。
+        'linkify-it$': resolve('node_modules/linkify-it/build/index.cjs.js')
       }
     },
     plugins: [
