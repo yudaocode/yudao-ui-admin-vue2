@@ -1,80 +1,206 @@
+<!-- WMS 移库单 -->
 <template>
-  <div class="app-container">
+  <div class="app-container wms-movement-order">
     <doc-alert
       title="【单据】移库"
       url="https://doc.iocoder.cn/wms/order/movement/"
     />
+
     <el-form
       ref="queryForm"
-      :model="queryParams"
       :inline="true"
+      :model="queryParams"
       size="small"
-      label-width="76px"
+      label-width="80px"
       @submit.native.prevent
     >
       <el-form-item
         label="移库单号"
         prop="no"
-      ><el-input
-        v-model="queryParams.no"
-        clearable
-        placeholder="请输入移库单号"
-        @keyup.enter.native="handleQuery"
-      /></el-form-item>
+      >
+        <el-input
+          v-model="queryParams.no"
+          clearable
+          placeholder="请输入移库单号"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
       <el-form-item
-        label="状态"
+        label="单据状态"
         prop="status"
-      ><el-select
-        v-model="queryParams.status"
-        clearable
-        placeholder="请选择状态"
-      ><el-option
-        v-for="item in statusDictDatas"
-        :key="item.value"
-        :label="item.label"
-        :value="Number(item.value)"
-      /></el-select></el-form-item>
+      >
+        <el-select
+          v-model="queryParams.status"
+          clearable
+          placeholder="请选择单据状态"
+        >
+          <el-option
+            v-for="dict in statusDictDatas"
+            :key="dict.value"
+            :label="dict.label"
+            :value="Number(dict.value)"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item
         label="来源仓库"
         prop="sourceWarehouseId"
-      ><warehouse-select v-model="queryParams.sourceWarehouseId" /></el-form-item>
+      >
+        <warehouse-select v-model="queryParams.sourceWarehouseId" />
+      </el-form-item>
       <el-form-item
         label="目标仓库"
         prop="targetWarehouseId"
-      ><warehouse-select v-model="queryParams.targetWarehouseId" /></el-form-item>
+      >
+        <warehouse-select v-model="queryParams.targetWarehouseId" />
+      </el-form-item>
       <el-form-item
         label="单据日期"
         prop="orderTime"
-      ><el-date-picker
-        v-model="queryParams.orderTime"
-        type="daterange"
-        value-format="yyyy-MM-dd HH:mm:ss"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
-        :default-time="['00:00:00', '23:59:59']"
-      /></el-form-item>
-      <el-form-item><el-button
-        type="primary"
-        icon="el-icon-search"
-        @click="handleQuery"
-      >搜索</el-button><el-button
-        icon="el-icon-refresh"
-        @click="resetQuery"
-      >重置</el-button><el-button
-        v-hasPermi="['wms:movement-order:create']"
-        type="primary"
-        plain
-        icon="el-icon-plus"
-        @click="openForm('create')"
-      >新增</el-button><el-button
-        v-hasPermi="['wms:movement-order:export']"
-        type="success"
-        plain
-        icon="el-icon-download"
-        :loading="exportLoading"
-        @click="handleExport"
-      >导出</el-button></el-form-item>
+      >
+        <el-date-picker
+          v-model="queryParams.orderTime"
+          type="daterange"
+          value-format="yyyy-MM-dd HH:mm:ss"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          :default-time="['00:00:00', '23:59:59']"
+        />
+      </el-form-item>
+      <el-form-item
+        label="数量"
+        prop="totalQuantityMin"
+      >
+        <div class="range-input">
+          <el-input-number
+            v-model="queryParams.totalQuantityMin"
+            :controls="false"
+            :min="0"
+            :precision="QUANTITY_PRECISION"
+            placeholder="最小值"
+          />
+          <span>至</span>
+          <el-input-number
+            v-model="queryParams.totalQuantityMax"
+            :controls="false"
+            :min="0"
+            :precision="QUANTITY_PRECISION"
+            placeholder="最大值"
+          />
+        </div>
+      </el-form-item>
+      <el-form-item
+        label="总金额"
+        prop="totalPriceMin"
+      >
+        <div class="range-input">
+          <el-input-number
+            v-model="queryParams.totalPriceMin"
+            :controls="false"
+            :min="0"
+            :precision="PRICE_PRECISION"
+            placeholder="最小值"
+          />
+          <span>至</span>
+          <el-input-number
+            v-model="queryParams.totalPriceMax"
+            :controls="false"
+            :min="0"
+            :precision="PRICE_PRECISION"
+            placeholder="最大值"
+          />
+        </div>
+      </el-form-item>
+      <el-form-item
+        label="创建用户"
+        prop="creator"
+      >
+        <user-select-v2
+          v-model="queryParams.creator"
+          placeholder="请选择创建用户"
+        />
+      </el-form-item>
+      <el-form-item
+        label="更新用户"
+        prop="updater"
+      >
+        <user-select-v2
+          v-model="queryParams.updater"
+          placeholder="请选择更新用户"
+        />
+      </el-form-item>
+      <el-form-item
+        label="创建时间"
+        prop="createTime"
+      >
+        <el-date-picker
+          v-model="queryParams.createTime"
+          type="datetimerange"
+          value-format="yyyy-MM-dd HH:mm:ss"
+          start-placeholder="开始时间"
+          end-placeholder="结束时间"
+        />
+      </el-form-item>
+      <el-form-item
+        label="更新时间"
+        prop="updateTime"
+      >
+        <el-date-picker
+          v-model="queryParams.updateTime"
+          type="datetimerange"
+          value-format="yyyy-MM-dd HH:mm:ss"
+          start-placeholder="开始时间"
+          end-placeholder="结束时间"
+        />
+      </el-form-item>
+      <el-form-item>
+        <el-button
+          type="primary"
+          icon="el-icon-search"
+          @click="handleQuery"
+        >搜索</el-button>
+        <el-button
+          icon="el-icon-refresh"
+          @click="resetQuery"
+        >重置</el-button>
+        <el-popover
+          placement="bottom"
+          width="520"
+          trigger="click"
+        >
+          <el-checkbox-group
+            v-model="checkedTableColumns"
+            class="column-settings"
+          >
+            <el-checkbox
+              v-for="column in tableColumnOptions"
+              :key="column.value"
+              :label="column.value"
+            >{{ column.label }}</el-checkbox>
+          </el-checkbox-group>
+          <el-button
+            slot="reference"
+            icon="el-icon-setting"
+          >表格设置</el-button>
+        </el-popover>
+        <el-button
+          v-hasPermi="['wms:movement-order:create']"
+          type="primary"
+          plain
+          icon="el-icon-plus"
+          @click="openForm('create')"
+        >新增</el-button>
+        <el-button
+          v-hasPermi="['wms:movement-order:export']"
+          type="success"
+          plain
+          icon="el-icon-download"
+          :loading="exportLoading"
+          @click="handleExport"
+        >导出</el-button>
+      </el-form-item>
     </el-form>
+
     <el-table
       v-loading="loading"
       :data="list"
@@ -86,135 +212,150 @@
       <el-table-column
         type="expand"
         width="48"
-      ><template slot-scope="scope"><el-table
-        :data="detailMap[scope.row.id] || []"
-        border
-        size="mini"
-      ><el-table-column
-        label="商品"
-        min-width="180"
-      ><template slot-scope="detail"><div>{{ detail.row.itemName || "-" }}</div>
-        <span class="sub-text">{{
-          detail.row.itemCode || ""
-        }}</span></template></el-table-column><el-table-column
-        label="规格"
-        min-width="180"
-      ><template slot-scope="detail"><div>{{ detail.row.skuName || "-" }}</div>
-        <span class="sub-text">{{
-          detail.row.skuCode || ""
-        }}</span></template></el-table-column><el-table-column
-        label="数量"
-        prop="quantity"
-        width="110"
-        align="right"
-      ><template slot-scope="detail">{{
-        formatQuantity(detail.row.quantity)
-      }}</template></el-table-column><el-table-column
-        label="单价(元)"
-        prop="price"
-        width="120"
-        align="right"
-      ><template slot-scope="detail">{{
-        formatPrice(detail.row.price) || "-"
-      }}</template></el-table-column><el-table-column
-        label="金额(元)"
-        prop="totalPrice"
-        width="120"
-        align="right"
-      ><template slot-scope="detail">{{
-        formatPrice(
-          detail.row.totalPrice ||
-            multiplyPrice(detail.row.quantity, detail.row.price)
-        ) || "-"
-      }}</template></el-table-column></el-table></template></el-table-column>
+      >
+        <template slot-scope="scope">
+          <el-table
+            :data="detailMap[scope.row.id] || []"
+            border
+            size="mini"
+          >
+            <el-table-column
+              label="商品信息"
+              min-width="220"
+            >
+              <template slot-scope="detail"><div>{{ detail.row.itemName || "-" }}</div>
+                <span class="sub-text">商品编号：{{ detail.row.itemCode || "-" }}</span></template>
+            </el-table-column>
+            <el-table-column
+              label="规格信息"
+              min-width="220"
+            >
+              <template slot-scope="detail"><div>{{ detail.row.skuName || "-" }}</div>
+                <span class="sub-text">规格编号：{{ detail.row.skuCode || "-" }}</span></template>
+            </el-table-column>
+            <el-table-column
+              label="移库数量"
+              width="120"
+              align="right"
+            ><template slot-scope="detail">{{
+              formatQuantity(detail.row.quantity)
+            }}</template></el-table-column>
+            <el-table-column
+              label="单价(元)"
+              width="120"
+              align="right"
+            ><template slot-scope="detail">{{
+              formatPrice(detail.row.price) || "-"
+            }}</template></el-table-column>
+            <el-table-column
+              label="金额(元)"
+              width="120"
+              align="right"
+            ><template slot-scope="detail">{{
+              formatPrice(getDetailTotalPrice(detail.row)) || "-"
+            }}</template></el-table-column>
+          </el-table>
+        </template>
+      </el-table-column>
       <el-table-column
-        label="移库单号"
-        prop="no"
-        min-width="180"
+        v-if="isTableColumnVisible('no')"
+        label="单号"
+        width="210"
         fixed="left"
-      />
+      >
+        <template slot-scope="scope">
+          单号：<el-button
+            type="text"
+            class="link-button"
+            @click="openDetail(scope.row.id)"
+          >{{ scope.row.no || "-" }}</el-button>
+        </template>
+      </el-table-column>
       <el-table-column
-        label="状态"
-        prop="status"
-        width="100"
+        v-if="isTableColumnVisible('status')"
+        label="移库状态"
+        width="110"
         align="center"
+        fixed="left"
       ><template slot-scope="scope"><dict-tag
         :type="DICT_TYPE.WMS_ORDER_STATUS"
         :value="scope.row.status"
       /></template></el-table-column>
       <el-table-column
+        v-if="isTableColumnVisible('sourceWarehouse')"
         label="来源仓库"
-        prop="sourceWarehouseName"
-        min-width="150"
-      />
+        min-width="180"
+      ><template slot-scope="scope">{{ scope.row.sourceWarehouseName || '-' }}</template></el-table-column>
       <el-table-column
+        v-if="isTableColumnVisible('targetWarehouse')"
         label="目标仓库"
-        prop="targetWarehouseName"
-        min-width="150"
+        min-width="180"
+      ><template slot-scope="scope">{{ scope.row.targetWarehouseName || '-' }}</template></el-table-column>
+      <el-table-column
+        v-if="isTableColumnVisible('quantityAmount')"
+        label="总数量/总金额(元)"
+        min-width="180"
+      ><template slot-scope="scope"><div class="split-value">
+                                      <span>数量：</span><span>{{ formatQuantity(scope.row.totalQuantity) }}</span>
+                                    </div>
+        <div class="split-value">
+          <span>金额：</span><span>{{ formatPrice(scope.row.totalPrice) }}</span>
+        </div></template></el-table-column>
+      <el-table-column
+        v-if="isTableColumnVisible('operateInfo')"
+        label="操作信息"
+        min-width="280"
+      ><template slot-scope="scope"><div>
+                                      创建：{{ formatNullableDate(scope.row.createTime) }} /
+                                      {{ scope.row.creatorName || scope.row.creator || "-" }}
+                                    </div>
+        <div>
+          更新：{{ formatNullableDate(scope.row.updateTime) }} /
+          {{ scope.row.updaterName || scope.row.updater || "-" }}
+        </div></template></el-table-column>
+      <el-table-column
+        v-if="isTableColumnVisible('remark')"
+        label="备注"
+        min-width="160"
+        prop="remark"
       />
-      <el-table-column
-        label="数量"
-        prop="totalQuantity"
-        width="100"
-        align="right"
-      ><template slot-scope="scope">{{
-        formatQuantity(scope.row.totalQuantity)
-      }}</template></el-table-column>
-      <el-table-column
-        label="金额(元)"
-        prop="totalPrice"
-        width="120"
-        align="right"
-      ><template slot-scope="scope">{{
-        formatPrice(scope.row.totalPrice)
-      }}</template></el-table-column>
-      <el-table-column
-        label="单据日期"
-        prop="orderTime"
-        width="120"
-      ><template slot-scope="scope">{{
-        formatDate(scope.row.orderTime)
-      }}</template></el-table-column>
       <el-table-column
         label="操作"
+        width="220"
         align="center"
-        width="300"
         fixed="right"
-      ><template slot-scope="scope"><el-button
-        v-hasPermi="['wms:movement-order:query']"
-        type="text"
-        size="mini"
-        @click="openDetail(scope.row.id)"
-      >详情</el-button><el-button
-        v-hasPermi="['wms:movement-order:update']"
-        type="text"
-        size="mini"
-        :disabled="!canUpdate(scope.row.status)"
-        @click="openForm('update', scope.row.id)"
-      >修改</el-button><el-button
-        v-if="canUpdate(scope.row.status)"
-        v-hasPermi="['wms:movement-order:complete']"
-        type="text"
-        size="mini"
-        @click="handleComplete(scope.row)"
-      >完成</el-button><el-button
-        v-if="canUpdate(scope.row.status)"
-        v-hasPermi="['wms:movement-order:cancel']"
-        type="text"
-        size="mini"
-        @click="handleCancel(scope.row)"
-      >作废</el-button><el-button
-        v-hasPermi="['wms:movement-order:delete']"
-        type="text"
-        size="mini"
-        :disabled="!canDelete(scope.row.status)"
-        @click="handleDelete(scope.row)"
-      >删除</el-button><el-button
-        v-hasPermi="['wms:movement-order:query']"
-        type="text"
-        size="mini"
-        @click="handlePrint(scope.row.id)"
-      >打印</el-button></template></el-table-column>
+      >
+        <template slot-scope="scope">
+          <el-tooltip
+            :content="getMovementOrderUpdateTip(scope.row.status)"
+            :disabled="canUpdateMovementOrder(scope.row.status)"
+          >
+            <span><el-button
+              v-hasPermi="['wms:movement-order:update']"
+              type="text"
+              :disabled="!canUpdateMovementOrder(scope.row.status)"
+              @click="openForm('update', scope.row.id)"
+            >修改</el-button></span>
+          </el-tooltip>
+          <el-tooltip
+            :content="getMovementOrderDeleteTip(scope.row.status)"
+            :disabled="canDeleteMovementOrder(scope.row.status)"
+          >
+            <span><el-button
+              v-hasPermi="['wms:movement-order:delete']"
+              type="text"
+              class="danger-text"
+              :disabled="!canDeleteMovementOrder(scope.row.status)"
+              @click="handleDelete(scope.row.id)"
+            >删除</el-button></span>
+          </el-tooltip>
+          <el-button
+            v-hasPermi="['wms:movement-order:query']"
+            type="text"
+            @click="handlePrint(scope.row.id)"
+          >打印</el-button>
+        </template>
+      </el-table-column>
     </el-table>
     <pagination
       v-show="total > 0"
@@ -223,6 +364,7 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
+
     <movement-order-form
       ref="form"
       @success="getList"
@@ -236,15 +378,20 @@
 import { MovementOrderApi } from '@/api/wms/order/movement'
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
 import {
-  OrderUpdateStatusList,
-  OrderDeleteStatusList
+  OrderDeleteStatusList,
+  OrderStatusEnum,
+  OrderUpdateStatusList
 } from '@/views/wms/utils/constants'
 import {
   formatPrice,
   formatQuantity,
-  multiplyPrice
+  multiplyPrice,
+  PRICE_PRECISION,
+  QUANTITY_PRECISION
 } from '@/views/wms/utils/format'
+import { formatDate } from '@/utils'
 import WarehouseSelect from '@/views/wms/md/warehouse/components/WarehouseSelect.vue'
+import UserSelectV2 from '@/views/system/user/components/UserSelectV2.vue'
 import MovementOrderForm from './MovementOrderForm.vue'
 import MovementOrderDetail from './MovementOrderDetail.vue'
 import MovementOrderPrint from './MovementOrderPrint.vue'
@@ -253,6 +400,7 @@ export default {
   name: 'WmsMovementOrder',
   components: {
     WarehouseSelect,
+    UserSelectV2,
     MovementOrderForm,
     MovementOrderDetail,
     MovementOrderPrint
@@ -260,21 +408,37 @@ export default {
   data() {
     return {
       DICT_TYPE,
+      QUANTITY_PRECISION,
+      PRICE_PRECISION,
       loading: false,
       exportLoading: false,
       list: [],
       total: 0,
-      statusDictDatas: getDictDatas(DICT_TYPE.WMS_ORDER_STATUS),
       detailMap: {},
-      queryParams: {
-        pageNo: 1,
-        pageSize: 10,
-        no: undefined,
-        status: undefined,
-        sourceWarehouseId: undefined,
-        targetWarehouseId: undefined,
-        orderTime: []
-      }
+      checkedTableColumns: [
+        'no',
+        'status',
+        'sourceWarehouse',
+        'targetWarehouse',
+        'quantityAmount',
+        'operateInfo',
+        'remark'
+      ],
+      tableColumnOptions: [
+        { label: '单号', value: 'no' },
+        { label: '移库状态', value: 'status' },
+        { label: '来源仓库', value: 'sourceWarehouse' },
+        { label: '目标仓库', value: 'targetWarehouse' },
+        { label: '数量/金额(元)', value: 'quantityAmount' },
+        { label: '操作信息', value: 'operateInfo' },
+        { label: '备注', value: 'remark' }
+      ],
+      queryParams: this.getDefaultQueryParams()
+    }
+  },
+  computed: {
+    statusDictDatas() {
+      return getDictDatas(DICT_TYPE.WMS_ORDER_STATUS)
     }
   },
   created() {
@@ -283,7 +447,44 @@ export default {
   methods: {
     formatPrice,
     formatQuantity,
-    multiplyPrice,
+    getDefaultQueryParams() {
+      return {
+        pageNo: 1,
+        pageSize: 10,
+        no: undefined,
+        status: undefined,
+        sourceWarehouseId: undefined,
+        targetWarehouseId: undefined,
+        orderTime: undefined,
+        totalQuantityMin: undefined,
+        totalQuantityMax: undefined,
+        totalPriceMin: undefined,
+        totalPriceMax: undefined,
+        creator: undefined,
+        updater: undefined,
+        createTime: undefined,
+        updateTime: undefined
+      }
+    },
+    isTableColumnVisible(column) {
+      return this.checkedTableColumns.indexOf(column) >= 0
+    },
+    canUpdateMovementOrder(status) {
+      return OrderUpdateStatusList.indexOf(Number(status)) >= 0
+    },
+    canDeleteMovementOrder(status) {
+      return OrderDeleteStatusList.indexOf(Number(status)) >= 0
+    },
+    getMovementOrderUpdateTip(status) {
+      if (Number(status) === OrderStatusEnum.FINISHED) { return '已移库，无法修改' }
+      if (Number(status) === OrderStatusEnum.CANCELED) { return '已作废，无法修改' }
+      return '当前状态无法修改'
+    },
+    getMovementOrderDeleteTip(status) {
+      return Number(status) === OrderStatusEnum.FINISHED
+        ? '已移库，无法删除'
+        : '当前状态无法删除'
+    },
     getList() {
       this.loading = true
       return MovementOrderApi.getMovementOrderPage(this.queryParams)
@@ -301,7 +502,21 @@ export default {
     },
     resetQuery() {
       this.$refs.queryForm.resetFields()
+      this.queryParams = this.getDefaultQueryParams()
       this.handleQuery()
+    },
+    getDetailTotalPrice(detail) {
+      return detail.totalPrice === undefined || detail.totalPrice === null
+        ? multiplyPrice(detail.quantity, detail.price)
+        : detail.totalPrice
+    },
+    handleExpandChange(row, expandedRows) {
+      if (!row.id || !expandedRows.some((item) => item.id === row.id)) return
+      this.$delete(this.detailMap, row.id)
+      return MovementOrderApi.getMovementOrderDetailListByOrderId(row.id)
+        .then((response) => {
+          this.$set(this.detailMap, row.id, response.data)
+        })
     },
     openForm(type, id) {
       this.$refs.form.open(type, id)
@@ -312,47 +527,12 @@ export default {
     handlePrint(id) {
       this.$refs.print.print(id)
     },
-    handleExpandChange(row, rows) {
-      if (!row.id || !rows.some((item) => item.id === row.id)) return
-      this.$delete(this.detailMap, row.id)
-      return MovementOrderApi.getMovementOrderDetailListByOrderId(row.id).then(
-        (response) => {
-          this.$set(this.detailMap, row.id, response.data)
-        }
-      )
-    },
-    canUpdate(status) {
-      return OrderUpdateStatusList.indexOf(Number(status)) >= 0
-    },
-    canDelete(status) {
-      return OrderDeleteStatusList.indexOf(Number(status)) >= 0
-    },
-    handleDelete(row) {
+    handleDelete(id) {
       this.$modal
-        .confirm('确认删除移库单“' + row.no + '”吗？')
-        .then(() => MovementOrderApi.deleteMovementOrder(row.id))
+        .confirm('确认删除该移库单吗？')
+        .then(() => MovementOrderApi.deleteMovementOrder(id))
         .then(() => {
           this.$modal.msgSuccess('删除成功')
-          this.getList()
-        })
-        .catch(() => {})
-    },
-    handleComplete(row) {
-      this.$modal
-        .confirm('确认完成移库？完成后将更新库存。')
-        .then(() => MovementOrderApi.completeMovementOrder(row.id))
-        .then(() => {
-          this.$modal.msgSuccess('移库成功')
-          this.getList()
-        })
-        .catch(() => {})
-    },
-    handleCancel(row) {
-      this.$modal
-        .confirm('确认作废该移库单？作废后不可恢复。')
-        .then(() => MovementOrderApi.cancelMovementOrder(row.id))
-        .then(() => {
-          this.$modal.msgSuccess('作废成功')
           this.getList()
         })
         .catch(() => {})
@@ -370,24 +550,41 @@ export default {
           this.exportLoading = false
         })
     },
-    formatDate(value) {
-      if (!value) return ''
-      const date = new Date(value)
-      return Number.isNaN(date.getTime())
-        ? ''
-        : date.getFullYear() +
-            '-' +
-            String(date.getMonth() + 1).padStart(2, '0') +
-            '-' +
-            String(date.getDate()).padStart(2, '0')
+    formatNullableDate(value) {
+      if (!value) return '-'
+      const text = formatDate(value)
+      return text || '-'
     }
   }
 }
 </script>
 
 <style scoped>
+.range-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.range-input .el-input-number {
+  width: 105px;
+}
+.column-settings {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
 .sub-text {
   color: #909399;
   font-size: 12px;
+}
+.split-value {
+  display: flex;
+  justify-content: space-between;
+}
+.link-button {
+  padding: 0;
+}
+.danger-text {
+  color: #f56c6c;
 }
 </style>

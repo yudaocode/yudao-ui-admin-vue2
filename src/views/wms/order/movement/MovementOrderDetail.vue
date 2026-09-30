@@ -1,75 +1,119 @@
+<!-- WMS 移库单详情 -->
 <template>
   <el-dialog
+    v-dialogDrag
     title="移库单详情"
     :visible.sync="visible"
-    width="1050px"
+    width="1200px"
     append-to-body
   >
-    <div v-loading="loading">
+    <div
+      v-loading="loading"
+      class="movement-detail"
+    >
+      <div class="section-title">单据信息</div>
       <el-descriptions
-        v-if="detailData"
         :column="2"
         border
         size="small"
-      ><el-descriptions-item label="移库单号">{{
-        detailData.no || "-"
-      }}</el-descriptions-item><el-descriptions-item label="状态"><dict-tag
-        :type="DICT_TYPE.WMS_ORDER_STATUS"
-        :value="detailData.status"
-      /></el-descriptions-item><el-descriptions-item label="来源仓库">{{
-        detailData.sourceWarehouseName || "-"
-      }}</el-descriptions-item><el-descriptions-item label="目标仓库">{{
-        detailData.targetWarehouseName || "-"
-      }}</el-descriptions-item><el-descriptions-item label="单据日期">{{
-        formatDate(detailData.orderTime) || "-"
-      }}</el-descriptions-item><el-descriptions-item label="总数量">{{
-        formatQuantity(detailData.totalQuantity) || "-"
-      }}</el-descriptions-item><el-descriptions-item label="总金额">{{
-        formatPrice(detailData.totalPrice) || "-"
-      }}</el-descriptions-item><el-descriptions-item label="备注">{{
-        detailData.remark || "-"
-      }}</el-descriptions-item></el-descriptions>
+        label-class-name="desc-label"
+      >
+        <el-descriptions-item label="移库单号">{{
+          detailData.no || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item label="来源仓库">{{
+          detailData.sourceWarehouseName || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item label="目标仓库">{{
+          detailData.targetWarehouseName || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item label="单据日期">{{
+          formatDateOnly(detailData.orderTime)
+        }}</el-descriptions-item>
+        <el-descriptions-item label="单据状态"><dict-tag
+          v-if="hasValue(detailData.status)"
+          :type="DICT_TYPE.WMS_ORDER_STATUS"
+          :value="detailData.status"
+        /><span v-else>-</span></el-descriptions-item>
+        <el-descriptions-item label="总数量">{{
+          formatQuantity(detailData.totalQuantity) || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item label="总金额">{{
+          formatPrice(detailData.totalPrice) || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{
+          formatDate(detailData.createTime) || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item label="创建人">{{
+          detailData.creatorName || detailData.creator || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item label="更新时间">{{
+          formatDate(detailData.updateTime) || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item label="更新人">{{
+          detailData.updaterName || detailData.updater || "-"
+        }}</el-descriptions-item>
+        <el-descriptions-item
+          label="备注"
+          :span="2"
+        >{{
+          detailData.remark || "-"
+        }}</el-descriptions-item>
+      </el-descriptions>
+
+      <div class="section-title section-title-spaced">商品明细</div>
       <el-table
-        v-if="detailData"
-        :data="detailData.details || []"
+        :data="detailRows"
         border
         size="small"
-        class="detail-table"
         show-summary
+        empty-text="暂无商品明细"
         :summary-method="getSummaries"
-      ><el-table-column
-        label="商品"
-        prop="itemName"
-        min-width="190"
-      /><el-table-column
-        label="规格"
-        prop="skuName"
-        min-width="190"
-      /><el-table-column
-        label="数量"
-        prop="quantity"
-        width="110"
-        align="right"
-      ><template slot-scope="scope">{{
-        formatQuantity(scope.row.quantity)
-      }}</template></el-table-column><el-table-column
-        label="单价(元)"
-        prop="price"
-        width="120"
-        align="right"
-      ><template slot-scope="scope">{{
-        formatPrice(scope.row.price) || "-"
-      }}</template></el-table-column><el-table-column
-        label="金额(元)"
-        prop="totalPrice"
-        width="120"
-        align="right"
-      ><template slot-scope="scope">{{
-        formatPrice(
-          scope.row.totalPrice ||
-            multiplyPrice(scope.row.quantity, scope.row.price)
-        ) || "-"
-      }}</template></el-table-column></el-table>
+      >
+        <el-table-column
+          label="商品信息"
+          min-width="220"
+        ><template slot-scope="scope"><div>{{ scope.row.itemName || "-" }}</div>
+          <span
+            v-if="scope.row.itemCode"
+            class="sub-text"
+          >商品编号：{{ scope.row.itemCode }}</span></template></el-table-column>
+        <el-table-column
+          label="规格信息"
+          min-width="220"
+        ><template slot-scope="scope"><div>{{ scope.row.skuName || "-" }}</div>
+          <span
+            v-if="scope.row.skuCode"
+            class="sub-text"
+          >规格编号：{{ scope.row.skuCode }}</span></template></el-table-column>
+        <el-table-column
+          label="数量"
+          prop="quantity"
+          width="120"
+          align="right"
+        ><template slot-scope="scope">{{
+          formatQuantity(scope.row.quantity) || "-"
+        }}</template></el-table-column>
+        <el-table-column
+          label="单价(元)"
+          prop="price"
+          width="130"
+          align="right"
+        ><template slot-scope="scope">{{
+          formatPrice(scope.row.price) || "-"
+        }}</template></el-table-column>
+        <el-table-column
+          label="金额(元)"
+          prop="totalPrice"
+          width="130"
+          align="right"
+        ><template slot-scope="scope">{{
+          formatPrice(scope.row.totalPrice) || "-"
+        }}</template></el-table-column>
+      </el-table>
+    </div>
+    <div slot="footer">
+      <el-button @click="visible = false">关 闭</el-button>
     </div>
   </el-dialog>
 </template>
@@ -77,23 +121,58 @@
 <script>
 import { MovementOrderApi } from '@/api/wms/order/movement'
 import { DICT_TYPE } from '@/utils/dict'
+import { formatDate } from '@/utils'
 import {
-  formatQuantity,
   formatPrice,
-  multiplyPrice,
-  sumQuantity,
-  sumPrice
+  formatQuantity,
+  formatSumPrice,
+  formatSumQuantity,
+  multiplyPrice
 } from '@/views/wms/utils/format'
 
 export default {
   name: 'WmsMovementOrderDetail',
   data() {
-    return { DICT_TYPE, visible: false, loading: false, detailData: null }
+    return {
+      DICT_TYPE,
+      visible: false,
+      loading: false,
+      detailData: { details: [] }
+    }
+  },
+  computed: {
+    detailRows() {
+      return (this.detailData.details || []).map((detail) =>
+        Object.assign({}, detail, {
+          totalPrice:
+            detail.totalPrice == null
+              ? multiplyPrice(detail.quantity, detail.price)
+              : detail.totalPrice
+        })
+      )
+    }
   },
   methods: {
-    formatQuantity,
     formatPrice,
-    multiplyPrice,
+    formatQuantity,
+    formatSumPrice,
+    formatSumQuantity,
+    formatDate,
+    hasValue(value) {
+      return value !== undefined && value !== null
+    },
+    formatDateOnly(value) {
+      const text = this.formatDate(value)
+      return text ? text.slice(0, 10) : '-'
+    },
+    getSummaries({ columns, data }) {
+      return columns.map((column, index) => {
+        if (index === 0) return '合计'
+        if (column.property === 'quantity') { return formatSumQuantity(data, (detail) => detail.quantity) }
+        if (column.property === 'totalPrice') { return formatSumPrice(data, (detail) => detail.totalPrice) }
+        return ''
+      })
+    },
     open(id) {
       this.visible = true
       this.loading = true
@@ -104,40 +183,28 @@ export default {
         .finally(() => {
           this.loading = false
         })
-    },
-    formatDate(value) {
-      if (!value) return ''
-      const date = new Date(value)
-      return Number.isNaN(date.getTime())
-        ? ''
-        : date.getFullYear() +
-            '-' +
-            String(date.getMonth() + 1).padStart(2, '0') +
-            '-' +
-            String(date.getDate()).padStart(2, '0')
-    },
-    getSummaries({ columns, data }) {
-      return columns.map((column, index) => {
-        if (index === 0) return '合计'
-        if (column.property === 'quantity') { return formatQuantity(sumQuantity(data, (item) => item.quantity)) }
-        if (column.property === 'totalPrice') {
-          return formatPrice(
-            sumPrice(
-              data,
-              (item) =>
-                item.totalPrice || multiplyPrice(item.quantity, item.price)
-            )
-          )
-        }
-        return ''
-      })
     }
   }
 }
 </script>
 
 <style scoped>
-.detail-table {
-  margin-top: 16px;
+.movement-detail {
+  min-height: 180px;
+}
+.section-title {
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.section-title-spaced {
+  margin-top: 24px;
+}
+::v-deep .desc-label {
+  font-weight: bold;
+}
+.sub-text {
+  color: #909399;
+  font-size: 12px;
 }
 </style>
