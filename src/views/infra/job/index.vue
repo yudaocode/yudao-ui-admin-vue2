@@ -72,10 +72,10 @@
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
                      v-hasPermi="['infra:job:update']">修改</el-button>
-          <el-button size="mini" type="text" icon="el-icon-check" @click="handleChangeStatus(scope.row, true)"
-                     v-if="scope.row.status === InfJobStatusEnum.STOP" v-hasPermi="['infra:job:update']">开启</el-button>
-          <el-button size="mini" type="text" icon="el-icon-close" @click="handleChangeStatus(scope.row, false)"
-                     v-if="scope.row.status === InfJobStatusEnum.NORMAL" v-hasPermi="['infra:job:update']">暂停</el-button>
+          <el-button size="mini" type="text"
+                     :icon="scope.row.status === InfJobStatusEnum.STOP ? 'el-icon-check' : 'el-icon-close'"
+                     @click="handleChangeStatus(scope.row, scope.row.status === InfJobStatusEnum.STOP)"
+                     v-hasPermi="['infra:job:update']">{{ scope.row.status === InfJobStatusEnum.STOP ? '开启' : '暂停' }}</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
                      v-hasPermi="['infra:job:delete']">删除</el-button>
           <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)"

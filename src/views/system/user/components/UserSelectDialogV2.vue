@@ -75,6 +75,9 @@
               <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
             </template>
           </el-table-column>
+          <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+            <template v-slot="scope">{{ parseTime(scope.row.createTime) }}</template>
+          </el-table-column>
         </el-table>
         <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize" @pagination="getList" />
       </el-col>

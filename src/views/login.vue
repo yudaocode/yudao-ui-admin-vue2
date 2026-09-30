@@ -175,7 +175,7 @@
 </template>
 
 <script>
-import {getTenantIdByName, sendSmsCode, socialAuthRedirect} from "@/api/login";
+import {getTenantByWebsite, getTenantIdByName, sendSmsCode, socialAuthRedirect} from "@/api/login";
 import {register, smsResetPassword} from "@/api/login";
 import {SystemUserSocialTypeEnum} from "@/utils/constants";
 import {getCaptchaEnable, getTenantEnable} from "@/utils/ruoyi";
@@ -317,8 +317,23 @@ export default {
     // 重定向地址
     this.redirect = this.$route.query.redirect ? decodeURIComponent(this.$route.query.redirect) : undefined;
     this.getCookie();
+    // 根据域名识别租户
+    this.getTenantByWebsite();
   },
   methods: {
+    /** 根据域名，获得租户信息 */
+    async getTenantByWebsite() {
+      if (!this.tenantEnable) return
+      try {
+        const tenant = (await getTenantByWebsite(location.host)).data
+        if (tenant) {
+          this.loginForm.tenantName = tenant.name
+          setTenantId(tenant.id)
+        }
+      } catch (e) {
+        // 域名未绑定租户时忽略，保持手工输入
+      }
+    },
     // 校验两次输入的密码是否一致
     equalToPassword(rule, value, callback) {
       if (this.loginForm.password !== value) {

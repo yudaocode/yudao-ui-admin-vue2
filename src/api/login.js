@@ -10,6 +10,14 @@ export function getTenantIdByName(name) {
   })
 }
 
+// 根据域名，获得租户信息
+export function getTenantByWebsite(website) {
+  return request({
+    url: '/system/tenant/get-by-website?website=' + encodeURIComponent(website),
+    method: 'get'
+  })
+}
+
 // 登录方法
 export function login(username, password, captchaVerification, socialType, socialCode, socialState) {
   const data = {
