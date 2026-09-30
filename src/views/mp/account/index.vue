@@ -58,9 +58,6 @@
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
                      v-hasPermi="['mp:account:delete']">删除
           </el-button>
-          <el-button size="mini" type="text" icon="el-icon-refresh" @click="handleGenerateQrCode(scope.row)"
-                     v-hasPermi="['mp:account:qr-code']">生成二维码
-          </el-button>
           <el-button size="mini" type="text" icon="el-icon-share" @click="handleCleanQuota(scope.row)"
                      v-hasPermi="['mp:account:clear-quota']">清空 API 配额
           </el-button>
