@@ -38,3 +38,5 @@ package-lock.json
 /module-browser-*.html
 /output/
 /.playwright-cli/
+/dialog-consumer-audit.js
+/scripts/
