@@ -18,6 +18,14 @@ export default {
         return title ? `${title} - ${process.env.VUE_APP_TITLE}` : process.env.VUE_APP_TITLE
       }
     }
+  },
+  watch: {
+    '$store.state.settings.greyMode': {
+      immediate: true,
+      handler(val) {
+        document.documentElement.style.filter = val ? 'grayscale(100%)' : ''
+      }
+    }
   }
 };
 </script>

@@ -9,7 +9,7 @@ export default {
   name: 'Footer',
   computed: {
     title() {
-      return this.$store.state.settings.title
+      return process.env.VUE_APP_TITLE
     },
     currentYear() {
       return new Date().getFullYear()

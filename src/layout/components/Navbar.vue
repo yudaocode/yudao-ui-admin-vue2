@@ -1,8 +1,8 @@
 <template>
   <div class="navbar">
-    <hamburger id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
+    <hamburger v-if="hamburger" id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
 
-    <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!topNav"/>
+    <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!topNav && breadcrumb"/>
     <top-nav id="topmenu-container" class="topmenu-container" v-if="topNav"/>
 
     <div class="right-menu">
@@ -15,10 +15,10 @@
         <search id="header-search" class="right-menu-item" />
 
         <!-- 站内信 -->
-        <notify-message class="right-menu-item hover-effect" />
+        <notify-message v-if="message" class="right-menu-item hover-effect" />
 
         <!-- IM 聊天入口：IM 是全屏沉浸式壳，新标签页打开 IM 主页 -->
-        <el-tooltip content="IM 聊天" effect="dark" placement="bottom">
+        <el-tooltip v-if="im" content="IM 聊天" effect="dark" placement="bottom">
           <div class="right-menu-item hover-effect" @click="goToChat">
             <i class="el-icon-chat-dot-round" />
           </div>
@@ -32,9 +32,9 @@
           <ruo-yi-doc id="ruoyi-doc" class="right-menu-item hover-effect" />
         </el-tooltip>
 
-        <screenfull id="screenfull" class="right-menu-item hover-effect" />
+        <screenfull v-if="screenfull" id="screenfull" class="right-menu-item hover-effect" />
 
-        <el-tooltip content="布局大小" effect="dark" placement="bottom">
+        <el-tooltip v-if="size" content="布局大小" effect="dark" placement="bottom">
           <size-select id="size-select" class="right-menu-item hover-effect" />
         </el-tooltip>
 
@@ -137,6 +137,24 @@ export default {
     },
     tenantEnable() {
       return getTenantEnable()
+    },
+    breadcrumb() {
+      return this.$store.state.settings.breadcrumb
+    },
+    hamburger() {
+      return this.$store.state.settings.hamburger
+    },
+    screenfull() {
+      return this.$store.state.settings.screenfull
+    },
+    size() {
+      return this.$store.state.settings.size
+    },
+    message() {
+      return this.$store.state.settings.message
+    },
+    im() {
+      return this.$store.state.settings.im
     }
   },
   methods: {

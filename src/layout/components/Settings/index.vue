@@ -69,35 +69,92 @@
 
       <el-divider/>
 
+      <h3 class="drawer-title">界面显示</h3>
+
+      <div class="drawer-item">
+        <span>面包屑</span>
+        <el-switch v-model="breadcrumb" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>折叠图标</span>
+        <el-switch v-model="hamburger" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>全屏图标</span>
+        <el-switch v-model="screenfull" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>布局大小图标</span>
+        <el-switch v-model="size" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>站内信图标</span>
+        <el-switch v-model="message" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>IM 聊天图标</span>
+        <el-switch v-model="im" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>菜单手风琴</span>
+        <el-switch v-model="uniqueOpened" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>页脚</span>
+        <el-switch v-model="footer" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>灰色模式</span>
+        <el-switch v-model="greyMode" class="drawer-switch" />
+      </div>
+
+      <div class="drawer-item">
+        <span>水印</span>
+        <el-input v-model="watermarkText" size="mini" style="float: right; width: 180px" placeholder="输入水印文本"
+                  @change="handleWatermark" />
+      </div>
+
+      <el-divider/>
+
       <el-button size="small" type="primary" plain icon="el-icon-document-add" @click="saveSetting">保存配置</el-button>
       <el-button size="small" plain icon="el-icon-refresh" @click="resetSetting">重置配置</el-button>
+      <el-button size="small" type="success" plain icon="el-icon-copy-document" @click="copySetting">复制配置</el-button>
     </div>
   </div>
 </template>
 
 <script>
 import ThemePicker from '@/components/ThemePicker'
+import { setWatermark, clearWatermark } from '@/directive/module/watermark'
+
+const buildSettingComputed = key => ({
+  get() {
+    return this.$store.state.settings[key]
+  },
+  set(val) {
+    this.$store.dispatch('settings/changeSetting', { key, value: val })
+  }
+})
 
 export default {
   components: { ThemePicker },
   data() {
     return {
       theme: this.$store.state.settings.theme,
-      sideTheme: this.$store.state.settings.sideTheme
+      sideTheme: this.$store.state.settings.sideTheme,
+      watermarkText: ''
     };
   },
   computed: {
-    fixedHeader: {
-      get() {
-        return this.$store.state.settings.fixedHeader
-      },
-      set(val) {
-        this.$store.dispatch('settings/changeSetting', {
-          key: 'fixedHeader',
-          value: val
-        })
-      }
-    },
+    fixedHeader: buildSettingComputed('fixedHeader'),
     topNav: {
       get() {
         return this.$store.state.settings.topNav
@@ -113,39 +170,18 @@ export default {
         }
       }
     },
-    tagsView: {
-      get() {
-        return this.$store.state.settings.tagsView
-      },
-      set(val) {
-        this.$store.dispatch('settings/changeSetting', {
-          key: 'tagsView',
-          value: val
-        })
-      }
-    },
-    sidebarLogo: {
-      get() {
-        return this.$store.state.settings.sidebarLogo
-      },
-      set(val) {
-        this.$store.dispatch('settings/changeSetting', {
-          key: 'sidebarLogo',
-          value: val
-        })
-      }
-    },
-    dynamicTitle: {
-      get() {
-        return this.$store.state.settings.dynamicTitle
-      },
-      set(val) {
-        this.$store.dispatch('settings/changeSetting', {
-          key: 'dynamicTitle',
-          value: val
-        })
-      }
-    },
+    tagsView: buildSettingComputed('tagsView'),
+    sidebarLogo: buildSettingComputed('sidebarLogo'),
+    dynamicTitle: buildSettingComputed('dynamicTitle'),
+    breadcrumb: buildSettingComputed('breadcrumb'),
+    hamburger: buildSettingComputed('hamburger'),
+    screenfull: buildSettingComputed('screenfull'),
+    size: buildSettingComputed('size'),
+    message: buildSettingComputed('message'),
+    im: buildSettingComputed('im'),
+    uniqueOpened: buildSettingComputed('uniqueOpened'),
+    footer: buildSettingComputed('footer'),
+    greyMode: buildSettingComputed('greyMode')
   },
   methods: {
     themeChange(val) {
@@ -162,20 +198,40 @@ export default {
       })
       this.sideTheme = val;
     },
+    handleWatermark(text) {
+      if (text) {
+        setWatermark(document.body, { text })
+      } else {
+        clearWatermark(document.body)
+      }
+    },
+    copySetting() {
+      const settings = this.$store.state.settings
+      const text = Object.keys(settings)
+        .filter(key => typeof settings[key] !== 'function')
+        .map(key => `  ${key}: ${JSON.stringify(settings[key])}`)
+        .join(',\n')
+      const textarea = document.createElement('textarea')
+      textarea.value = '{\n' + text + '\n}'
+      document.body.appendChild(textarea)
+      textarea.select()
+      try {
+        document.execCommand('copy') ? this.$modal.msgSuccess('复制成功') : this.$modal.msgError('复制失败')
+      } catch (e) {
+        this.$modal.msgError('复制失败')
+      }
+      document.body.removeChild(textarea)
+    },
     saveSetting() {
       this.$modal.loading("正在保存到本地，请稍候...");
-      this.$cache.local.set(
-        "layout-setting",
-        `{
-            "topNav":${this.topNav},
-            "tagsView":${this.tagsView},
-            "fixedHeader":${this.fixedHeader},
-            "sidebarLogo":${this.sidebarLogo},
-            "dynamicTitle":${this.dynamicTitle},
-            "sideTheme":"${this.sideTheme}",
-            "theme":"${this.theme}"
-          }`
-      );
+      const settings = this.$store.state.settings
+      const picked = {}
+      ;['topNav', 'tagsView', 'fixedHeader', 'sidebarLogo', 'dynamicTitle', 'breadcrumb',
+        'hamburger', 'screenfull', 'size', 'message', 'im', 'uniqueOpened', 'footer', 'greyMode'
+      ].forEach(key => { picked[key] = settings[key] })
+      picked.sideTheme = this.sideTheme
+      picked.theme = this.theme
+      this.$cache.local.set("layout-setting", JSON.stringify(picked));
       setTimeout(this.$modal.closeLoading(), 1000)
     },
     resetSetting() {

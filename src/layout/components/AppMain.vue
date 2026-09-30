@@ -6,7 +6,7 @@
       </keep-alive>
     </transition>
     <iframe-toggle />
-    <app-footer />
+    <app-footer v-if="$store.state.settings.footer" />
   </section>
 </template>
 
@@ -35,6 +35,13 @@ export default {
   width: 100%;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  /* 路由视图撑满剩余高度，页脚始终贴底 */
+  > *:first-child {
+    flex: 1 0 auto;
+  }
 }
 
 .fixed-header + .app-main {
