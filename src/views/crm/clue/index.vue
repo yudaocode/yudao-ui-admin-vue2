@@ -240,7 +240,7 @@
         <el-table-column
           label="操作"
           fixed="right"
-          width="170"
+          width="120"
         >
           <template slot-scope="scope">
             <el-button
@@ -249,13 +249,6 @@
               size="mini"
               @click="openForm('update', scope.row.id)"
             >编辑</el-button>
-            <el-button
-              v-if="!scope.row.transformStatus"
-              v-hasPermi="['crm:clue:update']"
-              type="text"
-              size="mini"
-              @click="handleTransform(scope.row)"
-            >转化</el-button>
             <el-button
               v-hasPermi="['crm:clue:delete']"
               type="text"
@@ -340,12 +333,6 @@ export default {
     handleDelete(row) {
       this.$modal.confirm('是否确认删除线索“' + (row.name || row.id) + '”？').then(() => ClueApi.deleteClue(row.id)).then(() => {
         this.$modal.msgSuccess('删除成功')
-        this.getList()
-      }).catch(() => {})
-    },
-    handleTransform(row) {
-      this.$modal.confirm('确定将线索“' + (row.name || row.id) + '”转化为客户吗？').then(() => ClueApi.transformClue(row.id)).then(() => {
-        this.$modal.msgSuccess('转化成功')
         this.getList()
       }).catch(() => {})
     },

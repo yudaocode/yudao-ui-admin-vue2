@@ -110,23 +110,6 @@
             @click="resetQuery"
           >重置</el-button>
           <el-button
-            v-hasPermi="['crm:customer:receive']"
-            type="primary"
-            plain
-            icon="el-icon-check"
-            :loading="receiveLoading"
-            :disabled="selectedRows.length === 0"
-            @click="handleReceive(selectedRows)"
-          >领取</el-button>
-          <el-button
-            v-hasPermi="['crm:customer:distribute']"
-            type="warning"
-            plain
-            icon="el-icon-user"
-            :disabled="selectedRows.length === 0"
-            @click="openDistributeForm(selectedRows)"
-          >分配</el-button>
-          <el-button
             v-hasPermi="['crm:customer:export']"
             type="success"
             plain
@@ -140,21 +123,13 @@
 
     <el-card shadow="never">
       <el-table
-        ref="table"
         v-loading="loading"
         :data="list"
         row-key="id"
         stripe
         border
         :show-overflow-tooltip="true"
-        @selection-change="handleSelectionChange"
       >
-        <el-table-column
-          v-if="canBatchOperate"
-          type="selection"
-          width="50"
-          align="center"
-        />
         <el-table-column
           label="客户名称"
           prop="name"
@@ -273,32 +248,6 @@
           prop="creatorName"
           width="110"
         />
-        <el-table-column
-          label="操作"
-          fixed="right"
-          width="190"
-        >
-          <template slot-scope="scope">
-            <el-button
-              v-hasPermi="['crm:customer:receive']"
-              type="text"
-              size="mini"
-              :loading="receiveLoading"
-              @click="handleReceive(scope.row)"
-            >领取</el-button>
-            <el-button
-              v-hasPermi="['crm:customer:distribute']"
-              type="text"
-              size="mini"
-              @click="openDistributeForm(scope.row)"
-            >分配</el-button>
-            <el-button
-              type="text"
-              size="mini"
-              @click="openDetail(scope.row.id)"
-            >详情</el-button>
-          </template>
-        </el-table-column>
       </el-table>
       <pagination
         v-show="total > 0"
@@ -308,11 +257,6 @@
         @pagination="getList"
       />
     </el-card>
-
-    <customer-distribute-form
-      ref="distributeForm"
-      @success="handleDistributeSuccess"
-    />
   </div>
 </template>
 
@@ -320,8 +264,6 @@
 import * as CustomerApi from '@/api/crm/customer'
 import { DICT_TYPE, getDictDatas } from '@/utils/dict'
 import { dateFormatter } from '@/utils'
-import { checkPermi } from '@/utils/permission'
-import CustomerDistributeForm from './CustomerDistributeForm.vue'
 
 const createQueryParams = () => ({
   pageNo: 1,
@@ -337,16 +279,13 @@ const createQueryParams = () => ({
 
 export default {
   name: 'CrmCustomerPool',
-  components: { CustomerDistributeForm },
   data() {
     return {
       DICT_TYPE,
       loading: false,
       exportLoading: false,
-      receiveLoading: false,
       total: 0,
       list: [],
-      selectedRows: [],
       queryParams: createQueryParams(),
       requestSequence: 0,
       skipInitialActivation: true
@@ -355,10 +294,7 @@ export default {
   computed: {
     industryDictDatas() { return getDictDatas(DICT_TYPE.CRM_CUSTOMER_INDUSTRY) },
     levelDictDatas() { return getDictDatas(DICT_TYPE.CRM_CUSTOMER_LEVEL) },
-    sourceDictDatas() { return getDictDatas(DICT_TYPE.CRM_CUSTOMER_SOURCE) },
-    canBatchOperate() {
-      return checkPermi(['crm:customer:receive', 'crm:customer:distribute'])
-    }
+    sourceDictDatas() { return getDictDatas(DICT_TYPE.CRM_CUSTOMER_SOURCE) }
   },
   created() {
     this.getList()
@@ -387,61 +323,18 @@ export default {
         if (requestId !== this.requestSequence) return
         this.list = data.list
         this.total = data.total
-        this.clearSelection()
       } finally {
         if (requestId === this.requestSequence) this.loading = false
       }
     },
     handleQuery() {
       this.queryParams.pageNo = 1
-      this.clearSelection()
       this.getList()
     },
     resetQuery() {
       Object.assign(this.queryParams, createQueryParams())
       if (this.$refs.queryForm) this.$refs.queryForm.resetFields()
       this.handleQuery()
-    },
-    handleSelectionChange(rows) {
-      this.selectedRows = Array.isArray(rows) ? rows : []
-    },
-    clearSelection() {
-      this.selectedRows = []
-      this.$nextTick(() => {
-        if (this.$refs.table) this.$refs.table.clearSelection()
-      })
-    },
-    normalizeRows(rows) {
-      return (Array.isArray(rows) ? rows : [rows]).filter(row => row && row.id !== undefined)
-    },
-    async handleReceive(rows) {
-      const selected = this.normalizeRows(rows)
-      if (selected.length === 0 || this.receiveLoading) return
-      const summary = selected.length === 1
-        ? '客户“' + (selected[0].name || selected[0].id) + '”'
-        : '选中的 ' + selected.length + ' 个客户'
-      this.receiveLoading = true
-      try {
-        try {
-          await this.$modal.confirm('确定领取' + summary + '吗？')
-        } catch (error) {
-          return
-        }
-        await CustomerApi.receiveCustomer(selected.map(row => row.id))
-        this.$modal.msgSuccess('领取客户成功')
-        await this.getList()
-      } finally {
-        this.receiveLoading = false
-      }
-    },
-    openDistributeForm(rows) {
-      const selected = this.normalizeRows(rows)
-      if (selected.length === 0) return
-      this.$refs.distributeForm.open(selected.map(row => row.id))
-    },
-    handleDistributeSuccess() {
-      this.clearSelection()
-      this.getList()
     },
     openDetail(id) {
       if (!id) return
