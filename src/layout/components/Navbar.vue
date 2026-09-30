@@ -43,6 +43,9 @@
           <router-link to="/user/profile">
             <el-dropdown-item>个人中心</el-dropdown-item>
           </router-link>
+          <el-dropdown-item divided @click.native="lockScreen">
+            <span>锁屏</span>
+          </el-dropdown-item>
           <el-dropdown-item @click.native="setting = true">
             <span>布局设置</span>
           </el-dropdown-item>
@@ -52,6 +55,11 @@
         </el-dropdown-menu>
       </el-dropdown>
     </div>
+
+    <lock-dialog :visible.sync="lockDialogVisible" />
+    <transition name="fade-bottom">
+      <lock-page v-if="isLock" />
+    </transition>
   </div>
 </template>
 
@@ -68,6 +76,8 @@ import RuoYiDoc from '@/components/RuoYi/Doc'
 import NotifyMessage from '@/layout/components/Message'
 import TenantVisit from '@/components/TenantVisit'
 import FmsAccountSetSwitch from '@/views/fms/components/account-set/FmsAccountSetSwitch.vue'
+import LockDialog from '@/layout/components/Lock/LockDialog.vue'
+import LockPage from '@/layout/components/Lock/LockPage.vue'
 import {getPath, getTenantEnable} from "@/utils/ruoyi";
 
 export default {
@@ -82,15 +92,26 @@ export default {
     RuoYiDoc,
     NotifyMessage,
     TenantVisit,
-    FmsAccountSetSwitch
+    FmsAccountSetSwitch,
+    LockDialog,
+    LockPage
+  },
+  data() {
+    return {
+      lockDialogVisible: false
+    }
   },
   computed: {
     ...mapGetters([
       'sidebar',
       'avatar',
       'nickname',
-      'device'
+      'device',
+      'lockInfo'
     ]),
+    isLock() {
+      return !!(this.lockInfo && this.lockInfo.isLock)
+    },
     setting: {
       get() {
         return this.$store.state.settings.showSettings
@@ -114,6 +135,10 @@ export default {
   methods: {
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
+    },
+    // 锁定屏幕
+    lockScreen() {
+      this.lockDialogVisible = true
     },
     async logout() {
       this.$modal.confirm('确定注销并退出系统吗？', '提示').then(() => {
@@ -222,5 +247,16 @@ export default {
       }
     }
   }
+}
+
+.fade-bottom-enter-active,
+.fade-bottom-leave-active {
+  transition: opacity 0.25s, transform 0.3s;
+}
+
+.fade-bottom-enter,
+.fade-bottom-leave-to {
+  opacity: 0;
+  transform: translateY(-10%);
 }
 </style>

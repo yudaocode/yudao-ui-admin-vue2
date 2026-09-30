@@ -11,19 +11,19 @@
 
 ## 一、逐文件总览
 
-Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖 12、🟡框架差异 90、❌真缺失 15。
+Vue3 源文件 2847 个：✅已对应/等价 2737（96.1%）、🟡部分覆盖 12、🟡框架差异 90、❌真缺失 8。
 
 | 目录 | 源文件数 | 已对应/等价 | 部分 | 差异 | 真缺失 |
 |---|---|---|---|---|---|
-| views | 1866 | 1856 | 1 | 6 | 3 |
+| views | 1866 | 1858 | 1 | 6 | 1 |
 | api | 538 | 535 | 0 | 3 | 0 |
 | components | 330 | 275 | 6 | 49 | 0 |
 | hooks | 22 | 13 | 3 | 3 | 3 |
 | utils | 28 | 25 | 0 | 3 | 0 |
-| store | 10 | 7 | 0 | 0 | 3 |
+| store | 10 | 8 | 0 | 0 | 2 |
 | directives | 3 | 2 | 0 | 1 | 0 |
 | router | 2 | 2 | 0 | 0 | 0 |
-| layout | 48 | 15 | 2 | 25 | 6 |
+| layout | 48 | 19 | 2 | 25 | 2 |
 
 ### 按模块（views 一级目录）
 
@@ -32,7 +32,7 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 | mes | 287 | 287 | 0 |
 | hrm | 203 | 203 | 0 |
 | mall | 186 | 186 | 0 |
-| oa | 161 | 160 | 1（见2.1） |
+| oa | 161 | 161 | 0 |
 | im | 139 | 139 | 0 |
 | crm | 119 | 119 | 0 |
 | iot | 96 | 96 | 0 |
@@ -49,7 +49,7 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 | pay | 23 | 23 | 0 |
 | Login | 11 | 10 | 1（见2.1） |
 | Profile | 7 | 7 | 0 |
-| Home | 4 | 3 | 1（见2.1） |
+| Home | 4 | 4 | 0 |
 | Error | 3 | 3 | 0 |
 | report | 3 | 3 | 0 |
 | IFrame | 1 | 1 | 0 |
@@ -61,21 +61,14 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 
 | 源文件 | 说明 |
 |---|---|
-| views/Home/Index2.vue | 无第二套首页 |
-| views/Login/components/QrCodeForm.vue | 后端无二维码ticket端点（两端均无API，Vue3侧亦仅静态二维码）；待后端支持 |
-| views/oa/utils/format.ts | — |
-| hooks/web/useConfigGlobal.ts | 无 ConfigGlobal 配置注入 |
-| hooks/web/useGuide.ts | 无新手引导(driver.js) |
-| hooks/web/useLocale.ts | 无语言切换 |
-| store/modules/bpm/simpleWorkflow.ts | 死代码（Vue3侧零引用）；简单流程由 SimpleProcessDesignerV2 承担 |
-| store/modules/locale.ts | 无i18n语言store（Vue2无多语言） |
-| store/modules/lock.ts | 无锁屏功能 |
-| layout/components/Footer/index.ts | 无Footer |
-| layout/components/Footer/src/Footer.vue | 无Footer |
-| layout/components/LocaleDropdown/index.ts | 无国际化 |
-| layout/components/LocaleDropdown/src/LocaleDropdown.vue | 无国际化 |
-| layout/components/UserInfo/src/components/LockDialog.vue | 无锁屏 |
-| layout/components/UserInfo/src/components/LockPage.vue | 无锁屏 |
+| views/Login/components/QrCodeForm.vue | 【用户决策：不移植 2026-09-30】后端无 ticket 端点（Vue3 侧亦仅静态二维码） |
+| hooks/web/useConfigGlobal.ts | 【用户决策：不移植 2026-09-30】无 ConfigGlobal 配置注入（EP 特有） |
+| hooks/web/useGuide.ts | 【用户决策：不移植 2026-09-30】无新手引导(driver.js) |
+| hooks/web/useLocale.ts | 【用户决策：不移植 2026-09-30】无语言切换（i18n体系） |
+| store/modules/bpm/simpleWorkflow.ts | 【用户决策：不移植 2026-09-30】死代码（Vue3侧零引用）；简单流程由 SimpleProcessDesignerV2 承担 |
+| store/modules/locale.ts | 【用户决策：不移植 2026-09-30】无i18n语言store（Vue2无多语言） |
+| layout/components/LocaleDropdown/index.ts | 【用户决策：不移植 2026-09-30】无国际化 |
+| layout/components/LocaleDropdown/src/LocaleDropdown.vue | 【用户决策：不移植 2026-09-30】无国际化 |
 
 ### 2.2 🟡 部分覆盖 / 框架差异 / 等价物映射
 
@@ -99,6 +92,7 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 | views/Profile/components/index.ts | 🟡框架差异 | 导出聚合barrel |
 | views/Redirect/Redirect.vue | ✅等价物 | views/redirect.vue |
 | views/bpm/model/form/PrintTemplate/index.ts | 🟡框架差异 | 导出聚合；module 实现两端均存在 |
+| views/oa/utils/format.ts | ✅等价物 | views/oa/utils/format-collab.js（5导出全覆盖，逻辑逐行一致） |
 | api/fms/ledger/types.ts | 🟡框架差异 | 纯TS类型 |
 | api/login/oauth2/index.ts | ✅等价物 | 并入 api/login.js |
 | api/login/types.ts | 🟡框架差异 | 纯TS类型 |
@@ -218,6 +212,7 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 | layout/components/Collapse/src/Collapse.vue | ✅等价物 | components/Hamburger |
 | layout/components/ContextMenu/index.ts | 🟡框架差异 | 内置于 TagsView |
 | layout/components/ContextMenu/src/ContextMenu.vue | ✅等价物 | layout/components/TagsView 右键菜单 |
+| layout/components/Footer/src/Footer.vue | ✅等价物 | layout/components/Footer/index.vue（移植位置调整） |
 | layout/components/Logo/index.ts | 🟡框架差异 | 实现细节 |
 | layout/components/Logo/src/Logo.vue | ✅等价物 | layout/components/Sidebar/Logo.vue |
 | layout/components/Menu/index.ts | 🟡框架差异 | 实现细节 |
@@ -250,6 +245,8 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 | layout/components/ToolHeader.vue | ✅等价物 | 并入 layout/components/Navbar.vue |
 | layout/components/UserInfo/index.ts | 🟡框架差异 | 实现细节 |
 | layout/components/UserInfo/src/UserInfo.vue | 🟡部分覆盖 | 头像下拉在Navbar；缺锁屏弹窗 |
+| layout/components/UserInfo/src/components/LockDialog.vue | ✅等价物 | layout/components/Lock/LockDialog.vue（移植位置调整） |
+| layout/components/UserInfo/src/components/LockPage.vue | ✅等价物 | layout/components/Lock/LockPage.vue（移植位置调整） |
 | layout/components/useRenderLayout.tsx | 🟡框架差异 | Vue3 JSX布局渲染 |
 
 ### 2.3 ✅ 已对应文件（按模块；未做逐项功能验收，默认"未验收"）
@@ -1101,15 +1098,20 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 - bpmnProcessDesigner/src/utils/index.js
 - bpmnProcessDesigner/src/utils/xml2json.js
 
+#### layout（1）
+
+- components/Footer/index.ts（→ components/Footer/index.js）
+
 #### router（1）
 
 - index.ts（→ index.js）
 
-#### store（6）
+#### store（7）
 
 - index.ts（→ index.js）
 - modules/app.ts（→ modules/app.js）
 - modules/dict.ts（→ modules/dict.js）
+- modules/lock.ts（→ modules/lock.js）
 - modules/permission.ts（→ modules/permission.js）
 - modules/tagsView.ts（→ modules/tagsView.js）
 - modules/user.ts（→ modules/user.js）
@@ -1144,6 +1146,10 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 
 - Error/404.vue（→ error/404.vue）
 - Error/500.vue（→ error/500.vue）
+
+#### views/Home（1）
+
+- Home/Index2.vue
 
 #### views/Profile（6）
 
@@ -4867,14 +4873,15 @@ Vue3 源文件 2847 个：✅已对应/等价 2730（95.9%）、🟡部分覆盖
 | 二维码登录 | ❌后端不支持 | 后端无ticket端点，Vue3侧亦仅静态二维码；待后端提供接口 |
 | 注册 | ✅已补 | login.vue 注册tab，/system/auth/register 接线，浏览器验证 |
 | 忘记密码 | ✅已补 | login.vue 忘记密码tab，短信scene=23+重置密码接线，浏览器验证 |
-| 锁屏 | ❌未迁移 | 源 lock store + LockDialog/LockPage，目标无 |
-| 多语言(i18n) | ❌未迁移 | 源 locale store + useI18n；目标仅硬编码翻译简表 |
+| 锁屏 | ✅已补 | store/modules/lock.js + layout/components/Lock/{LockDialog,LockPage}.vue + Navbar 接线；missing-lock-footer-browser-test.js |
+| 多语言(i18n) | ❌不移植（用户决策 2026-09-30） | 源 locale store + useI18n；目标仅硬编码翻译简表 |
 | 布局/导航(TagsView/菜单/面包屑等) | 待验收 | layout 各等价物存在 |
 | 表单设计器 select/dict/area/iframe 规则 | ✅已补 | FormCreate config 5 规则文件移植，与源深比较一致，浏览器渲染字典选项通过 |
 | 暗黑模式切换 | ❌未迁移 | 源 ThemeSwitch，目标仅 ThemePicker 换色 |
 | 500错误页 | ✅已补 | views/error/500.vue + /500 路由；playwright 渲染通过 |
 | 水印 | ✅已补 | v-watermark 指令（directive/module/watermark.js），浏览器验证 |
-| 新手引导/事件总线 | ❌未迁移 | useGuide(driver.js)/useEmitt；Vue2无对应，待决策 |
+| 新手引导 | ❌不移植（用户决策 2026-09-30） | useGuide(driver.js) |
+| 事件总线 | ✅已补 | useEmitt → utils/eventBus.js |
 | backtop/Sticky/密码强度/操作日志/部门选择 | ✅已补 | 5组件已移植并全局注册，浏览器冒烟通过 |
 | 权限指令 hasPermi/hasRole | 待验收 | directive/permission/ 存在 |
 | JsonEditor 组件 | ✅已修复 | 新增 components/JsonEditor（契约等价）；iot 两页面悬空引用消除；顺带修复 el-button 复用致 :disabled 失效 |
