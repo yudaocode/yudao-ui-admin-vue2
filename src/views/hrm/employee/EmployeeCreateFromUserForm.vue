@@ -66,12 +66,12 @@
         placeholder="请选择直属上级"
       /></template></el-table-column>
       <el-table-column
-        label="职位"
+        label="岗位"
         min-width="170"
       ><template slot-scope="scope"><el-input
         v-model="scope.row.postName"
         maxlength="255"
-        placeholder="请输入职位"
+        placeholder="请输入岗位"
       /></template></el-table-column>
       <el-table-column
         label="入职时间"
