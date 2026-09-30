@@ -37,12 +37,9 @@
       <el-table-column label="正常次数" prop="normalCount" align="center" width="100" />
       <el-table-column label="迟到次数" prop="lateCount" align="center" width="100" />
       <el-table-column label="早退次数" prop="earlyCount" align="center" width="100" />
-      <el-table-column
-        label="缺少下班打卡天数"
-        prop="missingClockOutDays"
-        align="center"
-        min-width="150"
-      />
+      <el-table-column label="请假天数" prop="leaveDays" align="center" width="100" />
+      <el-table-column label="出差天数" prop="travelDays" align="center" width="100" />
+      <el-table-column label="旷工天数" prop="absentDays" align="center" min-width="150" />
     </el-table>
   </div>
 </template>

@@ -41,7 +41,7 @@
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
         <el-button
-          v-hasPermi="['oa:overtime-apply:create']"
+          v-hasPermi="['oa:resign-apply:create']"
           type="primary"
           plain
           icon="el-icon-plus"
@@ -82,14 +82,14 @@
         <template slot-scope="scope">
           <el-button
             v-if="scope.row.status === BpmProcessInstanceStatus.NOT_START"
-            v-hasPermi="['oa:overtime-apply:create']"
+            v-hasPermi="['oa:resign-apply:create']"
             type="text"
             size="mini"
             @click="handleSubmit(scope.row.id)"
           >提交</el-button>
           <el-button
             v-if="scope.row.status === BpmProcessInstanceStatus.NOT_START"
-            v-hasPermi="['oa:overtime-apply:create']"
+            v-hasPermi="['oa:resign-apply:create']"
             type="text"
             size="mini"
             @click="openForm('update', scope.row.id)"

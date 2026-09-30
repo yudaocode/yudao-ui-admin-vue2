@@ -45,20 +45,44 @@
         <template slot-scope="scope">
           <div class="clock-lines">
             <div>
-              上班：{{ getClockText(scope.row.dailyAttendances[index], OA_ATTENDANCE_TYPE.CLOCK_IN) }}
+              上班：
+              <el-button
+                v-if="getDailyAttendance(scope.row, index).clockInId && checkPermi(['oa:attendance:update'])"
+                type="text"
+                @click="openForm(getDailyAttendance(scope.row, index).clockInId)"
+              >
+                {{ getClockText(scope.row.dailyAttendances[index], OA_ATTENDANCE_TYPE.CLOCK_IN) }}
+              </el-button>
+              <span v-else>
+                {{ getClockText(scope.row.dailyAttendances[index], OA_ATTENDANCE_TYPE.CLOCK_IN) }}
+              </span>
             </div>
             <div>
-              下班：{{ getClockText(scope.row.dailyAttendances[index], OA_ATTENDANCE_TYPE.CLOCK_OUT) }}
+              下班：
+              <el-button
+                v-if="getDailyAttendance(scope.row, index).clockOutId && checkPermi(['oa:attendance:update'])"
+                type="text"
+                @click="openForm(getDailyAttendance(scope.row, index).clockOutId)"
+              >
+                {{ getClockText(scope.row.dailyAttendances[index], OA_ATTENDANCE_TYPE.CLOCK_OUT) }}
+              </el-button>
+              <span v-else>
+                {{ getClockText(scope.row.dailyAttendances[index], OA_ATTENDANCE_TYPE.CLOCK_OUT) }}
+              </span>
             </div>
           </div>
         </template>
       </el-table-column>
     </el-table>
+    <!-- 修改考勤记录 -->
+    <oa-attendance-form ref="attendanceForm" @success="getList" />
   </div>
 </template>
 
 <script>
 import * as AttendanceApi from '@/api/oa/attendance'
+import { checkPermi } from '@/utils/permission'
+import OaAttendanceForm from '../list/OaAttendanceForm.vue'
 import { DICT_TYPE, getDictLabel } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
 import { OA_ATTENDANCE_TYPE } from '@/views/oa/utils/constants'
@@ -96,7 +120,7 @@ function getWeekStartDate(value) {
 
 export default {
   name: 'OaAttendanceWeekReport',
-  components: { UserSelectV2 },
+  components: { UserSelectV2, OaAttendanceForm },
   data() {
     return {
       OA_ATTENDANCE_TYPE,
@@ -121,6 +145,15 @@ export default {
     this.getList()
   },
   methods: {
+    checkPermi,
+    /** 当天考勤（后端可能缺某天，兜底为空对象，避免模板取 clockInId 报错） */
+    getDailyAttendance(row, index) {
+      return (row.dailyAttendances && row.dailyAttendances[index]) || {}
+    },
+    /** 修改考勤记录 */
+    openForm(id) {
+      this.$refs.attendanceForm.open(id)
+    },
     getList() {
       this.loading = true
       const params = {
