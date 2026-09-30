@@ -95,7 +95,7 @@
                             v-hasPermi="['system:user:delete', 'system:user:update-password', 'system:permission:assign-user-role']">
                 <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
                 <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item command="handleDelete" v-if="scope.row.id !== 1" size="mini" type="text" icon="el-icon-delete"
+                  <el-dropdown-item command="handleDelete" size="mini" type="text" icon="el-icon-delete"
                                     v-hasPermi="['system:user:delete']">删除</el-dropdown-item>
                   <el-dropdown-item command="handleResetPwd" size="mini" type="text" icon="el-icon-key"
                                     v-hasPermi="['system:user:update-password']">重置密码</el-dropdown-item>

@@ -61,7 +61,7 @@
                      v-hasPermi="['system:dept:update']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-plus" @click="handleAdd(scope.row)"
                      v-hasPermi="['system:dept:create']">新增</el-button>
-          <el-button v-if="scope.row.parentId !== 0" size="mini" type="text" icon="el-icon-delete"
+          <el-button size="mini" type="text" icon="el-icon-delete"
                      @click="handleDelete(scope.row)" v-hasPermi="['system:dept:delete']">删除</el-button>
         </template>
       </el-table-column>

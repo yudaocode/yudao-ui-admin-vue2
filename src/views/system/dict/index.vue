@@ -73,6 +73,9 @@
         <template v-slot="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
                      v-hasPermi="['system:dict:update']">修改</el-button>
+          <router-link :to="'/dict/type/data/' + scope.row.type">
+            <el-button size="mini" type="text" icon="el-icon-tickets">数据</el-button>
+          </router-link>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
                      v-hasPermi="['system:dict:delete']">删除</el-button>
         </template>
