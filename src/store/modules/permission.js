@@ -36,6 +36,7 @@ const permission = {
       return new Promise(resolve => {
         // 将 menus 菜单，转换为 route 路由数组
         const sdata = JSON.parse(JSON.stringify(menus)) // 【重要】用于菜单中的数据
+        assignDirectoryRedirects(sdata)
         assignUniqueDirectoryNames(sdata)
         const rdata = JSON.parse(JSON.stringify(sdata)) // 与侧边栏使用相同的目录名称
         const sidebarRoutes = filterAsyncRouter(sdata)
@@ -54,6 +55,27 @@ const permission = {
 function getMenuRouteName(route) {
   if (route.componentName) return route.componentName
   return toCamelCase(route.path.split('/').pop(), true)
+}
+
+// 目录的 redirect：直接访问目录路径时，跳转到第一个子页面
+function assignDirectoryRedirects(menus, parentPath = '') {
+  const join = (base, path) => (path.startsWith('/') ? path : `${base.replace(/\/$/, '')}/${path}`)
+  menus.forEach(route => {
+    if (/^https?:\/\//.test(route.path)) return
+    const fullPath = join(parentPath, route.path)
+    if (route.children && route.children.length) {
+      if (!route.redirect) {
+        let first = route.children.find(child => !/^https?:\/\//.test(child.path))
+        let path = first ? join(fullPath, first.path) : ''
+        while (first && first.children && first.children.length) {
+          first = first.children.find(child => !/^https?:\/\//.test(child.path))
+          if (first) path = join(path, first.path)
+        }
+        if (path && path !== fullPath) route.redirect = path
+      }
+      assignDirectoryRedirects(route.children, fullPath)
+    }
+  })
 }
 
 // 目录没有页面缓存标识；冲突时只给目录改名，保留页面的 componentName 和访问路径。
@@ -104,6 +126,12 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
       noCache: !route.keepAlive
     }
     route.hidden = !route.visible
+    // 仅重定向的隐藏路由：不命名（避免占用路由名称）、不加载组件
+    if (route.redirectOnly) {
+      delete route.name
+      route.hidden = true
+      return true
+    }
     // 处理 name 属性
     route.name = getMenuRouteName(route)
     // 处理 component 属性
@@ -137,9 +165,14 @@ function filterChildren(childrenMap, lastRouter = false) {
   childrenMap.forEach((el, index) => {
     if (el.children && el.children.length) {
       if (!el.component && !lastRouter) {
+        // 目录被扁平化后自身不再有路由，保留一个仅用于重定向的隐藏路由
+        if (el.redirect) children.push({ path: el.path, redirect: el.redirect, hidden: true, redirectOnly: true })
         el.children.forEach(c => {
           c.path = el.path + '/' + c.path
           if (c.children && c.children.length) {
+            if (c.redirect) {
+              children.push({ path: c.path, redirect: c.redirect, hidden: true, redirectOnly: true })
+            }
             children = children.concat(filterChildren(c.children, c))
             return
           }
@@ -156,8 +189,19 @@ function filterChildren(childrenMap, lastRouter = false) {
   return children
 }
 
+// 规范化后端菜单的 component 路径，兼容 `../views/oa/leave/index.vue`、`/system/user/index`、`?query/#hash` 等写法
+export const normalizeViewPath = (view) => {
+  let path = String(view || '').trim()
+  path = path.split(/[?#]/)[0]
+  path = path.replace(/^(\.\.?\/)+/, '').replace(/^\/+/, '')
+  path = path.replace(/^(src\/)?views\//, '')
+  path = path.replace(/\.vue$/, '')
+  return path
+}
+
 export const loadView = (view) => { // 路由懒加载
-  return (resolve) => require([`@/views/${view}`], resolve)
+  const path = normalizeViewPath(view)
+  return (resolve) => require([`@/views/${path}`], resolve)
 }
 
 export default permission
