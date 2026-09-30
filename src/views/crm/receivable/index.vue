@@ -247,8 +247,8 @@
               @click="handleSubmit(scope.row)"
             >提交审核</el-button>
             <el-button
-              v-else-if="scope.row.processInstanceId"
-              v-hasPermi="['crm:receivable:query']"
+              v-else
+              v-hasPermi="['crm:receivable:update']"
               type="text"
               size="mini"
               @click="handleProcessDetail(scope.row)"

@@ -19,6 +19,7 @@
       >
         <span>合同配置设置</span>
         <el-button
+          v-hasPermi="['crm:contract-config:update']"
           type="primary"
           size="small"
           :loading="loading"

@@ -10,8 +10,8 @@
           v-model="model.quotaSettingType"
           @change="handleQuotaSettingChange"
         >
-          <el-radio-button :value="HrmPerformanceQuotaSettingType.SYSTEM">系统制定</el-radio-button>
-          <el-radio-button :value="HrmPerformanceQuotaSettingType.EMPLOYEE">员工制定</el-radio-button>
+          <el-radio-button :label="HrmPerformanceQuotaSettingType.SYSTEM">系统制定</el-radio-button>
+          <el-radio-button :label="HrmPerformanceQuotaSettingType.EMPLOYEE">员工制定</el-radio-button>
         </el-radio-group>
       </el-form-item>
       <template v-if="model.quotaSettingType === HrmPerformanceQuotaSettingType.EMPLOYEE">

@@ -169,7 +169,6 @@
             size="mini"
             icon="el-icon-search"
             @click="openDetail(scope.row.id)"
-            v-hasPermi="['pay:transfer:query']"
           >
             详情
           </el-button>

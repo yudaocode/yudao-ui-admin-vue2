@@ -137,6 +137,16 @@
             修改
           </el-button>
           <el-button
+            v-if="scope.row.parentId > 0"
+            v-hasPermi="['product:spu:query']"
+            size="mini"
+            type="text"
+            icon="el-icon-goods"
+            @click="handleViewSpu(scope.row.id)"
+          >
+            查看商品
+          </el-button>
+          <el-button
             v-hasPermi="['product:category:delete']"
             size="mini"
             type="text"
@@ -185,6 +195,10 @@ export default {
     this.getList()
   },
   methods: {
+    /** 查看商品操作 */
+    handleViewSpu(id) {
+      this.$router.push({ name: 'ProductSpu', query: { categoryId: id } })
+    },
     getList() {
       this.loading = true
       return getCategoryList(this.queryParams).then((response) => {

@@ -145,14 +145,14 @@
           :value="scope.row.returnType"
         /></template></el-table-column>
         <el-table-column
-          label="负责人"
-          prop="ownerUserName"
-          width="120"
-        />
-        <el-table-column
           label="备注"
           prop="remark"
           min-width="160"
+        />
+        <el-table-column
+          label="负责人"
+          prop="ownerUserName"
+          width="120"
         />
         <el-table-column
           label="实际回款金额（元）"
@@ -166,6 +166,26 @@
           label="未回款金额（元）"
           width="160"
         ><template slot-scope="scope">{{ formatMoney(Number(scope.row.price || 0) - Number(scope.row.receivable && scope.row.receivable.price || 0)) }}</template></el-table-column>
+        <el-table-column
+          label="更新时间"
+          prop="updateTime"
+          align="center"
+          width="180"
+          :formatter="dateFormatter"
+        />
+        <el-table-column
+          label="创建时间"
+          prop="createTime"
+          align="center"
+          width="180"
+          :formatter="dateFormatter"
+        />
+        <el-table-column
+          label="创建人"
+          prop="creatorName"
+          align="center"
+          width="100"
+        />
         <el-table-column
           label="操作"
           fixed="right"
@@ -218,7 +238,7 @@
 import * as ReceivablePlanApi from '@/api/crm/receivable/plan'
 import * as CustomerApi from '@/api/crm/customer'
 import { DICT_TYPE } from '@/utils/dict'
-import { dateFormatter2 } from '@/utils'
+import { dateFormatter, dateFormatter2 } from '@/utils'
 import ReceivablePlanForm from './ReceivablePlanForm.vue'
 import ReceivableForm from '../ReceivableForm.vue'
 
@@ -231,6 +251,7 @@ export default {
     CustomerApi.getCustomerSimpleList().then(response => { this.customerList = (response).data })
   },
   methods: {
+    dateFormatter,
     dateFormatter2,
     formatMoney(value) { const number = Number(value); return Number.isFinite(number) ? number.toFixed(2) : '-' },
     async getList() {
