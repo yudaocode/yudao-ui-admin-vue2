@@ -6,15 +6,17 @@
       </keep-alive>
     </transition>
     <iframe-toggle />
+    <app-footer />
   </section>
 </template>
 
 <script>
 import iframeToggle from "./IframeToggle/index"
+import AppFooter from "./Footer/index.vue"
 
 export default {
   name: 'AppMain',
-  components: { iframeToggle },
+  components: { iframeToggle, AppFooter },
   computed: {
     cachedViews() {
       return this.$store.state.tagsView.cachedViews

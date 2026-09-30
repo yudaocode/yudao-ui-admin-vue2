@@ -17,6 +17,13 @@
         <!-- 站内信 -->
         <notify-message class="right-menu-item hover-effect" />
 
+        <!-- IM 聊天入口：IM 是全屏沉浸式壳，新标签页打开 IM 主页 -->
+        <el-tooltip content="IM 聊天" effect="dark" placement="bottom">
+          <div class="right-menu-item hover-effect" @click="goToChat">
+            <i class="el-icon-chat-dot-round" />
+          </div>
+        </el-tooltip>
+
         <el-tooltip content="源码地址" effect="dark" placement="bottom">
           <ruo-yi-git id="ruoyi-git" class="right-menu-item hover-effect" />
         </el-tooltip>
@@ -139,6 +146,11 @@ export default {
     // 锁定屏幕
     lockScreen() {
       this.lockDialogVisible = true
+    },
+    // 用路由 name resolve 出完整 URL，在新标签页打开 IM 主页
+    goToChat() {
+      const { href } = this.$router.resolve({ name: 'ImHome' })
+      window.open(href, '_blank')
     },
     async logout() {
       this.$modal.confirm('确定注销并退出系统吗？', '提示').then(() => {
