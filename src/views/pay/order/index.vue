@@ -105,7 +105,7 @@
           <span>{{ parseTime(scope.row.successTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="支付应用" align="center" prop="successTime" width="100">
+      <el-table-column label="支付应用" align="center" prop="appName" width="100">
         <template v-slot="scope">
           <span>{{ scope.row.appName }}</span>
         </template>
