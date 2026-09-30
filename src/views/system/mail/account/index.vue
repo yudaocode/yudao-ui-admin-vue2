@@ -10,6 +10,11 @@
       <el-form-item label="用户名" prop="username">
         <el-input v-model="queryParams.username" placeholder="请输入用户名" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
+      <el-form-item label="创建时间" prop="createTime">
+        <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss"
+                        type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"
+                        :default-time="['00:00:00', '23:59:59']" />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
@@ -133,7 +138,8 @@ export default {
         pageNo: 1,
         pageSize: 10,
         mail: null,
-        username: null
+        username: null,
+        createTime: []
       },
       // 表单参数
       form: {},

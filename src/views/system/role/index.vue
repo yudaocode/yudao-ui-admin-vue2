@@ -62,6 +62,7 @@
         </template>
       </el-table-column>
       <el-table-column label="显示顺序" prop="sort" width="100" />
+      <el-table-column label="备注" prop="remark" :show-overflow-tooltip="true" width="150" />
       <el-table-column label="状态" align="center" width="100">
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status"/>

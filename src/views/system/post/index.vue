@@ -49,6 +49,7 @@
       <el-table-column label="岗位编码" align="center" prop="code" />
       <el-table-column label="岗位名称" align="center" prop="name" />
       <el-table-column label="岗位排序" align="center" prop="sort" />
+      <el-table-column label="岗位备注" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column label="状态" align="center" prop="status">
         <template v-slot="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status"/>

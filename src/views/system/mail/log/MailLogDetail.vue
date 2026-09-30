@@ -19,9 +19,12 @@
       <el-descriptions-item label="模版发送人名称">{{
         detailData.templateNickname
       }}</el-descriptions-item>
-      <el-descriptions-item label="接收用户">{{
-        detailData.userId || "无"
-      }}</el-descriptions-item>
+      <el-descriptions-item label="接收用户"
+        ><span v-if="detailData.userType && detailData.userId"
+          ><dict-tag :type="DICT_TYPE.USER_TYPE" :value="detailData.userType" />
+          ({{ detailData.userId }})</span
+        ><span v-else>无</span></el-descriptions-item
+      >
       <el-descriptions-item label="收件信息">{{
         mailsText
       }}</el-descriptions-item>
