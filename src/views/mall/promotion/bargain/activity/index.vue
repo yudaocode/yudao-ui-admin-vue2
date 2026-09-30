@@ -189,7 +189,6 @@
       >
         <template slot-scope="scope">
           <el-button
-            v-if="scope.row.status === 0"
             v-hasPermi="['promotion:bargain-activity:update']"
             type="text"
             size="mini"
