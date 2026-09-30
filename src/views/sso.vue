@@ -75,6 +75,10 @@ export default {
     };
   },
   created() {
+    // 防止在没有登录的情况下循环弹窗
+    if (typeof this.$route.query.client_id === 'undefined') {
+      return
+    }
     // 解析参数
     // 例如说【自动授权不通过】：client_id=default&redirect_uri=https%3A%2F%2Fwww.iocoder.cn&response_type=code&scope=user.read%20user.write
     // 例如说【自动授权通过】：client_id=default&redirect_uri=https%3A%2F%2Fwww.iocoder.cn&response_type=code&scope=user.read
