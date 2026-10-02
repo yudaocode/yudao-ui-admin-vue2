@@ -19,7 +19,7 @@
           ><el-option
             v-for="channel in channelList"
             :key="channel.id"
-            :label="channel.signature + '【' + channel.code + '】'"
+            :label="channel.signature + '【' + (getDictDataLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code) || channel.code) + '】'"
             :value="channel.id" /></el-select
       ></el-form-item>
       <el-form-item label="短信类型" prop="type"
@@ -80,7 +80,7 @@ import {
 } from "@/api/system/sms/smsTemplate";
 import { getSimpleSmsChannelList } from "@/api/system/sms/smsChannel";
 import { CommonStatusEnum } from "@/utils/constants";
-import { DICT_TYPE, getDictDatas } from "@/utils/dict";
+import { DICT_TYPE, getDictDatas, getDictDataLabel } from "@/utils/dict";
 export default {
   name: "SystemSmsTemplateForm",
   data() {
@@ -127,6 +127,7 @@ export default {
     };
   },
   methods: {
+    getDictDataLabel,
     defaultForm() {
       return {
         id: undefined,
