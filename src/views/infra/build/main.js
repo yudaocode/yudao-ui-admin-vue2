@@ -6,7 +6,7 @@ import '@/assets/icons'
 import axios from 'axios'
 import Tinymce from '@/components/tinymce/index.vue'
 
-Vue.component('TinyMCE', Tinymce)
+Vue.component('Tinymce', Tinymce)
 
 Vue.config.productionTip = false
 Vue.prototype.$axios = axios

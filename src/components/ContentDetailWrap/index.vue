@@ -3,7 +3,7 @@
     ref="contentDetailWrap"
     class="content-detail-wrap-container"
   >
-    <StickyContainer :offset="offset">
+    <Sticky :offset="offset">
       <div class="content-detail-wrap-header">
         <div class="content-detail-wrap-header__back">
           <el-button @click="$emit('back')">
@@ -20,7 +20,7 @@
           <slot name="right" />
         </div>
       </div>
-    </StickyContainer>
+    </Sticky>
     <div class="content-detail-wrap-body-wrapper">
       <el-card
         class="content-detail-wrap-body"

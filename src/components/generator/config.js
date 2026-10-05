@@ -134,7 +134,7 @@ export const inputComponents = [
       showLabel: true,
       changeTag: true,
       labelWidth: null,
-      tag: 'TinyMCE',
+      tag: 'tinymce',
       tagIcon: 'rich-text',
       defaultValue: null,
       span: 24,

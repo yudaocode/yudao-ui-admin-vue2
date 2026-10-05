@@ -26,7 +26,7 @@
  * Sticky 吸顶容器（Vue3 版逻辑移植，position: fixed 方案，兼容 Element UI 2.x 布局）
  */
 export default {
-  name: 'StickyContainer',
+  name: 'Sticky',
   props: {
     // 距离顶部或者底部的距离(单位px)
     offset: {

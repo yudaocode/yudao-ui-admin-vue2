@@ -18,6 +18,7 @@ module.exports = {
     'vue/singleline-html-element-content-newline': 'off',
     'vue/multiline-html-element-content-newline': 'off',
     'vue/component-definition-name-casing': ['error', 'PascalCase'],
+    'vue/multi-word-component-names': ['error', { ignores: ['Pagination', 'Sticky', 'Editor', 'Hamburger', 'Tinymce'] }],
     'vue/no-v-html': 'off',
     'accessor-pairs': 2,
     'arrow-spacing': [2, {
