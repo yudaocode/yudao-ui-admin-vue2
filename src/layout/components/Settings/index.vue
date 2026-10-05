@@ -256,6 +256,7 @@ const buildSettingComputed = key => ({
 })
 
 export default {
+  name: 'LayoutSettings',
   components: { ThemePicker },
   data() {
     return {

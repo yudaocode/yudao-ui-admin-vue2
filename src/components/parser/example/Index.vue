@@ -22,6 +22,7 @@ import Parser from '../Parser'
 // import Parser from 'form-gen-parser'
 
 export default {
+  name: 'FormParserExample',
   components: {
     Parser
   },

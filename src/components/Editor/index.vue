@@ -20,7 +20,7 @@ import merge from 'lodash/merge'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
 
 export default {
-  name: 'Editor',
+  name: 'WangEditor',
   props: {
     value: { type: String, default: '' },
     editorId: { type: String, default: 'wangEditor-1' },
