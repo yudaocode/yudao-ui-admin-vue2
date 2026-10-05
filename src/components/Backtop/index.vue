@@ -19,7 +19,7 @@
  * 对齐 Vue3 版本基于 ElBacktop 的契约：target / visibilityHeight / right / bottom
  */
 export default {
-  name: 'Backtop',
+  name: 'BackTop',
   props: {
     // 触发滚动的目标对象（CSS 选择器），默认为 window
     target: {

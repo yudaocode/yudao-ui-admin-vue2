@@ -50,25 +50,25 @@ Vue.component('DocAlert', DocAlert)
 Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
 Vue.component('JsonEditor', JsonEditor)
-Vue.component('Backtop', Backtop)
+Vue.component('BackTop', BackTop)
 Vue.component('Sticky', Sticky)
 Vue.component('InputPassword', InputPassword)
 Vue.component('OperateLogV2', OperateLogV2)
 Vue.component('DeptSelectForm', DeptSelectForm)
 Vue.component('ContentWrap', ContentWrap)
 Vue.component('ContentDetailWrap', ContentDetailWrap)
-Vue.component('Infotip', Infotip)
+Vue.component('InfoTip', InfoTip)
 // 字典标签组件
 import DictTag from '@/components/DictTag'
 import DocAlert from '@/components/DocAlert'
-import Backtop from '@/components/Backtop'
+import BackTop from '@/components/Backtop'
 import Sticky from '@/components/Sticky'
 import InputPassword from '@/components/InputPassword'
 import OperateLogV2 from '@/components/OperateLogV2'
 import DeptSelectForm from '@/components/DeptSelectForm'
 import ContentWrap from '@/components/ContentWrap'
 import ContentDetailWrap from '@/components/ContentDetailWrap'
-import Infotip from '@/components/Infotip'
+import InfoTip from '@/components/Infotip'
 // 头部标签插件
 import VueMeta from 'vue-meta'
 

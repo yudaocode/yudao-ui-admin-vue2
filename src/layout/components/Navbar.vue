@@ -161,6 +161,7 @@ import LockPage from '@/layout/components/Lock/LockPage.vue'
 import { getPath, getTenantEnable } from '@/utils/ruoyi'
 
 export default {
+  name: 'NavBar',
   components: {
     Breadcrumb,
     TopNav,

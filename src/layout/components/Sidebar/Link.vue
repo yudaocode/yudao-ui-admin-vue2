@@ -11,6 +11,7 @@
 import { isExternal } from '@/utils/validate'
 
 export default {
+  name: 'AppLink',
   props: {
     to: {
       type: String,

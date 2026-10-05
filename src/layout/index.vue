@@ -22,7 +22,7 @@
         <tags-view v-if="needTagsView" />
       </div>
       <app-main />
-      <Backtop />
+      <BackTop />
       <right-panel>
         <settings />
       </right-panel>

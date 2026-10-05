@@ -35,7 +35,7 @@
  * Vue3 版使用 ep:warning-filled 图标与 Highlight 组件；Vue2 版使用 element-ui 内置图标并内置高亮切分逻辑
  */
 export default {
-  name: 'Infotip',
+  name: 'InfoTip',
   props: {
     title: {
       type: String,
