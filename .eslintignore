@@ -8,3 +8,6 @@ public
 *.js
 # 忽略当前目录下为vue的文件的语法检查
 *.vue
+
+# Tinyflow 已编译的画布库，仅忽略打包文件
+/src/components/Tinyflow/ui/index.js
