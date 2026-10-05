@@ -67,7 +67,7 @@ const lineChartData = {
 }
 
 export default {
-  name: 'Index',
+  name: 'HomePage',
   components: {
     PanelGroup,
     LineChart,

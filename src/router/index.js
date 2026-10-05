@@ -129,7 +129,7 @@ export const constantRoutes = [
     children: [{
       path: 'index',
       component: (resolve) => require(['@/views/index'], resolve),
-      name: '首页',
+      name: 'HomePage',
       meta: { title: '首页', icon: 'dashboard', affix: true }
     }
     ]
@@ -142,7 +142,7 @@ export const constantRoutes = [
     children: [{
       path: 'profile',
       component: (resolve) => require(['@/views/Profile/Index'], resolve),
-      name: 'Profile',
+      name: 'UserProfile',
       meta: { title: '个人中心', icon: 'user' }
     }, {
       path: 'notify-message',

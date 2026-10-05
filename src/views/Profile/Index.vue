@@ -42,7 +42,7 @@ import UserSocial from './components/UserSocial.vue'
 import { getUserProfile } from '@/api/system/user/profile'
 
 export default {
-  name: 'Profile',
+  name: 'UserProfile',
   components: { BasicInfo, ProfileUser, ResetPwd, UserSocial },
   data() { return { activeName: 'basicInfo', user: {}} },
   created() { this.refreshProfile() },

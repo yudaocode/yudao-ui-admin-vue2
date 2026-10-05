@@ -127,9 +127,9 @@ const __sfc__ = /* @__PURE__*/_defineComponent({
       })
     }
 
-    /** 跳转个人中心（路由 name=Profile） */
+    /** 跳转个人中心（路由 name=UserProfile） */
     const goProfile = () => router.push({
-      name: 'Profile'
+      name: 'UserProfile'
     })
     const __returned__ = {
       route,
