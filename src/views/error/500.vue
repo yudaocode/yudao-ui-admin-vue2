@@ -45,7 +45,7 @@
 <script>
 
 export default {
-  name: 'Page500',
+  name: 'ErrorPage500',
   computed: {
     message() {
       return '抱歉，服务器报告错误。'

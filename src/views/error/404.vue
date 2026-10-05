@@ -47,7 +47,7 @@
 <script>
 
 export default {
-  name: 'Page404',
+  name: 'ErrorPage404',
   computed: {
     message() {
       return '找不到网页！'

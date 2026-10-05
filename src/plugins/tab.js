@@ -8,7 +8,7 @@ export default {
     if (obj === undefined) {
       matched.forEach((m) => {
         if (m.components && m.components.default && m.components.default.name) {
-          if (!['Layout', 'ParentView'].includes(m.components.default.name)) {
+          if (!['MainLayout', 'ParentView'].includes(m.components.default.name)) {
             obj = { name: m.components.default.name, path: path, query: query }
           }
         }
