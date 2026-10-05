@@ -44,6 +44,7 @@ import { constantRoutes } from '@/router'
 const hideList = ['/index', '/user/profile']
 
 export default {
+  name: 'TopNav',
   data() {
     return {
       // 顶部栏初始数

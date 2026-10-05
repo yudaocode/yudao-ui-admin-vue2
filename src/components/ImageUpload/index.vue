@@ -50,6 +50,7 @@
 import { getAccessToken } from '@/utils/auth'
 
 export default {
+  name: 'ImageUpload',
   props: {
     value: { type: [String, Object, Array], default: undefined },
     // 图片数量限制

@@ -17,6 +17,7 @@
 import InnerLink from '../InnerLink/index.vue'
 
 export default {
+  name: 'IframeToggle',
   components: { InnerLink },
   computed: {
     iframeViews() {
