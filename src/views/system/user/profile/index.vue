@@ -110,7 +110,7 @@ import userSocial from './userSocial'
 import { getUserProfile } from '@/api/system/user/profile'
 
 export default {
-  name: 'Profile',
+  name: 'SystemUserProfile',
   components: { userAvatar, userInfo, resetPwd, userSocial },
   data() {
     return {

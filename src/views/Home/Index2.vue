@@ -92,7 +92,7 @@ import * as echarts from 'echarts'
 import { barOptions, lineOptions, pieOptions } from '@/views/Home/echarts-data'
 
 export default {
-  name: 'Home2',
+  name: 'HomePage2',
   data() {
     return {
       loading: true,
