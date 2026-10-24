@@ -13,7 +13,7 @@
       label-width="100px"
       :disabled="isDetail"
     >
-      <el-row><el-col :span="8"><el-form-item
+      <el-row><el-col :span="24"><el-form-item
         label="工作站编码"
         prop="code"
       ><el-input

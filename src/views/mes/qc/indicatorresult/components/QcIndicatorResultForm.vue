@@ -13,7 +13,7 @@
       label-width="100px"
     >
       <el-row :gutter="16">
-        <el-col :span="12">
+        <el-col :span="24">
           <el-form-item
             label="样品编号"
             prop="code"

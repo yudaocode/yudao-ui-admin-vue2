@@ -318,6 +318,7 @@ export default {
   name: 'PmsWorkItemAllList',
   components: { WorkItemDetail, WorkItemForm, IterationSelect, ProjectMemberSelect, WorkItemLabelSelect },
   props: {
+    active: { type: Boolean, default: true },
     projectId: { type: Number, required: true },
     projectType: { type: Number, required: true },
     editable: { type: Boolean, required: true },
@@ -337,6 +338,9 @@ export default {
     }
   },
   watch: {
+    active(value) {
+      if (!value) this.showFilterPopover = false
+    },
     projectId(value) {
       this.queryParams.projectId = value
       this.handleQuery()
@@ -348,6 +352,9 @@ export default {
   },
   mounted() {
     this.getWorkItemList()
+  },
+  deactivated() {
+    this.showFilterPopover = false
   },
   methods: {
     dateFormatter,

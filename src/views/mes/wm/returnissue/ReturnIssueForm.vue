@@ -14,7 +14,7 @@
         label-width="110px"
       >
         <el-row>
-          <el-col :span="8">
+          <el-col :span="24">
             <el-form-item
               label="退料单编号"
               prop="code"

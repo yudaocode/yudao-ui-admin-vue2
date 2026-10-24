@@ -160,7 +160,7 @@
       <el-form-item label="获取经纬度">
         <el-button
           type="primary"
-          @click="mapDialogVisible = true"
+          @click="openMapDialog"
         >获取</el-button>
       </el-form-item>
     </el-form>
@@ -177,36 +177,27 @@
       <el-button @click="dialogVisible = false">取 消</el-button>
     </div>
 
-    <el-dialog
-      title="获取经纬度"
-      :visible.sync="mapDialogVisible"
-      width="70%"
-      append-to-body
-    >
-      <IFrame
-        class="map-frame"
-        :src="tencentLbsUrl"
-      />
-    </el-dialog>
+    <MapDialog
+      ref="mapDialog"
+      @confirm="handleMapConfirm"
+    />
   </el-dialog>
 </template>
 
 <script>
 import ImageUpload from '@/components/ImageUpload'
-import IFrame from '@/components/iFrame/index'
+import { bd09ToGcj02, gcj02ToBd09, MapDialog, toMapCoordinate } from '@/components/Map'
 import * as DeliveryPickUpStoreApi from '@/api/mall/trade/delivery/pickUpStore'
-import { getTradeConfig } from '@/api/mall/trade/config'
 import { getAreaTree } from '@/api/system/area'
 import { CommonStatusEnum } from '@/utils/constants'
 import { DICT_TYPE, getDictDatas } from '@/utils/dict'
 
 export default {
   name: 'DeliveryPickUpStoreForm',
-  components: { ImageUpload, IFrame },
+  components: { ImageUpload, MapDialog },
   data() {
     return {
       dialogVisible: false,
-      mapDialogVisible: false,
       dialogTitle: '',
       formLoading: false,
       formType: '',
@@ -219,7 +210,6 @@ export default {
         emitPath: false
       },
       statusDictDatas: getDictDatas(DICT_TYPE.COMMON_STATUS),
-      tencentLbsUrl: '',
       formRules: {
         name: [{ required: true, message: '门店名称不能为空', trigger: 'blur' }],
         logo: [{ required: true, message: '门店 logo 不能为空', trigger: 'blur' }],
@@ -257,13 +247,6 @@ export default {
   },
   mounted() {
     this.loadAreaTree()
-    this.initTencentLbsMap()
-  },
-  beforeDestroy() {
-    window.removeEventListener('message', this.handleMapMessage, false)
-    if (window.selectAddress === this.selectAddress) {
-      delete window.selectAddress
-    }
   },
   methods: {
     getDefaultFormData() {
@@ -321,7 +304,6 @@ export default {
     /** 重置表单 */
     resetForm() {
       this.formData = this.getDefaultFormData()
-      this.mapDialogVisible = false
       this.$nextTick(() => {
         if (this.$refs.form) this.$refs.form.clearValidate()
       })
@@ -332,44 +314,20 @@ export default {
         this.areaList = response.data
       })
     },
-    /** 选择经纬度 */
-    selectAddress(loc) {
-      if (loc && loc.latlng && loc.latlng.lat !== undefined) {
-        this.formData.latitude = loc.latlng.lat
-      }
-      if (loc && loc.latlng && loc.latlng.lng !== undefined) {
-        this.formData.longitude = loc.latlng.lng
-      }
-      this.mapDialogVisible = false
+    /** 门店保存 GCJ02，百度地图选点使用 BD09 */
+    openMapDialog() {
+      const coordinate = toMapCoordinate(this.formData.longitude, this.formData.latitude)
+      const point = coordinate ? gcj02ToBd09(coordinate.longitude, coordinate.latitude) : undefined
+      this.$refs.mapDialog.open(point?.longitude, point?.latitude)
     },
-    /** 接收腾讯位置选择器回传的数据 */
-    handleMapMessage(event) {
-      const loc = event && event.data
-      if (!loc || loc.module !== 'locationPicker') return
-      if (window.parent && typeof window.parent.selectAddress === 'function') {
-        window.parent.selectAddress(loc)
-      } else {
-        this.selectAddress(loc)
-      }
-    },
-    /** 初始化腾讯地图 */
-    initTencentLbsMap() {
-      window.selectAddress = this.selectAddress
-      window.addEventListener('message', this.handleMapMessage, false)
-      return getTradeConfig().then((response) => {
-        const config = response.data
-        const key = config.tencentLbsKey || ''
-        this.tencentLbsUrl = 'https://apis.map.qq.com/tools/locpicker?type=1&key=' + key + '&referer=myapp'
-      })
+    /** 将百度选点转换回门店使用的 GCJ02 */
+    handleMapConfirm(data) {
+      const coordinate = toMapCoordinate(data.longitude, data.latitude)
+      if (!coordinate) return
+      const point = bd09ToGcj02(coordinate.longitude, coordinate.latitude)
+      this.formData.longitude = Number(point.longitude.toFixed(6))
+      this.formData.latitude = Number(point.latitude.toFixed(6))
     }
   }
 }
 </script>
-
-<style scoped>
-.map-frame {
-  display: block;
-  width: 100%;
-  min-height: 609px;
-}
-</style>

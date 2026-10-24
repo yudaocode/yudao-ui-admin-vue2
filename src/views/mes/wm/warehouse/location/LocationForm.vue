@@ -15,7 +15,7 @@
         :disabled="isDetail"
       >
         <el-row>
-          <el-col :span="8">
+          <el-col :span="24">
             <el-form-item
               label="库区编码"
               prop="code"

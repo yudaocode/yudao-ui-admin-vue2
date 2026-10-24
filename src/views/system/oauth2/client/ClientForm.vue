@@ -70,6 +70,7 @@
         prop="authorizedGrantTypes"
       ><el-select
         v-model="formData.authorizedGrantTypes"
+        style="width: 100%"
         multiple
         filterable
         allow-create
@@ -82,6 +83,7 @@
       /></el-select></el-form-item>
       <el-form-item label="授权范围"><el-select
         v-model="formData.scopes"
+        style="width: 100%"
         multiple
         filterable
         allow-create
@@ -94,9 +96,9 @@
       /></el-select></el-form-item>
       <el-form-item label="自动授权范围"><el-select
         v-model="formData.autoApproveScopes"
+        style="width: 100%"
         multiple
         filterable
-        allow-create
         placeholder="请输入授权范围"
       ><el-option
         v-for="scope in formData.scopes"
@@ -109,6 +111,7 @@
         prop="redirectUris"
       ><el-select
         v-model="formData.redirectUris"
+        style="width: 100%"
         multiple
         filterable
         allow-create
@@ -121,6 +124,7 @@
       /></el-select></el-form-item>
       <el-form-item label="权限"><el-select
         v-model="formData.authorities"
+        style="width: 100%"
         multiple
         filterable
         allow-create
@@ -133,6 +137,7 @@
       /></el-select></el-form-item>
       <el-form-item label="资源"><el-select
         v-model="formData.resourceIds"
+        style="width: 100%"
         multiple
         filterable
         allow-create

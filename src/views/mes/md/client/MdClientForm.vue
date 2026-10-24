@@ -15,7 +15,7 @@
       :disabled="isDetail"
     >
       <el-row>
-        <el-col :span="12"><el-form-item
+        <el-col :span="24"><el-form-item
           label="客户编码"
           prop="code"
         ><el-input

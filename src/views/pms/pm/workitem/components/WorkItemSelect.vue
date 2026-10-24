@@ -45,6 +45,10 @@ export default {
   },
   methods: {
     async getWorkItemList() {
+      if (!this.projectId || this.type === undefined) {
+        this.workItemList = []
+        return
+      }
       this.loading = true
       try {
         const list = await getAllPageItems((pageNo, pageSize) => WorkItemApi.getWorkItemPage({

@@ -14,7 +14,7 @@
         label-width="110px"
       >
         <el-row>
-          <el-col :span="8">
+          <el-col :span="24">
             <el-form-item
               label="方案编码"
               prop="code"

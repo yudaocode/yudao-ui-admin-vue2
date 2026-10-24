@@ -34,9 +34,17 @@ export default {
   name: 'HrmPortalHome',
   components: { HrmHomeCalendar, EmployeeSurvey },
   data() {
-    return { accessible: false, loading: false, employee: undefined, salarySlipSummary: undefined }
+    return { initialized: false, accessible: false, loading: false, employee: undefined, salarySlipSummary: undefined }
+  },
+  async mounted() {
+    this.accessible = await checkHrmPortalAccess(this.$router)
+    this.initialized = true
+    if (!this.accessible) return
+    await this.$nextTick()
+    await this.refreshAll()
   },
   async activated() {
+    if (!this.initialized) return
     this.accessible = await checkHrmPortalAccess(this.$router)
     if (!this.accessible) return
     await this.$nextTick()

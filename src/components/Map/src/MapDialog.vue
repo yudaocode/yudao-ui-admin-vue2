@@ -40,9 +40,11 @@
         </el-form-item>
       </el-form>
       <!-- 第三行：地图 -->
-      <div
-        v-if="state.mapContainerReady"
-        ref="mapContainer"
+      <iframe
+        v-if="state.mapContainerReady && mapFrameHtml"
+        ref="mapFrame"
+        :srcdoc="mapFrameHtml"
+        title="百度地图"
         class="map-dialog-map"
       />
       <div
@@ -63,13 +65,14 @@
 </template>
 
 <script>
-import { loadBaiduMapSdk } from './utils'
+import { BAIDU_MAP_FRAME_READY, buildBaiduMapFrameHtml } from './utils'
 
 export default {
   name: 'MapDialog',
   data() {
     return {
       dialogVisible: false,
+      mapFrameHtml: buildBaiduMapFrameHtml(),
       initLongitude: undefined,
       initLatitude: undefined,
       state: {
@@ -86,52 +89,52 @@ export default {
       }
     }
   },
+  created() {
+    this._mapApi = null
+  },
+  mounted() {
+    window.addEventListener('message', this.handleFrameMessage)
+  },
+  beforeDestroy() {
+    window.removeEventListener('message', this.handleFrameMessage)
+  },
   methods: {
     /** 打开弹窗 */
     open(longitude, latitude) {
       this.initLongitude = longitude
       this.initLatitude = latitude
-      this.state.longitude = longitude ? String(longitude) : ''
-      this.state.latitude = latitude ? String(latitude) : ''
+      this.state.longitude = Number.isFinite(longitude) ? String(longitude) : ''
+      this.state.latitude = Number.isFinite(latitude) ? String(latitude) : ''
       this.state.address = ''
       this.state.mapAddressOptions = []
       this.dialogVisible = true
     },
-    /** 弹窗打开动画完成后初始化地图 */
-    async handleDialogOpened() {
-      // 先显示地图容器
+    /** 弹窗打开后显示地图 iframe */
+    handleDialogOpened() {
       this.state.mapContainerReady = true
-      // 等待下一个 DOM 更新周期，确保地图容器已渲染
-      await this.$nextTick()
-      try {
-        // 加载百度地图 SDK
-        await loadBaiduMapSdk()
-        this.initMapInstance()
-      } catch (error) {
-        this.state.mapContainerReady = false
-        this.$message.error(error.message)
-      }
     },
-    /** 弹窗关闭后清理地图 */
+    /** 关闭时移除 iframe，避免百度 SDK destroy 的延迟回调影响其它地图 */
     handleDialogClosed() {
-      // 销毁地图实例
-      if (this.state.map) {
-        if (this.state.map.destroy) {
-          this.state.map.destroy()
-        }
-        this.state.map = null
-      }
+      this.state.map = null
       this.state.mapMarker = null
       this.state.geocoder = null
+      this.state.loading = false
       this.state.mapContainerReady = false
+      this._mapApi = null
     },
-    /** 初始化地图实例 */
-    initMapInstance() {
-      if (!this.$refs.mapContainer) {
-        return
-      }
+    /** 只接收当前地图 iframe 的 SDK 就绪消息 */
+    handleFrameMessage(event) {
+      const frameWindow = this.$refs.mapFrame && this.$refs.mapFrame.contentWindow
+      if (!frameWindow || event.source !== frameWindow || event.data?.type !== BAIDU_MAP_FRAME_READY || this.state.map) return
+      const container = frameWindow.document.querySelector('#map')
+      if (!container) return
+      this._mapApi = frameWindow.BMapGL
+      this.initMapInstance(container)
+    },
+    /** 初始化地图实例，SDK 与实例均运行在独立 iframe 内 */
+    initMapInstance(container) {
       // 初始化地图和地理编码器
-      this.initMap()
+      this.initMap(container)
       this.initGeocoder()
       // 监听地图点击事件
       this.state.map.addEventListener('click', e => {
@@ -140,41 +143,41 @@ export default {
         this.regeoCode(this.state.lonLat)
       })
       // 如果有初始经纬度，加载标记点
-      if (this.initLongitude && this.initLatitude) {
+      if (Number.isFinite(this.initLongitude) && Number.isFinite(this.initLatitude)) {
         const lonLat = `${this.initLongitude},${this.initLatitude}`
         this.regeoCode(lonLat)
       }
     },
     /** 初始化地图 */
-    initMap() {
-      this.state.map = new window.BMapGL.Map(this.$refs.mapContainer)
-      this.state.map.centerAndZoom(new window.BMapGL.Point(116.404, 39.915), 11)
+    initMap(container) {
+      this.state.map = new this._mapApi.Map(container)
+      this.state.map.centerAndZoom(new this._mapApi.Point(116.404, 39.915), 11)
       this.state.map.enableScrollWheelZoom()
       this.state.map.disableDoubleClickZoom()
-      this.state.map.addControl(new window.BMapGL.NavigationControl())
-      this.state.map.addControl(new window.BMapGL.ScaleControl())
-      this.state.map.addControl(new window.BMapGL.ZoomControl())
+      this.state.map.addControl(new this._mapApi.NavigationControl())
+      this.state.map.addControl(new this._mapApi.ScaleControl())
+      this.state.map.addControl(new this._mapApi.ZoomControl())
     },
     /** 初始化地理编码器 */
     initGeocoder() {
-      this.state.geocoder = new window.BMapGL.Geocoder()
+      this.state.geocoder = new this._mapApi.Geocoder()
     },
     /** 搜索地址 */
     autoSearch(queryValue) {
-      if (!queryValue) {
+      if (!queryValue || !this._mapApi) {
         this.state.mapAddressOptions = []
         return
       }
       this.state.loading = true
       // noinspection JSUnusedGlobalSymbols
-      const localSearch = new window.BMapGL.LocalSearch(this.state.map, {
+      const localSearch = new this._mapApi.LocalSearch(this.state.map, {
         onSearchComplete: results => {
           this.state.loading = false
           const temp = []
           if (results && results._pois) {
             results._pois.forEach(p => {
               const point = p.point
-              if (point && point.lng && point.lat) {
+              if (point && Number.isFinite(point.lng) && Number.isFinite(point.lat)) {
                 temp.push({
                   name: p.title,
                   value: point.lng + ',' + point.lat
@@ -201,8 +204,8 @@ export default {
       if (this.state.mapMarker !== null) {
         this.state.map.removeOverlay(this.state.mapMarker)
       }
-      const point = new window.BMapGL.Point(lnglat[0], lnglat[1])
-      this.state.mapMarker = new window.BMapGL.Marker(point)
+      const point = new this._mapApi.Point(lnglat[0], lnglat[1])
+      this.state.mapMarker = new this._mapApi.Marker(point)
       this.state.map.addOverlay(this.state.mapMarker)
       this.state.map.centerAndZoom(point, 16)
     },
@@ -217,14 +220,14 @@ export default {
       }
       this.state.longitude = lnglat[0]
       this.state.latitude = lnglat[1]
-      const point = new window.BMapGL.Point(lnglat[0], lnglat[1])
+      const point = new this._mapApi.Point(lnglat[0], lnglat[1])
       this.state.map.centerAndZoom(point, 16)
       this.setMarker(lnglat)
       this.getAddress(lnglat)
     },
     /** 根据经纬度获取地址信息 */
     getAddress(lnglat) {
-      const point = new window.BMapGL.Point(lnglat[0], lnglat[1])
+      const point = new this._mapApi.Point(lnglat[0], lnglat[1])
       this.state.geocoder.getLocation(point, result => {
         if (result && result.address) {
           this.state.address = result.address
@@ -262,6 +265,8 @@ export default {
   width: 100%;
   height: 400px;
   margin-top: 10px;
+  border: 0;
+  display: block;
 }
 
 .map-dialog-loading {

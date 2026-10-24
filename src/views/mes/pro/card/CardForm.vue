@@ -12,7 +12,7 @@
      :rules="formRules"
      label-width="120px"
      :disabled="isDetail"
-   ><el-row><el-col :span="12"><el-form-item
+   ><el-row><el-col :span="24"><el-form-item
       label="流转卡编码"
       prop="code"
     ><el-input

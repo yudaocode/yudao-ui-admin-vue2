@@ -155,6 +155,10 @@ export default {
     },
     // 查询表数据
     getList() {
+      if (this.queryParams.dataSourceConfigId === undefined || this.queryParams.dataSourceConfigId === null) {
+        this.dbTableList = []
+        return
+      }
       this.loading = true
       getSchemaTableList(this.queryParams).then(res => {
         this.dbTableList = res.data
@@ -174,6 +178,10 @@ export default {
     },
     /** 导入按钮操作 */
     handleImportTable() {
+      if (this.queryParams.dataSourceConfigId === undefined || this.queryParams.dataSourceConfigId === null) {
+        this.$modal.msgError('请选择数据源')
+        return
+      }
       createCodegenList({
         dataSourceConfigId: this.queryParams.dataSourceConfigId,
         tableNames: this.tables

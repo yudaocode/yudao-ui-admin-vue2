@@ -178,7 +178,11 @@ export default /* @__PURE__*/ _defineComponent({
     })
     /** 打开地图选择弹窗 */
     const openMapDialog = () => {
-            mapDialogRef.value?.open(formData.value.longitude ? Number(formData.value.longitude) : undefined, formData.value.latitude ? Number(formData.value.latitude) : undefined)
+      const longitude = formData.value.longitude
+      const latitude = formData.value.latitude
+      const lng = longitude === undefined || longitude === null || String(longitude).trim() === '' ? undefined : Number(longitude)
+      const lat = latitude === undefined || latitude === null || String(latitude).trim() === '' ? undefined : Number(latitude)
+      mapDialogRef.value?.open(Number.isFinite(lng) ? lng : undefined, Number.isFinite(lat) ? lat : undefined)
     }
     /** 处理地图选择确认 */
     const handleMapConfirm = (data) => {

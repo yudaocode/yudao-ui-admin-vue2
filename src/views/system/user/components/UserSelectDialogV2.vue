@@ -198,7 +198,7 @@
 
 <script>
 import { CommonStatusEnum } from '@/utils/constants'
-import { getUserPage } from '@/api/system/user'
+import { getUserList, getUserPage } from '@/api/system/user'
 import DeptTreeSelect from '@/views/system/dept/components/DeptTreeSelect.vue'
 
 export default {
@@ -255,25 +255,8 @@ export default {
         }))
         this.total = data.total || 0
         await this.$nextTick()
-        this.applyPreSelection()
       } finally {
         this.loading = false
-      }
-    },
-    applyPreSelection() {
-      if (!this.preSelectedIds.length) return
-      if (this.multiple) {
-        this.list.forEach((row) => {
-          if (this.preSelectedIds.includes(row.id) && this.$refs.table) {
-            this.$refs.table.toggleRowSelection(row, true)
-          }
-        })
-      } else {
-        const match = this.list.find((row) => this.preSelectedIds.includes(row.id))
-        if (match) {
-          this.selectedRadioId = match.id
-          this.currentRadioRow = match
-        }
       }
     },
     handleQuery() {
@@ -352,7 +335,18 @@ export default {
       await this.$nextTick()
       this.$refs.deptTree && this.$refs.deptTree.reset()
       this.$refs.table && this.$refs.table.clearSelection()
+      // 按编号读取已选用户，不受当前搜索条件和分页范围影响
+      const selected = this.preSelectedIds.length ? (await getUserList(this.preSelectedIds)).data : []
       await this.getList()
+      if (this.multiple) {
+        selected.forEach(row => {
+          const selectedRow = this.list.find(item => item.id === row.id) || row
+          this.$refs.table && this.$refs.table.toggleRowSelection(selectedRow, true)
+        })
+      } else if (selected.length) {
+        this.currentRadioRow = selected[0]
+        this.selectedRadioId = selected[0].id
+      }
       if (this.queryParams.deptId && this.$refs.deptTree) {
         this.$refs.deptTree.setCurrent(this.queryParams.deptId)
       }

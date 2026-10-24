@@ -272,6 +272,7 @@
               name="all"
             >
               <WorkItemAllList
+                :active="activeTab === 'items' && activeWorkItemTab === 'all'"
                 :editable="editable"
                 :iteration-id="iteration.id"
                 :project-id="iteration.projectId"
@@ -285,6 +286,7 @@
               name="requirement"
             >
               <WorkItemList
+                :active="activeTab === 'items' && activeWorkItemTab === 'requirement'"
                 default-view-mode="board"
                 :editable="editable"
                 :iteration-id="iteration.id"
@@ -300,6 +302,7 @@
               name="task"
             >
               <WorkItemList
+                :active="activeTab === 'items' && activeWorkItemTab === 'task'"
                 default-view-mode="board"
                 :editable="editable"
                 :iteration-id="iteration.id"
@@ -315,6 +318,7 @@
               name="defect"
             >
               <WorkItemList
+                :active="activeTab === 'items' && activeWorkItemTab === 'defect'"
                 default-view-mode="board"
                 :editable="editable"
                 :iteration-id="iteration.id"

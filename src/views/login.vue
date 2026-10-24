@@ -372,6 +372,7 @@
 import { getTenantByWebsite, getTenantIdByName, sendSmsCode, socialAuthRedirect } from '@/api/login'
 import { register, smsResetPassword } from '@/api/login'
 import { SystemUserSocialTypeEnum } from '@/utils/constants'
+import { buildSocialRedirectUri } from '@/utils/social'
 import { getCaptchaEnable, getTenantEnable } from '@/utils/ruoyi'
 import {
   getPassword,
@@ -636,10 +637,10 @@ export default {
       }
       if (tenant) {
         // 计算 redirectUri
-        const redirectUri = location.origin + '/social-login?' +
-         encodeURIComponent('type=' + socialTypeEnum.type + '&redirect=' + (this.redirect || '/')) // 重定向不能丢
-        // const redirectUri = 'http://127.0.0.1:48080/api/gitee/callback';
-        // const redirectUri = 'http://127.0.0.1:48080/api/dingtalk/callback';
+        const redirectUri = buildSocialRedirectUri(this.$router.resolve('/social-login').href, {
+          type: socialTypeEnum.type,
+          redirect: this.redirect || '/'
+        })
         // 进行跳转
         socialAuthRedirect(socialTypeEnum.type, encodeURIComponent(redirectUri)).then((res) => {
           // console.log(res.url);

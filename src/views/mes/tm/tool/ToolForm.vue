@@ -15,7 +15,7 @@
         label-width="120px"
       >
         <el-row :gutter="16">
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item
               label="工具编码"
               prop="code"

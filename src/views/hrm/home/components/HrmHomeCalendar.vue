@@ -164,7 +164,12 @@ export default {
           startDate: formatDateKey(new Date(month.getFullYear(), month.getMonth(), 1)),
           endDate: formatDateKey(new Date(month.getFullYear(), month.getMonth() + 1, 0))
         })
-        const items = response.data
+        const items = response.data.map(item => ({
+          ...item,
+          date: Array.isArray(item.date)
+            ? formatDateKey(new Date(item.date[0], item.date[1] - 1, item.date[2]))
+            : item.date
+        }))
         this.calendarItems = this.itemFilter ? items.filter(this.itemFilter) : items
       } finally {
         this.loading = false

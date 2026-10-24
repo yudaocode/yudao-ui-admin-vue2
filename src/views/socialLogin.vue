@@ -100,6 +100,8 @@
 </template>
 
 <script>
+import { clearSocialCallback, getSocialCallback } from '@/utils/social'
+
 import {
   getPassword, getRememberMe,
   getUsername,
@@ -145,7 +147,7 @@ export default {
       state: undefined
     }
   },
-  created() {
+  async created() {
     this.getCookie()
     // 验证码开关
     this.captchaEnable = getCaptchaEnable()
@@ -153,8 +155,14 @@ export default {
     this.redirect = this.getUrlValue('redirect')
     // 社交登录相关
     this.type = this.getUrlValue('type')
-    this.code = this.$route.query.code
-    this.state = this.$route.query.state
+    const { code, state } = getSocialCallback()
+    this.code = code
+    this.state = state
+    await clearSocialCallback(this.$router)
+    if (!this.type || !this.code || !this.state) {
+      await this.$router.replace({ path: '/login', query: this.redirect ? { redirect: this.redirect } : {}})
+      return
+    }
 
     // 尝试登录一下
     this.loading = true
@@ -163,7 +171,7 @@ export default {
       state: this.state,
       type: this.type
     }).then(() => {
-      this.$router.push({ path: this.redirect || '/' }).catch(() => {})
+      this.$router.push(this.redirect || '/').catch(() => {})
     }).catch(() => {
       this.loading = false
     })
@@ -212,7 +220,7 @@ export default {
             password: this.loginForm.password,
             captchaVerification: captchaParams.captchaVerification
           }).then(() => {
-            this.$router.push({ path: this.redirect || '/' }).catch(() => {})
+            this.$router.push(this.redirect || '/').catch(() => {})
           }).catch(() => {
             this.loading = false
             this.getCode()

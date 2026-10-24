@@ -15,7 +15,7 @@
       :disabled="isDetail"
     >
       <el-row :gutter="20">
-        <el-col :span="8"><el-form-item
+        <el-col :span="24"><el-form-item
           label="维修单编码"
           prop="code"
         ><el-input

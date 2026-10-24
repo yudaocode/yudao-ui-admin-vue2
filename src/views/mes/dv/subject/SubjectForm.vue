@@ -14,7 +14,7 @@
       label-width="100px"
     >
       <el-row :gutter="20">
-        <el-col :span="12">
+        <el-col :span="24">
           <el-form-item
             label="项目编码"
             prop="code"

@@ -48,6 +48,10 @@ export default {
   watch: { projectId: { immediate: true, handler: 'getProjectMemberList' }},
   methods: {
     async getProjectMemberList() {
+      if (!this.projectId) {
+        this.memberList = []
+        return
+      }
       this.loading = true
       try {
         const response = await ProjectMemberApi.getProjectMemberList(this.projectId)

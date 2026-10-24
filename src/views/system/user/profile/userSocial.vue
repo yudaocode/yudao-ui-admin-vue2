@@ -44,6 +44,7 @@
 <script>
 
 import { SystemUserSocialTypeEnum } from '@/utils/constants'
+import { buildSocialRedirectUri, clearSocialCallback, getSocialCallback } from '@/utils/social'
 import { getBindSocialUserList } from '@/api/system/social/user'
 import { socialAuthRedirect, socialBind, socialUnbind } from '@/api/system/user/socialUser'
 
@@ -70,19 +71,23 @@ export default {
   computed: {
   },
   async created() {
-    // 初始化社交用户列表
-    await this.initSocial()
-
     // 社交绑定
-    const type = this.$route.query.type
-    const code = this.$route.query.code
-    const state = this.$route.query.state
+    const type = new URL(decodeURIComponent(location.href)).searchParams.get('type')
+    const { code, state } = getSocialCallback()
+    if (code) {
+      const callbackRoute = this.$route
+      await clearSocialCallback(this.$router)
+      if (callbackRoute.fullPath !== this.$route.fullPath) {
+        // Vue2 标签页按 path 复用，更新原标签即可清掉授权参数并保留当前页
+        await this.$store.dispatch('tagsView/updateVisitedView', this.$route)
+      }
+    }
+    await this.initSocial()
     if (!code) {
       return
     }
     socialBind(type, code, state).then(resp => {
       this.$modal.msgSuccess('绑定成功')
-      this.$router.replace('/user/profile')
       // 调用父组件, 刷新
       this.setActiveTab('userSocial')
       // 重新初始化社交用户列表
@@ -111,7 +116,7 @@ export default {
     },
     bind(socialUser) {
       // 计算 redirectUri
-      const redirectUri = location.origin + '/user/profile?type=' + socialUser.type
+      const redirectUri = buildSocialRedirectUri(this.$router.resolve('/user/profile').href, { type: socialUser.type })
       // 进行跳转
       socialAuthRedirect(socialUser.type, encodeURIComponent(redirectUri)).then((res) => {
         window.location.href = res.data

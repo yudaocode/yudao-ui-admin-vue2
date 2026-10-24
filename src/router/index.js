@@ -1,8 +1,12 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import { restoreSocialRoute } from '@/utils/social'
 /* Layout */
 import Layout from '@/layout'
 import ParentView from '@/components/ParentView'
+
+// hash 路由的第三方回调需要先还原目标地址
+restoreSocialRoute()
 
 Vue.use(Router)
 

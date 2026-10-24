@@ -19,7 +19,7 @@
           class="icon-selector-trigger"
           aria-label="选择图标"
         >
-          <Icon :icon="value || currentActiveType + icon" />
+          <Icon :icon="value || 'ep:add-location'" />
         </button>
         <el-input
           v-model="filterValue"
@@ -36,7 +36,10 @@
             :label="pane.label"
             :name="pane.name"
           >
-            <div class="icon-selector-grid">
+            <div
+              v-if="pane.name === currentActiveType"
+              class="icon-selector-grid"
+            >
               <button
                 v-for="item in pageList"
                 :key="item"
@@ -84,7 +87,10 @@ export default {
     }
   },
   computed: {
-    filteredIcons() { return (IconJson[this.currentActiveType] || []).filter(item => item.includes(this.filterValue)) },
+    filteredIcons() {
+      const keyword = this.filterValue.trim().toLowerCase()
+      return (IconJson[this.currentActiveType] || []).filter(item => item.toLowerCase().includes(keyword))
+    },
     pageList() { return this.filteredIcons.slice(this.pageSize * (this.currentPage - 1), this.pageSize * this.currentPage) },
     iconCount() { return this.filteredIcons.length }
   },
@@ -93,8 +99,12 @@ export default {
       immediate: true,
       handler(value) {
         if (value && value.includes(':')) {
-          this.currentActiveType = value.slice(0, value.indexOf(':') + 1)
+          const type = value.slice(0, value.indexOf(':') + 1)
+          if (!IconJson[type]) return
+          this.currentActiveType = type
           this.icon = value.slice(value.indexOf(':') + 1)
+          const index = this.filteredIcons.indexOf(this.icon)
+          this.currentPage = index >= 0 ? Math.floor(index / this.pageSize) + 1 : 1
         }
       }
     },
@@ -104,8 +114,6 @@ export default {
     handleClick(tab) {
       this.currentPage = 1
       this.currentActiveType = tab.name
-      this.icon = IconJson[this.currentActiveType][0]
-      this.$emit('input', this.currentActiveType + this.icon)
     },
     onChangeIcon(item) {
       this.icon = item

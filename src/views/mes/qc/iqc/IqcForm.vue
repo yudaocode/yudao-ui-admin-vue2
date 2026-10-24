@@ -15,7 +15,7 @@
       :disabled="isDetail"
     >
       <el-row :gutter="16">
-        <el-col :span="8">
+        <el-col :span="24">
           <el-form-item
             label="检验单编号"
             prop="code"

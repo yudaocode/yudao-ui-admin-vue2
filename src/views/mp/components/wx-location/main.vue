@@ -4,14 +4,16 @@
     <el-link
       type="primary"
       target="_blank"
+      rel="noopener noreferrer"
       :href="mapUrl"
     >
       <el-col>
-        <el-row>
-          <img
-            :src="staticMapUrl"
-            alt="位置地图"
-          >
+        <el-row v-if="point">
+          <MapView
+            :longitude="point.longitude"
+            :latitude="point.latitude"
+            style="width: 250px; height: 180px; pointer-events: none"
+          />
         </el-row>
         <el-row>
           <i class="el-icon-map-location" />{{ label }}
@@ -22,8 +24,11 @@
 </template>
 
 <script>
+import { gcj02ToBd09, MapView, toMapCoordinate } from '@/components/Map'
+
 export default {
   name: 'WxLocation',
+  components: { MapView },
   props: {
     locationX: {
       required: true,
@@ -36,18 +41,24 @@ export default {
     label: {
       required: true,
       type: String
-    },
-    qqMapKey: {
-      type: String,
-      default: 'TVDBZ-TDILD-4ON4B-PFDZA-RNLKH-VVF6E'
     }
   },
   computed: {
-    mapUrl() {
-      return `https://map.qq.com/?type=marker&isopeninfowin=1&markertype=1&pointx=${this.locationY}&pointy=${this.locationX}&name=${encodeURIComponent(this.label)}&ref=yudao`
+    point() {
+      const coordinate = toMapCoordinate(this.locationY, this.locationX)
+      return coordinate ? gcj02ToBd09(coordinate.longitude, coordinate.latitude) : undefined
     },
-    staticMapUrl() {
-      return `https://apis.map.qq.com/ws/staticmap/v2/?zoom=10&markers=color:blue|label:A|${this.locationX},${this.locationY}&key=${encodeURIComponent(this.qqMapKey)}&size=250*180`
+    mapUrl() {
+      if (!this.point) return undefined
+      const params = new URLSearchParams({
+        location: `${this.point.latitude},${this.point.longitude}`,
+        title: this.label || '位置',
+        content: this.label || '',
+        output: 'html',
+        coord_type: 'bd09ll',
+        src: 'webapp.yudao.admin'
+      })
+      return `https://api.map.baidu.com/marker?${params.toString()}`
     }
   }
 }

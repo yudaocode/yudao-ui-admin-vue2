@@ -233,6 +233,7 @@ export default {
   name: 'PmsIterationList',
   components: { IterationForm, IterationStartForm },
   props: {
+    active: { type: Boolean, default: true },
     projectId: { type: Number, required: true },
     editable: { type: Boolean, required: true }
   },
@@ -252,8 +253,16 @@ export default {
       }
     }
   },
+  watch: {
+    active(value) {
+      if (!value) this.showFilterPopover = false
+    }
+  },
   mounted() {
     this.getIterationList()
+  },
+  deactivated() {
+    this.showFilterPopover = false
   },
   methods: {
     checkPermi,
