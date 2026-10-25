@@ -1,4 +1,3 @@
-import formCreate from '@form-create/element-ui'
 import { createApiSelect } from './src/components/useApiSelect'
 import DictSelect from './src/components/DictSelect.vue'
 import DeptSelect from './src/components/DeptSelect.vue'
@@ -25,9 +24,12 @@ export const formCreateCustomComponents = [
   AreaSelect
 ]
 
+// 启动时全局注册的 form-create 组件，在使用表单的页面按需安装 form-create 时（见 ./setup.js）再注册到 form-create
+export const formCreateComponents = []
+
 export function registerFormCreateComponent(Vue, name, component) {
   Vue.component(name, component)
-  formCreate.component(name, component)
+  formCreateComponents.push([name, component])
 }
 
 export function registerFormCreateCustomComponents(Vue) {

@@ -58,6 +58,10 @@ import formCreate from '@form-create/element-ui'
 import { useFormCreateDesigner } from '@/components/FormCreate/src/useFormCreateDesigner'
 import hljs from 'highlight.js/lib/highlight'
 import 'highlight.js/styles/github.css'
+import { setupFcDesigner } from '@/components/FormCreate/designer'
+
+// 按需安装 form-create 表单设计器，需在渲染设计器之前
+setupFcDesigner()
 
 hljs.registerLanguage('json', require('highlight.js/lib/languages/json'))
 hljs.registerLanguage('xml', require('highlight.js/lib/languages/xml'))

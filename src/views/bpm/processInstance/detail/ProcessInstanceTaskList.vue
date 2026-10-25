@@ -114,6 +114,10 @@ import { getTaskListByProcessInstanceId } from '@/api/bpm/task'
 import { formatPast2 } from '@/utils'
 import { setConfAndFields2 } from '@/utils/formCreate'
 import TaskEvidenceCell from '@/views/bpm/task/components/TaskEvidenceCell.vue'
+import { setupFormCreate } from '@/components/FormCreate/setup'
+
+// 按需安装 form-create，需在渲染表单之前
+setupFormCreate()
 
 export default {
   name: 'ProcessInstanceTaskList',

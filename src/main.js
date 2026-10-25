@@ -77,15 +77,11 @@ Vue.use(plugins)
 Vue.use(VueMeta)
 // Vue.use(hljs.vuePlugin);
 
-// bpmnProcessDesigner 需要引入
-import MyPD from '@/components/bpmnProcessDesigner/package/index.js'
-
-Vue.use(MyPD)
+// bpmnProcessDesigner 流程设计器、属性面板、查看器（含 bpmn-js 及其样式）按需加载，仅在流程页面使用时加载
+Vue.component('MyProcessDesigner', () => import('@/components/bpmnProcessDesigner/package/designer'))
+Vue.component('MyPropertiesPanel', () => import('@/components/bpmnProcessDesigner/package/penal'))
+Vue.component('MyProcessViewer', () => import('@/components/bpmnProcessDesigner/package/designer/index2'))
 import '@/components/bpmnProcessDesigner/package/theme/index.scss'
-import 'bpmn-js/dist/assets/diagram-js.css'
-import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
-import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css'
-import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css'
 
 import '@/styles/index.scss'
 
@@ -109,22 +105,24 @@ Vue.use(Element, {
 
 Vue.config.productionTip = false
 
-// form-create 表单设计器（Vue2 + Element UI 版本）
-import formCreate from '@form-create/element-ui'
-import FcDesigner from '@form-create/designer'
+// form-create 表单组件（Vue2 + Element UI 版本）
+// 注意：form-create 渲染器、设计器在使用表单的页面按需安装（见 @/components/FormCreate/setup.js、designer.js），这里只全局注册组件
 import ImageUpload from '@/components/ImageUpload'
 import UploadImg from '@/components/UploadImg'
 import UploadImgs from '@/components/UploadImgs'
 import FileUpload from '@/components/FileUpload'
 import UploadFile from '@/components/UploadFile'
-import Editor from '@/components/Editor'
-import { setupWangEditorPlugin } from '@/views/bpm/model/form/PrintTemplate/setup'
 import {
   registerFormCreateComponent,
   registerFormCreateCustomComponents
 } from '@/components/FormCreate'
 
-setupWangEditorPlugin()
+// 富文本编辑器按需加载，避免进入登录、普通列表等首屏
+const Editor = () => import('@/components/Editor')
+Vue.component('Editor', Editor)
+// 小写 editor 为历史兼容名，保留
+// eslint-disable-next-line vue/component-definition-name-casing
+Vue.component('editor', Editor)
 
 const formCreateComponents = [
   ['ImageUpload', ImageUpload],
@@ -138,9 +136,7 @@ const formCreateComponents = [
   ['FileUpload', FileUpload],
   ['fileUpload', FileUpload],
   ['UploadFile', UploadFile],
-  ['uploadFile', UploadFile],
-  ['Editor', Editor],
-  ['editor', Editor]
+  ['uploadFile', UploadFile]
 ]
 registerFormCreateCustomComponents(Vue)
 formCreateComponents.forEach(([name, component]) => {
@@ -157,8 +153,6 @@ const formCreateComponentAliases = [
 formCreateComponentAliases.forEach(([name, component]) => {
   registerFormCreateComponent(Vue, name, component)
 })
-Vue.use(formCreate)
-Vue.use(FcDesigner)
 
 new Vue({
   el: '#app',

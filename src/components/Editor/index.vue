@@ -18,6 +18,10 @@ import { markRaw } from 'vue'
 import '@wangeditor-next/editor/dist/css/style.css'
 import merge from 'lodash/merge'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
+import { setupWangEditorPlugin } from '@/views/bpm/model/form/PrintTemplate/setup'
+
+// 注册打印模板的流程记录、提及扩展（原在 main.js 启动时注册），需在创建编辑器之前
+setupWangEditorPlugin()
 
 export default {
   name: 'Editor',

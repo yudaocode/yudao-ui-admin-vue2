@@ -147,6 +147,10 @@ import ProcessInstanceTaskList from './ProcessInstanceTaskList.vue'
 import ProcessInstanceCommentList from './ProcessInstanceCommentList.vue'
 import ProcessInstanceOperationButton from './ProcessInstanceOperationButton.vue'
 import PrintDialog from './PrintDialog.vue'
+import { setupFormCreate } from '@/components/FormCreate/setup'
+
+// 按需安装 form-create，需在渲染表单之前
+setupFormCreate()
 
 export default {
   name: 'BpmProcessInstanceDetail',

@@ -291,6 +291,10 @@ import { DICT_TYPE } from '@/utils/dict'
 import { checkPermi } from '@/utils/permission'
 import { formatDate, deepClone } from '@/utils'
 import download from '@/plugins/download'
+import { setupFormCreate } from '@/components/FormCreate/setup'
+
+// 按需安装 form-create，需在渲染表单之前
+setupFormCreate()
 
 function subString(str, start, end) {
   if (!str) return ''

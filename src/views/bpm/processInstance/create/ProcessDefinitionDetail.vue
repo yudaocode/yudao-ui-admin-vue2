@@ -125,6 +125,10 @@ import {
 } from '@/components/SimpleProcessDesignerV2/src/consts'
 import { SimpleProcessViewer } from '@/components/SimpleProcessDesignerV2/src'
 import ProcessInstanceTimeline from '@/views/bpm/processInstance/detail/ProcessInstanceTimeline.vue'
+import { setupFormCreate } from '@/components/FormCreate/setup'
+
+// 按需安装 form-create，需在渲染表单之前
+setupFormCreate()
 
 export default {
   name: 'ProcessDefinitionDetail',

@@ -192,6 +192,10 @@ import { SimpleProcessViewer } from '@/components/SimpleProcessDesignerV2/src'
 import CategoryForm from '../category/CategoryForm.vue'
 import ModelImportForm from './ModelImportForm.vue'
 import CategoryDraggableModel from './CategoryDraggableModel.vue'
+import { setupFormCreate } from '@/components/FormCreate/setup'
+
+// 按需安装 form-create，需在渲染表单之前
+setupFormCreate()
 
 export default {
   name: 'BpmModel',

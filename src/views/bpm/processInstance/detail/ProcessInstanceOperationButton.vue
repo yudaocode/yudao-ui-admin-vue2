@@ -294,6 +294,10 @@ import { isEmpty } from '@/utils/is'
 import FileUpload from '@/components/FileUpload'
 import ProcessInstanceTimeline from './ProcessInstanceTimeline.vue'
 import SignDialog from './SignDialog.vue'
+import { setupFormCreate } from '@/components/FormCreate/setup'
+
+// 按需安装 form-create，需在渲染表单之前
+setupFormCreate()
 
 export default {
   name: 'ProcessInstanceOperationButton',

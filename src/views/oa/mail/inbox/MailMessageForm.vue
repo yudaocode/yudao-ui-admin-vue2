@@ -120,10 +120,11 @@
 <script>
 import * as MessageApi from '@/api/oa/mail/message'
 import MailAddressSelect from '../account/components/MailAddressSelect.vue'
+import Editor from '@/components/Editor'
 
 export default {
   name: 'OaMailMessageForm',
-  components: { MailAddressSelect },
+  components: { MailAddressSelect, Editor },
   props: {
     data: {
       type: Object,

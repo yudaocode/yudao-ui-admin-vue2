@@ -85,6 +85,10 @@ import { createForm, updateForm, getForm } from '@/api/bpm/form'
 import { CommonStatusEnum } from '@/utils/constants'
 import { encodeConf, encodeFields, setConfAndFields } from '@/utils/formCreate'
 import { useFormCreateDesigner } from '@/components/FormCreate/src/useFormCreateDesigner'
+import { setupFcDesigner } from '@/components/FormCreate/designer'
+
+// 按需安装 form-create 表单设计器，需在渲染设计器之前
+setupFcDesigner()
 
 export default {
   name: 'BpmFormEditor',

@@ -168,6 +168,10 @@
 <script>
 import { deleteForm, getForm, getFormPage } from '@/api/bpm/form'
 import { setConfAndFields2 } from '@/utils/formCreate'
+import { setupFormCreate } from '@/components/FormCreate/setup'
+
+// 按需安装 form-create，需在渲染表单之前
+setupFormCreate()
 
 export default {
   name: 'BpmForm',
