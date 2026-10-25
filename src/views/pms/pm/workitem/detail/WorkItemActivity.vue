@@ -42,7 +42,7 @@ import { formatDate } from '@/utils/formatTime'
 export default {
   name: 'PmsWorkItemActivity',
   props: {
-    workItemId: { type: Number, required: true },
+    workItemId: { type: [Number, String], required: true },
     showTitle: { type: Boolean, default: true }
   },
   data() {

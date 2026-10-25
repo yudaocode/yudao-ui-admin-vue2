@@ -88,7 +88,7 @@ export default /* #__PURE__*/_defineComponent({
   __name: 'RtcGroupCallBanner',
   props: {
     groupId: {
-      type: Number,
+      type: [Number, String],
       required: true
     }
   },

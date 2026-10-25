@@ -121,6 +121,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as ReceiveApi from '@/api/oa/officialdoc/receive'
 import { DICT_TYPE } from '@/utils/dict'
 import { BpmProcessInstanceStatus } from '@/utils/constants'
@@ -148,7 +149,7 @@ export default {
   computed: {
     detailId() {
       const id = this.id || this.$route.query.id
-      return id ? Number(id) : undefined
+      return id ? parseId(id) : undefined
     }
   },
   watch: {

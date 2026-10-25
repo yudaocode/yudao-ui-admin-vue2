@@ -24,7 +24,7 @@ export default {
   name: 'PmsProjectSelect',
   model: { prop: 'modelValue', event: 'update:modelValue' },
   props: {
-    modelValue: { type: Number, default: undefined }
+    modelValue: { type: [Number, String], default: undefined }
   },
   data() {
     return { projectList: [] }

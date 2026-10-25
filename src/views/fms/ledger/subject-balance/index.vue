@@ -123,6 +123,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsLedgerApi } from '@/api/fms/ledger'
 
 import { formatMoney } from '@/views/fms/utils/format'
@@ -151,7 +152,7 @@ export default {
     formatMoney,
     clearLedgerData() { this.list = [] },
     onLedgerContextReady() {
-      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: Number(this.accountSetId), startMonth: this.accountingMonth, endMonth: this.accountingMonth })
+      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: parseId(this.accountSetId), startMonth: this.accountingMonth, endMonth: this.accountingMonth })
       return this.getList()
     },
     getList() {
@@ -170,7 +171,7 @@ export default {
         if (sequence === this.listSequence) this.loading = false
       })
     },
-    handleQuery(value) { this.queryParams = Object.assign({}, this.queryParams, value, { accountSetId: Number(this.accountSetId) }); this.getList() },
+    handleQuery(value) { this.queryParams = Object.assign({}, this.queryParams, value, { accountSetId: parseId(this.accountSetId) }); this.getList() },
     toggleExpandAll() {
       this.refreshTable = false
       this.isExpandAll = !this.isExpandAll

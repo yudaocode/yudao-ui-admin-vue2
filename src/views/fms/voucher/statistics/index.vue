@@ -158,6 +158,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsVoucherWordApi } from '@/api/fms/config/voucher-word'
 import { FmsVoucherStatisticsApi } from '@/api/fms/voucher'
 import { checkPermi } from '@/utils/permission'
@@ -196,7 +197,7 @@ export default {
     },
     createDefaultQuery(accountSetId, month) {
       return {
-        accountSetId: Number(accountSetId) || 0,
+        accountSetId: parseId(accountSetId) || 0,
         startMonth: month || '',
         endMonth: month || '',
         voucherWordId: undefined,
@@ -207,25 +208,25 @@ export default {
       }
     },
     onVoucherContextReady() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const month = this.currentMonth
       if (!accountSetId) return Promise.resolve()
       this.monthRange = [month, month]
       this.queryParams = this.createDefaultQuery(accountSetId, month)
       return FmsVoucherWordApi.getVoucherWordSimpleList(accountSetId).then(response => {
-        if (accountSetId !== Number(this.accountSetId)) return
+        if (accountSetId !== parseId(this.accountSetId)) return
         const rows = response.data
         this.voucherWords = rows
         return this.getList()
       })
     },
     getList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!accountSetId) return Promise.resolve()
       const sequence = ++this.statisticsRequestSequence
       this.loading = true
       return FmsVoucherStatisticsApi.getVoucherStatisticsList(this.queryParams).then(response => {
-        if (sequence !== this.statisticsRequestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.statisticsRequestSequence || accountSetId !== parseId(this.accountSetId)) return
         const rows = response.data
         this.list = rows
       }).finally(() => {

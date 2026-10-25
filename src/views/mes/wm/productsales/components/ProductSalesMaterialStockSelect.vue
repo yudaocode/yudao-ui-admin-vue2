@@ -17,9 +17,9 @@ export default {
   name: 'ProductSalesMaterialStockSelect',
   components: { ProductSalesEntitySelect },
   props: {
-    value: { type: Number, default: undefined },
-    itemId: { type: Number, default: undefined },
-    batchId: { type: Number, default: undefined }
+    value: { type: [Number, String], default: undefined },
+    itemId: { type: [Number, String], default: undefined },
+    batchId: { type: [Number, String], default: undefined }
   }
 }
 </script>

@@ -84,6 +84,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as DiscussionApi from '@/api/oa/discussion'
 import * as DiscussionLikeApi from '@/api/oa/discussion/like'
 import { formatDate } from '@/utils/formatTime'
@@ -120,7 +121,7 @@ export default {
     formatDate,
     /** 查询讨论详情，visit 为 true 时记录访问 */
     getDetail(visit = false) {
-      return DiscussionApi.getDiscussion(Number(this.$route.params.id), visit).then(response => {
+      return DiscussionApi.getDiscussion(parseId(this.$route.params.id), visit).then(response => {
         this.detail = response.data
       })
     },

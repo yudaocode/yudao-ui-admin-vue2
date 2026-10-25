@@ -121,7 +121,7 @@ export default /* @__PURE__*/ _defineComponent({
   },
   __name: 'DeviceDetailsThingModelPropertyHistory',
   props: {
-    deviceId: { type: Number, required: true }
+    deviceId: { type: [Number, String], required: true }
   },
   setup(__props, { expose: __expose }) {
     /** IoT 设备属性历史数据详情 */

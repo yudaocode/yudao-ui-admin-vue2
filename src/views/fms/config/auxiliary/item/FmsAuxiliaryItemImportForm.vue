@@ -93,6 +93,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsAuxiliaryItemApi } from '@/api/fms/config/auxiliary/item'
 import { FMS_AUXILIARY_TYPE } from '@/views/fms/utils/constants'
 
@@ -136,7 +137,7 @@ export default {
   },
   methods: {
     open(accountSetId, auxiliaryType) {
-      this.accountSetId = Number(accountSetId) || 0
+      this.accountSetId = parseId(accountSetId) || 0
       this.auxiliaryType = auxiliaryType || null
       if (!this.accountSetId || !this.auxiliaryType) return
       this.dialogVisible = true

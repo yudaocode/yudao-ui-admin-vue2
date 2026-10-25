@@ -1,3 +1,5 @@
+import { compareId } from '@/utils/id'
+import { maxImId } from '@/views/im/utils/pull'
 import { defineStore } from './storeFactory'
 import { IM_AT_ALL_USER_ID, ImConversationType, ImMessageReceiptStatus, ImMessageStatus, ImContentType, isGroupNotification, isNormalMessage } from '../../utils/constants'
 import { getClientConversationId, getClientMessageKey, getDb, getServerMessageKey, parseClientConversationId, setMessageMaxId, StorageKeys } from '../../utils/db'
@@ -17,7 +19,7 @@ function getMessageKey(message, conversationType) {
 
 /** 判断消息是否已被当前设备清理或删除 */
 function isMessageTerminated(message, terminal) {
-  return !!message.id && message.id <= terminal.clearBefore || !!message.id && terminal.deletedKeys.has(`id:${message.id}`) || terminal.deletedKeys.has(`client:${message.clientMessageId}`)
+  return !!message.id && compareId(message.id, terminal.clearBefore) <= 0 || !!message.id && terminal.deletedKeys.has(`id:${message.id}`) || terminal.deletedKeys.has(`client:${message.clientMessageId}`)
 }
 
 /** 把已持久化的撤回 marker 应用到迟到的普通消息 */
@@ -200,7 +202,7 @@ function applyConversationSummary(conversation, message, db) {
 /** 判断消息是否可以推进当前会话摘要 */
 function shouldUpdateConversationSummary(conversation, message) {
   if (message.id !== undefined && conversation.lastMessageId !== undefined) {
-    return message.id >= conversation.lastMessageId
+    return compareId(message.id, conversation.lastMessageId) >= 0
   }
   return !!message.clientMessageId && message.clientMessageId === conversation.lastClientMessageId || (message.sendTime || 0) > (conversation.lastSendTime || 0)
 }
@@ -208,7 +210,7 @@ function shouldUpdateConversationSummary(conversation, message) {
 /** 会话摘要顺序：服务端消息按 id，混合本地消息时按发送时间 */
 function compareConversationSummaryOrder(left, right) {
   if (left.id && right.id) {
-    return left.id - right.id
+    return compareId(left.id, right.id)
   }
   return (left.sendTime || 0) - (right.sendTime || 0) || Number(!!left.id) - Number(!!right.id) || left.clientMessageId.localeCompare(right.clientMessageId)
 }
@@ -239,13 +241,13 @@ function syncConversationAtFlags(conversation, message, userId) {
   }
   if (message.atUserIds.includes(userId)) {
     conversation.atMe = true
-    if (message.id && message.id > (conversation.atMessageId || 0)) {
+    if (message.id && compareId(message.id, conversation.atMessageId || 0) > 0) {
       conversation.atMessageId = message.id
     }
   }
   if (message.atUserIds.includes(IM_AT_ALL_USER_ID)) {
     conversation.atAll = true
-    if (message.id && message.id > (conversation.atAllMessageId || 0)) {
+    if (message.id && compareId(message.id, conversation.atAllMessageId || 0) > 0) {
       conversation.atAllMessageId = message.id
     }
   }
@@ -337,11 +339,11 @@ export const useMessageStore = defineStore('imMessageStore', {
       if (!messageId) {
         return
       }
-      if (conversationType === ImConversationType.PRIVATE && messageId > this.privateMessageMaxId) {
+      if (conversationType === ImConversationType.PRIVATE && compareId(messageId, this.privateMessageMaxId) > 0) {
         this.privateMessageMaxId = messageId
-      } else if (conversationType === ImConversationType.GROUP && messageId > this.groupMessageMaxId) {
+      } else if (conversationType === ImConversationType.GROUP && compareId(messageId, this.groupMessageMaxId) > 0) {
         this.groupMessageMaxId = messageId
-      } else if (conversationType === ImConversationType.CHANNEL && messageId > this.channelMessageMaxId) {
+      } else if (conversationType === ImConversationType.CHANNEL && compareId(messageId, this.channelMessageMaxId) > 0) {
         this.channelMessageMaxId = messageId
       }
     },
@@ -356,7 +358,7 @@ export const useMessageStore = defineStore('imMessageStore', {
       }
       const nextMaxReadId = maxReadId || 0
       const current = this.getPrivateReadMaxId(peerId)
-      if (current !== undefined && nextMaxReadId <= current) {
+      if (current !== undefined && compareId(nextMaxReadId, current) <= 0) {
         return current
       }
       this.privateReadMaxIds = {
@@ -617,7 +619,7 @@ export const useMessageStore = defineStore('imMessageStore', {
           const messageId = message.id
           const storedMessage = await db.get('messages', getServerMessageKey(conversationInfo.type, messageId))
           if (storedMessage) {
-            existingIndex = messages.findIndex(existing => existing.id && messageId < existing.id)
+            existingIndex = messages.findIndex(existing => existing.id && compareId(messageId, existing.id) < 0)
             if (existingIndex < 0) {
               existingIndex = messages.length
             }
@@ -664,7 +666,7 @@ export const useMessageStore = defineStore('imMessageStore', {
         if (message.id) {
           for (let index = 0; index < messages.length; index++) {
             const existing = messages[index]
-            if (existing.id && message.id < existing.id) {
+            if (existing.id && compareId(message.id, existing.id) < 0) {
               insertIndex = index
               break
             }
@@ -769,7 +771,7 @@ export const useMessageStore = defineStore('imMessageStore', {
         const messageId = message.id
         const storedMessage = await db.get('messages', getServerMessageKey(conversationInfo.type, messageId))
         if (storedMessage) {
-          existingIndex = messages.findIndex(existing => existing.id && messageId < existing.id)
+          existingIndex = messages.findIndex(existing => existing.id && compareId(messageId, existing.id) < 0)
           if (existingIndex < 0) {
             existingIndex = messages.length
           }
@@ -830,7 +832,7 @@ export const useMessageStore = defineStore('imMessageStore', {
       if (message.id) {
         for (let index = 0; index < messages.length; index++) {
           const existing = messages[index]
-          if (existing.id && message.id < existing.id) {
+          if (existing.id && compareId(message.id, existing.id) < 0) {
             insertIndex = index
             break
           }
@@ -996,7 +998,7 @@ export const useMessageStore = defineStore('imMessageStore', {
       // 1. 私聊回执批量更新自己发送的消息
       if (options.conversationType === ImConversationType.PRIVATE && options.privateReadMaxId) {
         messages.forEach(message => {
-          if (message.selfSend && message.id && message.id <= options.privateReadMaxId && message.receiptStatus === ImMessageReceiptStatus.PENDING) {
+          if (message.selfSend && message.id && compareId(message.id, options.privateReadMaxId) <= 0 && message.receiptStatus === ImMessageReceiptStatus.PENDING) {
             changed.push({
               current: message,
               next: {
@@ -1008,7 +1010,7 @@ export const useMessageStore = defineStore('imMessageStore', {
         })
         const storedMessages = await db.getAllByIndex('messages', 'clientConversationId', clientConversationId)
         const storedByKey = new Map(storedMessages.map(message => [message.messageKey, message]))
-        storedMessages.filter(message => message.selfSend && !!message.id && message.id <= options.privateReadMaxId && message.receiptStatus === ImMessageReceiptStatus.PENDING).forEach(message => {
+        storedMessages.filter(message => message.selfSend && !!message.id && compareId(message.id, options.privateReadMaxId) <= 0 && message.receiptStatus === ImMessageReceiptStatus.PENDING).forEach(message => {
           const next = {
             ...message,
             receiptStatus: ImMessageReceiptStatus.DONE
@@ -1092,7 +1094,7 @@ export const useMessageStore = defineStore('imMessageStore', {
       const terminal = await getConversationMessageTerminal(clientConversationId, db)
       const messages = this.messagesByConversation[clientConversationId] || []
       const existingIds = new Set(messages.map(message => message.id).filter(Boolean))
-      const fresh = earlierMessages.map(ensureClientMessageId).filter(message => message.id && !existingIds.has(message.id) && !isMessageTerminated(message, terminal)).map(message => applyPersistedRecall(message, terminal)).sort((messageA, messageB) => (messageA.id || 0) - (messageB.id || 0))
+      const fresh = earlierMessages.map(ensureClientMessageId).filter(message => message.id && !existingIds.has(message.id) && !isMessageTerminated(message, terminal)).map(message => applyPersistedRecall(message, terminal)).sort((messageA, messageB) => compareId(messageA.id || 0, messageB.id || 0))
       if (fresh.length === 0) {
         return
       }
@@ -1172,7 +1174,7 @@ export const useMessageStore = defineStore('imMessageStore', {
         const deletedSettingKey = `${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`
         const oldDeletedKeys = (await db.getSetting(deletedSettingKey, tx)) || []
         const pendingClientKeys = new Set([...storedMessages, ...messages].filter(message => !message.id && !!message.clientMessageId).map(message => `client:${message.clientMessageId}`))
-        const clearBefore = Math.max(oldClearBefore, conversation?.lastMessageId || 0, ...storedMessages.map(message => message.id || 0))
+        const clearBefore = maxImId(oldClearBefore, conversation?.lastMessageId || 0, ...storedMessages.map(message => message.id || 0))
         await db.setSetting(settingKey, clearBefore, tx)
         if (pendingClientKeys.size > 0) {
           await db.setSetting(deletedSettingKey, Array.from(new Set([...oldDeletedKeys, ...pendingClientKeys])), tx)

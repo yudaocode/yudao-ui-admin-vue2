@@ -48,6 +48,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import FmsAuxiliaryItemSelect from '@/views/fms/config/auxiliary/components/FmsAuxiliaryItemSelect.vue'
 
 export default {
@@ -84,7 +85,7 @@ export default {
   methods: {
     open(row, accountSetId) {
       this.subject = row || null
-      this.accountSetId = Number(accountSetId) || 0
+      this.accountSetId = parseId(accountSetId) || 0
       this.resetForm()
       this.auxiliaryConfigs.forEach(config => {
         this.$set(this.formData.items, config.auxiliaryTypeId, [])

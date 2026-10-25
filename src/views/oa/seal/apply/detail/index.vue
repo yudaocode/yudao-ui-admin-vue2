@@ -109,6 +109,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as SealApplyApi from '@/api/oa/seal/apply'
 import UploadFile from '@/components/UploadFile'
 import { DICT_TYPE } from '@/utils/dict'
@@ -148,7 +149,7 @@ export default {
     formatDate,
     getInfo() {
       // 获取弹窗或 BPM 传入的业务编号，兼容路由查询参数
-      const id = Number(this.id || this.$route.query.id)
+      const id = parseId(this.id || this.$route.query.id)
       if (!id) return
       this.detailLoading = true
       return SealApplyApi.getSealApply(id).then(response => {

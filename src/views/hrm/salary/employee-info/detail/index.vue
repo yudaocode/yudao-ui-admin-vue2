@@ -52,6 +52,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { getEmployee } from '@/api/hrm/employee'
 import { getSalaryEmployeeInfo } from '@/api/hrm/salary/employee-info'
 import EmployeeDetailsHeader from '@/views/hrm/employee/detail/EmployeeDetailsHeader.vue'
@@ -69,7 +70,7 @@ export default {
   },
   data() {
     return {
-      id: Number(this.$route.params.id),
+      id: parseId(this.$route.params.id),
       loading: false,
       employee: {},
       salaryEmployee: {},
@@ -108,7 +109,7 @@ export default {
       if (this.$refs.changeRecordList) await this.$refs.changeRecordList.getList()
     },
     async init() {
-      if (!Number.isSafeInteger(this.id) || this.id <= 0) {
+      if (!isPositiveId(this.id)) {
         this.$modal.msgWarning('参数错误，员工不能为空！')
         this.close()
         return

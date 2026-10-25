@@ -77,6 +77,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import WxAccountSelect from '@/views/mp/components/wx-account-select'
 import * as MpDraftApi from '@/api/mp/draft'
 import * as MpFreePublishApi from '@/api/mp/freePublish'
@@ -116,12 +117,12 @@ export default {
   },
   computed: {
     hasAccount() {
-      return Number(this.accountId) > 0
+      return parseId(this.accountId) > 0
     }
   },
   methods: {
     onAccountChanged(id) {
-      this.accountId = Number(id)
+      this.accountId = parseId(id)
       this.accountContext.value = this.accountId
       this.queryParams.accountId = this.accountId
       this.queryParams.pageNo = 1

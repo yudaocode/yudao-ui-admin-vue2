@@ -58,6 +58,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as VehicleReturnApi from '@/api/oa/vehicle/return'
 import { DICT_TYPE } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
@@ -102,7 +103,7 @@ export default {
       }
       this.detailLoading = true
       this.detailData = { fileUrls: [] }
-      VehicleReturnApi.getVehicleReturn(Number(id)).then(response => {
+      VehicleReturnApi.getVehicleReturn(parseId(id)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

@@ -156,6 +156,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsLedgerApi } from '@/api/fms/ledger'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
 import FmsAuxiliaryItemSelect from '@/views/fms/config/auxiliary/components/FmsAuxiliaryItemSelect.vue'
@@ -192,7 +193,7 @@ export default {
     clearLedgerData() { this.list = []; this.subjects = [] },
     onLedgerContextReady() {
       this.monthRange = [this.accountingMonth, this.accountingMonth]
-      this.queryParams.accountSetId = Number(this.accountSetId)
+      this.queryParams.accountSetId = parseId(this.accountSetId)
       this.queryParams.startMonth = this.accountingMonth
       this.queryParams.endMonth = this.accountingMonth
       this.loadSubjectOptions()
@@ -200,7 +201,7 @@ export default {
     },
     loadSubjectOptions() {
       const sequence = ++this.subjectSequence
-      return FmsSubjectApi.getSubjectSimpleList(Number(this.accountSetId)).then(response => {
+      return FmsSubjectApi.getSubjectSimpleList(parseId(this.accountSetId)).then(response => {
         if (sequence !== this.subjectSequence) return
         const rows = response.data
         this.subjects = buildTree(rows)
@@ -208,7 +209,7 @@ export default {
     },
     handleTypeLoaded(rows) {
       this.types = rows
-      if (!this.types.some(item => Number(item.id) === Number(this.queryParams.auxiliaryTypeId))) {
+      if (!this.types.some(item => parseId(item.id) === parseId(this.queryParams.auxiliaryTypeId))) {
         this.queryParams.auxiliaryTypeId = (this.types[0] && this.types[0].id) || 0
         this.queryParams.auxiliaryItemId = undefined
       }
@@ -226,7 +227,7 @@ export default {
     getList() {
       if (!this.accountSetId || !this.queryParams.auxiliaryTypeId || this.monthRange.length !== 2) { this.list = []; return Promise.resolve() }
       const sequence = ++this.listSequence
-      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: Number(this.accountSetId), startMonth: this.monthRange[0], endMonth: this.monthRange[1] })
+      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: parseId(this.accountSetId), startMonth: this.monthRange[0], endMonth: this.monthRange[1] })
       this.loading = true
       return FmsLedgerApi.getAuxiliaryBalanceList(this.queryParams).then(response => {
         if (sequence !== this.listSequence) return

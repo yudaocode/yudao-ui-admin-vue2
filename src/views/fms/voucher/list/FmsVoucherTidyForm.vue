@@ -71,6 +71,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsVoucherApi } from '@/api/fms/voucher'
 import FmsVoucherWordSelect from '@/views/fms/config/voucher-word/components/FmsVoucherWordSelect.vue'
 import { FMS_VOUCHER_TIDY_TYPE } from '../helpers'
@@ -104,7 +105,7 @@ export default {
       const options = words || []
       const preferred = options.find(item => item.defaultStatus) || options[0]
       return {
-        accountSetId: Number(accountSetId) || 0,
+        accountSetId: parseId(accountSetId) || 0,
         month: month || '',
         voucherWordId: preferred && preferred.id,
         startNumber: 1,

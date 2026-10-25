@@ -121,6 +121,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import UserSelect from '@/views/system/user/components/UserSelect.vue'
 import * as ReimbursementApi from '@/api/oa/reimbursement'
 import { DICT_TYPE } from '@/utils/dict'
@@ -168,7 +169,7 @@ export default {
         return
       }
       this.detailLoading = true
-      return ReimbursementApi.getReimbursement(Number(this.detailId)).then(response => {
+      return ReimbursementApi.getReimbursement(parseId(this.detailId)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

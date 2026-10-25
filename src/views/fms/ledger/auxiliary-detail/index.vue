@@ -141,7 +141,7 @@
               v-for="item in filteredItems"
               :key="item.id"
               type="button"
-              :class="{ active: Number(item.id) === Number(queryParams.auxiliaryItemId) }"
+              :class="{ active: String(item.id) === String(queryParams.auxiliaryItemId) }"
               @click="handleItemClick(item.id)"
             ><span>{{ item.code }}</span><span>{{ item.name }}</span></button>
             <el-empty
@@ -169,6 +169,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsAuxiliaryItemApi } from '@/api/fms/config/auxiliary/item'
 import { FmsLedgerApi } from '@/api/fms/ledger'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
@@ -205,12 +206,12 @@ export default {
     }
   },
   computed: {
-    selectedType() { return this.types.find(item => Number(item.id) === Number(this.queryParams.auxiliaryTypeId)) },
-    selectedItem() { return this.items.find(item => Number(item.id) === Number(this.queryParams.auxiliaryItemId)) },
+    selectedType() { return this.types.find(item => parseId(item.id) === parseId(this.queryParams.auxiliaryTypeId)) },
+    selectedItem() { return this.items.find(item => parseId(item.id) === parseId(this.queryParams.auxiliaryItemId)) },
     selectedItemPrintText() { return this.selectedItem ? '辅助项目：' + ((this.selectedType && this.selectedType.name) || '') + ' ' + this.selectedItem.code + '_' + this.selectedItem.name : '' },
     filteredItems() {
       const keyword = this.itemKeyword.toLowerCase()
-      return this.items.filter(item => this.dataItemIds.includes(Number(item.id))).filter(item => !keyword || (item.code + ' ' + item.name).toLowerCase().includes(keyword))
+      return this.items.filter(item => this.dataItemIds.includes(parseId(item.id))).filter(item => !keyword || (item.code + ' ' + item.name).toLowerCase().includes(keyword))
     }
   },
   beforeDestroy() { this.loadSequence += 1; this.listSequence += 1; this.subjectSequence += 1 },
@@ -219,7 +220,7 @@ export default {
     clearLedgerData() { this.list = []; this.items = []; this.dataItemIds = []; this.subjects = [] },
     onLedgerContextReady() {
       this.monthRange = [this.accountingMonth, this.accountingMonth]
-      this.queryParams.accountSetId = Number(this.accountSetId)
+      this.queryParams.accountSetId = parseId(this.accountSetId)
       this.queryParams.startMonth = this.accountingMonth
       this.queryParams.endMonth = this.accountingMonth
       this.loadSubjectOptions()
@@ -227,7 +228,7 @@ export default {
     },
     loadSubjectOptions() {
       const sequence = ++this.subjectSequence
-      return FmsSubjectApi.getSubjectSimpleList(Number(this.accountSetId)).then(response => {
+      return FmsSubjectApi.getSubjectSimpleList(parseId(this.accountSetId)).then(response => {
         if (sequence !== this.subjectSequence) return
         const rows = response.data
         this.subjects = buildTree(rows)
@@ -235,7 +236,7 @@ export default {
     },
     handleTypeLoaded(rows) {
       this.types = rows
-      if (!this.types.some(item => Number(item.id) === Number(this.queryParams.auxiliaryTypeId))) this.queryParams.auxiliaryTypeId = (this.types[0] && this.types[0].id) || 0
+      if (!this.types.some(item => parseId(item.id) === parseId(this.queryParams.auxiliaryTypeId))) this.queryParams.auxiliaryTypeId = (this.types[0] && this.types[0].id) || 0
       this.loadItems()
     },
     handleTypeChange() { this.itemKeyword = ''; return this.loadItems() },
@@ -256,21 +257,21 @@ export default {
       this.queryParams.auxiliaryItemId = 0
       if (!this.accountSetId || !this.queryParams.auxiliaryTypeId || this.monthRange.length !== 2) return Promise.resolve()
       const balanceParams = {
-        accountSetId: Number(this.accountSetId),
+        accountSetId: parseId(this.accountSetId),
         startMonth: this.monthRange[0],
         endMonth: this.monthRange[1],
         auxiliaryTypeId: this.queryParams.auxiliaryTypeId,
         subjectId: this.queryParams.subjectId
       }
       return Promise.all([
-        FmsAuxiliaryItemApi.getAuxiliaryItemSimpleList(Number(this.accountSetId), this.queryParams.auxiliaryTypeId),
+        FmsAuxiliaryItemApi.getAuxiliaryItemSimpleList(parseId(this.accountSetId), this.queryParams.auxiliaryTypeId),
         FmsLedgerApi.getAuxiliaryBalanceList(balanceParams)
       ]).then(responses => {
         if (sequence !== this.loadSequence) return
         const items = responses[0].data
         const balances = responses[1].data
         this.items = items
-        this.dataItemIds = (balances).filter(item => Number(item.periodDebitAmount || 0) !== 0 || Number(item.periodCreditAmount || 0) !== 0).map(item => Number(item.auxiliaryItemId))
+        this.dataItemIds = (balances).filter(item => Number(item.periodDebitAmount || 0) !== 0 || Number(item.periodCreditAmount || 0) !== 0).map(item => parseId(item.auxiliaryItemId))
         this.queryParams.auxiliaryItemId = this.dataItemIds[0] || 0
         return this.getList()
       })
@@ -278,7 +279,7 @@ export default {
     getList() {
       if (!this.accountSetId || !this.queryParams.auxiliaryItemId || this.monthRange.length !== 2) { this.list = []; return Promise.resolve() }
       const sequence = ++this.listSequence
-      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: Number(this.accountSetId), startMonth: this.monthRange[0], endMonth: this.monthRange[1] })
+      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: parseId(this.accountSetId), startMonth: this.monthRange[0], endMonth: this.monthRange[1] })
       this.loading = true
       return FmsLedgerApi.getAuxiliaryDetailList(this.queryParams).then(response => {
         if (sequence !== this.listSequence) return

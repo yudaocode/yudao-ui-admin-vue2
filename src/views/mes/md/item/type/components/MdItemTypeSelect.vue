@@ -33,7 +33,7 @@ import { handleTree } from '@/utils/ruoyi'
 export default {
   name: 'MdItemTypeSelect',
   inheritAttrs: false,
-  props: { value: { type: Number, default: undefined }, modelValue: { type: Number, default: undefined }, disabled: { type: Boolean, default: false }, placeholder: { type: String, default: '请选择物料分类' }},
+  props: { value: { type: [Number, String], default: undefined }, modelValue: { type: [Number, String], default: undefined }, disabled: { type: Boolean, default: false }, placeholder: { type: String, default: '请选择物料分类' }},
   data() {
     return {
       allList: [],

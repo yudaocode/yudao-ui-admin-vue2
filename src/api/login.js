@@ -2,6 +2,26 @@ import request from '@/utils/request'
 import { getRefreshToken } from '@/utils/auth'
 import service from '@/utils/request'
 
+export const AuthQrcodeStatusEnum = { WAITING: 0, CONFIRMED: 1 }
+
+// 沿用登录页已选择的租户，不携带旧登录态。
+export function createQrcode() {
+  return request({
+    url: '/system/auth/create-qrcode',
+    method: 'post',
+    headers: { isToken: false }
+  })
+}
+
+export function pollQrcode(data) {
+  return request({
+    url: '/system/auth/qrcode-login',
+    method: 'post',
+    data,
+    headers: { isToken: false }
+  })
+}
+
 // 使用租户名，获得租户编号
 export function getTenantIdByName(name) {
   return request({

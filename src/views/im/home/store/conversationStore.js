@@ -1,3 +1,5 @@
+import { compareId } from '@/utils/id'
+import { maxImId } from '@/views/im/utils/pull'
 import { defineStore } from './storeFactory'
 import { debounce } from '../../utils/collection'
 import store from '@/store'
@@ -95,14 +97,14 @@ function applyConversationUnreadState(conversation, messages, readMessageId, use
   let atMessageId
   let atAllMessageId
   for (const message of messages) {
-    if (!message.id || message.id <= readMessageId || message.selfSend || !isNormalMessage(message.type) || message.status === ImMessageStatus.RECALL) {
+    if (!message.id || compareId(message.id, readMessageId) <= 0 || message.selfSend || !isNormalMessage(message.type) || message.status === ImMessageStatus.RECALL) {
       continue
     }
     unreadCount++
-    if (message.atUserIds?.includes(userId) && message.id > (atMessageId || 0)) {
+    if (message.atUserIds?.includes(userId) && compareId(message.id, atMessageId || 0) > 0) {
       atMessageId = message.id
     }
-    if (message.atUserIds?.includes(IM_AT_ALL_USER_ID) && message.id > (atAllMessageId || 0)) {
+    if (message.atUserIds?.includes(IM_AT_ALL_USER_ID) && compareId(message.id, atAllMessageId || 0) > 0) {
       atAllMessageId = message.id
     }
   }
@@ -119,8 +121,8 @@ function applyConversationUnreadState(conversation, messages, readMessageId, use
 function applyConversationRecallStateWithoutRead(conversation, messages, originalMessage, userId) {
   const previousUnreadCount = conversation.unreadCount
   const originalWasIncomingNormal = !!originalMessage.id && !originalMessage.selfSend && isNormalMessage(originalMessage.type) && originalMessage.status !== ImMessageStatus.RECALL
-  const incomingNormalMessages = messages.filter(message => !!message.id && !message.selfSend && isNormalMessage(message.type) && message.status !== ImMessageStatus.RECALL).sort((left, right) => (right.id || 0) - (left.id || 0))
-  const previousUnreadMessages = [...incomingNormalMessages.filter(message => message.id !== originalMessage.id), ...(originalWasIncomingNormal ? [originalMessage] : [])].sort((left, right) => (right.id || 0) - (left.id || 0)).slice(0, previousUnreadCount)
+  const incomingNormalMessages = messages.filter(message => !!message.id && !message.selfSend && isNormalMessage(message.type) && message.status !== ImMessageStatus.RECALL).sort((left, right) => compareId(right.id || 0, left.id || 0))
+  const previousUnreadMessages = [...incomingNormalMessages.filter(message => message.id !== originalMessage.id), ...(originalWasIncomingNormal ? [originalMessage] : [])].sort((left, right) => compareId(right.id || 0, left.id || 0)).slice(0, previousUnreadCount)
   const recalledUnread = previousUnreadMessages.some(message => message.id === originalMessage.id)
   const unreadCount = Math.max(0, previousUnreadCount - (recalledUnread ? 1 : 0))
   const unreadMessages = incomingNormalMessages.slice(0, unreadCount)
@@ -143,7 +145,7 @@ function applyConversationRecallStateWithoutRead(conversation, messages, origina
 
 /** 为旧会话回填未读 @ 消息编号 */
 function backfillConversationMentionIds(conversation, messages, userId) {
-  const unreadMessages = messages.filter(message => !!message.id && !message.selfSend && isNormalMessage(message.type) && message.status !== ImMessageStatus.RECALL).sort((left, right) => (right.id || 0) - (left.id || 0)).slice(0, conversation.unreadCount)
+  const unreadMessages = messages.filter(message => !!message.id && !message.selfSend && isNormalMessage(message.type) && message.status !== ImMessageStatus.RECALL).sort((left, right) => compareId(right.id || 0, left.id || 0)).slice(0, conversation.unreadCount)
   const atMessageId = conversation.atMessageId || (conversation.atMe ? unreadMessages.find(message => message.atUserIds?.includes(userId))?.id : undefined)
   const atAllMessageId = conversation.atAllMessageId || (conversation.atAll ? unreadMessages.find(message => message.atUserIds?.includes(IM_AT_ALL_USER_ID))?.id : undefined)
   const changed = conversation.atMessageId !== atMessageId || conversation.atAllMessageId !== atAllMessageId
@@ -272,7 +274,7 @@ export const useConversationStore = defineStore('imConversationStore', {
         return false
       }
       const record = this.getConversationRead(conversation.type, conversation.targetId)
-      return !!record && message.id <= record.messageId
+      return !!record && compareId(message.id, record.messageId) <= 0
     },
     /** 判断服务端已读位置是否覆盖消息编号 */
     isReportedReadPositionCovered(type, targetId, messageId) {
@@ -280,7 +282,7 @@ export const useConversationStore = defineStore('imConversationStore', {
         return false
       }
       const conversation = this.getConversation(type, targetId)
-      return (conversation?.reportedReadMessageId || 0) >= messageId
+      return compareId(conversation?.reportedReadMessageId || 0, messageId) >= 0
     },
     /** 应用读位置到会话 */
     applyReadToConversation(conversation, messageId, messages, userId) {
@@ -321,16 +323,16 @@ export const useConversationStore = defineStore('imConversationStore', {
           return storedMessages
         }
         const current = changedReads.get(clientConversationId) || this.conversationReads[clientConversationId]
-        const messageId = Math.max(record.messageId, current?.messageId || 0)
+        const messageId = maxImId(record.messageId, current?.messageId || 0)
         const currentConversation = this.getConversation(record.conversationType, record.targetId)
         const conversation = changedConversations.get(clientConversationId) || (currentConversation ? {
           ...currentConversation
         } : undefined)
-        if (conversation && record.messageId > (conversation.reportedReadMessageId || 0)) {
+        if (conversation && compareId(record.messageId, conversation.reportedReadMessageId || 0) > 0) {
           conversation.reportedReadMessageId = record.messageId
           changedConversations.set(clientConversationId, conversation)
         }
-        if (!current || messageId > current.messageId) {
+        if (!current || compareId(messageId, current.messageId) > 0) {
           const next = {
             conversationType: record.conversationType,
             targetId: record.targetId,
@@ -347,7 +349,7 @@ export const useConversationStore = defineStore('imConversationStore', {
         }
         const memoryMessages = messageStore.getMessages(clientConversationId)
         for (const message of memoryMessages) {
-          if (message.id && message.id <= messageId && message.receiptStatus !== ImMessageReceiptStatus.DONE) {
+          if (message.id && compareId(message.id, messageId) <= 0 && message.receiptStatus !== ImMessageReceiptStatus.DONE) {
             changedMemoryMessages.set(message, {
               ...message,
               receiptStatus: ImMessageReceiptStatus.DONE
@@ -355,7 +357,7 @@ export const useConversationStore = defineStore('imConversationStore', {
           }
         }
         for (const message of await getStoredMessages()) {
-          if (message.id && message.id <= messageId && message.receiptStatus !== ImMessageReceiptStatus.DONE) {
+          if (message.id && compareId(message.id, messageId) <= 0 && message.receiptStatus !== ImMessageReceiptStatus.DONE) {
             message.receiptStatus = ImMessageReceiptStatus.DONE
             changedMessages.set(message.messageKey, message)
           }
@@ -634,7 +636,7 @@ export const useConversationStore = defineStore('imConversationStore', {
       }
       const key = getClientConversationId(type, targetId)
       const current = this.conversationReads[key]
-      const readMessageIdAdvanced = !!messageId && messageId > (current?.messageId || 0)
+      const readMessageIdAdvanced = !!messageId && compareId(messageId, current?.messageId || 0) > 0
       if (conversation.unreadCount === 0 && !conversation.atMe && !conversation.atAll && !readMessageIdAdvanced) {
         return
       }
@@ -669,7 +671,7 @@ export const useConversationStore = defineStore('imConversationStore', {
     /** 实际记录已上报读位置；调用方必须持有当前会话写 lane */
     async markConversationReadReportedNow(type, targetId, messageId, db) {
       const conversation = this.getConversation(type, targetId)
-      if (!conversation || messageId <= (conversation.reportedReadMessageId || 0)) {
+      if (!conversation || compareId(messageId, conversation.reportedReadMessageId || 0) <= 0) {
         return
       }
       const nextConversation = {

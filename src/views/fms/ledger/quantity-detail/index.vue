@@ -125,6 +125,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsLedgerApi } from '@/api/fms/ledger'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
 
@@ -146,9 +147,9 @@ export default {
     formatMoney,
     clearLedgerData() { this.list = []; this.quantitySubjects = [] },
     onLedgerContextReady() {
-      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: Number(this.accountSetId), startMonth: this.accountingMonth, endMonth: this.accountingMonth })
+      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: parseId(this.accountSetId), startMonth: this.accountingMonth, endMonth: this.accountingMonth })
       const sequence = ++this.subjectSequence
-      return FmsSubjectApi.getSubjectSimpleList(Number(this.accountSetId)).then(response => {
+      return FmsSubjectApi.getSubjectSimpleList(parseId(this.accountSetId)).then(response => {
         if (sequence !== this.subjectSequence) return
         const rows = response.data
         this.quantitySubjects = filterQuantitySubjects(buildTree(rows))
@@ -166,7 +167,7 @@ export default {
         this.list = rows
       }).finally(() => { if (sequence === this.listSequence) this.loading = false })
     },
-    handleQuery(value) { this.queryParams = Object.assign({}, this.queryParams, value, { accountSetId: Number(this.accountSetId) }); this.getList() },
+    handleQuery(value) { this.queryParams = Object.assign({}, this.queryParams, value, { accountSetId: parseId(this.accountSetId) }); this.getList() },
     getDebitUnitPrice(row) { return Number(row.debitQuantity) ? Number(row.debitAmount) / Number(row.debitQuantity) : undefined },
     getCreditUnitPrice(row) { return Number(row.creditQuantity) ? Number(row.creditAmount) / Number(row.creditQuantity) : undefined },
     getBalanceUnitPrice(row) { return Number(row.balanceQuantity) ? Number(row.balance) / Number(row.balanceQuantity) : undefined },

@@ -21,13 +21,14 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsAuxiliaryTypeApi } from '@/api/fms/config/auxiliary/type'
 import { readFmsAccountSetId } from '@/views/fms/utils/context'
 
 export default {
   name: 'FmsAuxiliaryTypeSelect',
   props: {
-    value: { type: [Number, Array], default: undefined },
+    value: { type: [Number, String, Array], default: undefined },
     accountSetId: { type: [Number, String], default: undefined },
     multiple: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
@@ -40,7 +41,7 @@ export default {
   },
   computed: {
     resolvedAccountSetId() {
-      return Number(this.accountSetId || readFmsAccountSetId(this.$route)) || 0
+      return parseId(this.accountSetId || readFmsAccountSetId(this.$route)) || 0
     }
   },
   watch: {

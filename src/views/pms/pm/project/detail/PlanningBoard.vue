@@ -370,6 +370,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import draggable from 'vuedraggable'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import * as IterationApi from '@/api/pms/pm/iteration'
@@ -404,7 +405,7 @@ export default {
     WorkItemForm
   },
   props: {
-    projectId: { type: Number, required: true },
+    projectId: { type: [Number, String], required: true },
     projectType: { type: Number, required: true },
     editable: { type: Boolean, required: true }
   },
@@ -571,7 +572,7 @@ export default {
     },
     handlePlanningDragStart(event) {
       const workItemId = event.item && event.item.dataset.workItemId
-      this.draggedWorkItemId = workItemId ? Number(workItemId) : undefined
+      this.draggedWorkItemId = workItemId ? parseId(workItemId) : undefined
     },
     async handleCollapsedIterationDrop(iteration) {
       const workItemId = this.draggedWorkItemId

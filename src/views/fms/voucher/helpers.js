@@ -1,3 +1,4 @@
+import { parseId } from '@/utils/id'
 export const FMS_VOUCHER_STATUS = Object.freeze({
   PENDING_REVIEW: 0,
   APPROVED: 1
@@ -164,14 +165,14 @@ export function flattenTree(items) {
 
 export function buildTree(items, parentId) {
   const source = (items || []).map(item => Object.assign({}, item))
-  const map = new Map(source.map(item => [Number(item.id), item]))
+  const map = new Map(source.map(item => [parseId(item.id), item]))
   const roots = []
   source.forEach(item => {
-    const parent = map.get(Number(item.parentId))
-    if (parent && Number(item.parentId) !== Number(item.id)) {
+    const parent = map.get(parseId(item.parentId))
+    if (parent && parseId(item.parentId) !== parseId(item.id)) {
       if (!parent.children) parent.children = []
       parent.children.push(item)
-    } else if (parentId === undefined || Number(item.parentId || 0) === Number(parentId)) {
+    } else if (parentId === undefined || parseId(item.parentId || 0) === parseId(parentId)) {
       roots.push(item)
     } else {
       roots.push(item)

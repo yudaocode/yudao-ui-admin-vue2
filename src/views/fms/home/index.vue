@@ -51,6 +51,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAccountSetList } from '@/api/fms/config/account-set'
 import { FmsHomeApi } from '@/api/fms/home'
 import { readFmsAccountSetId, saveFmsAccountSet } from '@/views/fms/utils/context'
@@ -76,7 +77,7 @@ export default {
   },
   computed: {
     currentAccountSet() {
-      return this.accountSets.find(item => Number(item.id) === Number(this.accountSetId)) || null
+      return this.accountSets.find(item => parseId(item.id) === parseId(this.accountSetId)) || null
     },
     isWritable() {
       return !!(this.currentAccountSet && [1, 3].includes(Number(this.currentAccountSet.level)))
@@ -90,7 +91,7 @@ export default {
       return getAccountSetList().then(response => {
         const rows = response.data
         this.accountSets = rows.filter(item => item && item.initialized)
-        if (!this.accountSetId || !this.accountSets.some(item => Number(item.id) === Number(this.accountSetId))) {
+        if (!this.accountSetId || !this.accountSets.some(item => parseId(item.id) === parseId(this.accountSetId))) {
           const preferred = this.accountSets.find(item => item.defaultStatus) || this.accountSets[0]
           this.accountSetId = preferred ? preferred.id : 0
         }
@@ -99,7 +100,7 @@ export default {
       })
     },
     handleAccountSetChange(id) {
-      const current = this.accountSets.find(item => Number(item.id) === Number(id))
+      const current = this.accountSets.find(item => parseId(item.id) === parseId(id))
       if (current) saveFmsAccountSet(current)
       this.init()
     },
@@ -110,7 +111,7 @@ export default {
       this.metricLoading = false
       this.selectedMetricKey = ''
       this.metricDetail = null
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!accountSetId) {
         this.loading = false
         return
@@ -121,7 +122,7 @@ export default {
       const sequence = ++this.homeRequestSequence
       this.loading = true
       return FmsHomeApi.getHome(accountSetId).then(response => {
-        if (sequence !== this.homeRequestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.homeRequestSequence || accountSetId !== parseId(this.accountSetId)) return
         const result = response.data
         this.home = result
         const firstMetric = this.home && this.home.metrics[0]
@@ -131,14 +132,14 @@ export default {
       })
     },
     selectMetric(metric) {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!accountSetId || !metric || !metric.key) return Promise.resolve()
       const sequence = ++this.metricRequestSequence
       this.selectedMetricKey = metric.key
       this.metricDetail = null
       this.metricLoading = true
       return FmsHomeApi.getHomeMetricDetail(accountSetId, metric.key).then(response => {
-        if (sequence !== this.metricRequestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.metricRequestSequence || accountSetId !== parseId(this.accountSetId)) return
         const result = response.data
         this.metricDetail = result
       }).finally(() => {

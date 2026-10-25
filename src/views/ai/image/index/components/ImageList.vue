@@ -123,7 +123,7 @@ export default {
         })
     },
     refreshWatchImages() {
-      const imageIds = Object.keys(this.inProgressImageMap).map(Number)
+      const imageIds = Object.values(this.inProgressImageMap).map(image => image.id)
       if (imageIds.length === 0) {
         return Promise.resolve()
       }

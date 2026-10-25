@@ -35,6 +35,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAccountSet } from '@/api/fms/config/account-set'
 import { useFmsStore } from '@/views/fms/store/fms'
 
@@ -64,14 +65,14 @@ export default {
   },
   methods: {
     initializePeriod() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.requestSequence
       if (!accountSetId) return Promise.resolve()
       return Promise.all([
         this.fmsStore.loadCurrentMonth(),
         getAccountSet(accountSetId)
       ]).then(responses => {
-        if (sequence !== this.requestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.requestSequence || accountSetId !== parseId(this.accountSetId)) return
         const currentMonth = responses[0]
         const accountSet = responses[1].data
         this.startMonth = this.formatMonth(accountSet && accountSet.startTime) || this.formatMonth(new Date())

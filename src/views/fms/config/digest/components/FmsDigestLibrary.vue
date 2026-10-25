@@ -87,6 +87,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsDigestApi } from '@/api/fms/config/digest'
 import { FMS_ACCOUNT_SET_CACHE_KEY } from '@/views/fms/utils/context'
 
@@ -109,10 +110,10 @@ export default {
   },
   methods: {
     defaultForm(accountSetId) {
-      return { id: undefined, accountSetId: Number(accountSetId) || 0, content: '' }
+      return { id: undefined, accountSetId: parseId(accountSetId) || 0, content: '' }
     },
     open(accountSetId) {
-      this.accountSetId = Number(accountSetId) || 0
+      this.accountSetId = parseId(accountSetId) || 0
       if (!this.accountSetId) return
       this.isWritable = this.readWritableStatus()
       this.resetForm()
@@ -122,7 +123,7 @@ export default {
     readWritableStatus() {
       try {
         const current = JSON.parse(localStorage.getItem(FMS_ACCOUNT_SET_CACHE_KEY) || 'null')
-        return !!(current && Number(current.id) === this.accountSetId && [1, 3].includes(Number(current.level)))
+        return !!(current && parseId(current.id) === this.accountSetId && [1, 3].includes(Number(current.level)))
       } catch (e) {
         return false
       }

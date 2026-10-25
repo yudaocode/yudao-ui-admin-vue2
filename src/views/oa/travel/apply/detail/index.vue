@@ -134,6 +134,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as TravelApi from '@/api/oa/travel/apply'
 import AreaSelect from '@/views/system/area/components/AreaSelect.vue'
 import UploadFile from '@/components/UploadFile'
@@ -173,7 +174,7 @@ export default {
       this.detail = { items: [], fileUrls: [] }
       if (!this.id) return
       this.loading = true
-      return TravelApi.getTravelApply(Number(this.id)).then(response => {
+      return TravelApi.getTravelApply(parseId(this.id)).then(response => {
         this.detail = response.data
       }).finally(() => {
         this.loading = false

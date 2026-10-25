@@ -176,6 +176,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAccountSet, getAccountSetList } from '@/api/fms/config/account-set'
 import { FmsCurrencyApi } from '@/api/fms/config/currency'
 import { FmsFinanceParameterApi } from '@/api/fms/config/finance-parameter'
@@ -217,7 +218,7 @@ export default {
   },
   computed: {
     currentAccountSet() {
-      return this.accountSets.find(item => Number(item.id) === Number(this.accountSetId)) || null
+      return this.accountSets.find(item => parseId(item.id) === parseId(this.accountSetId)) || null
     },
     isWritable() {
       return !!(this.currentAccountSet && [1, 3].includes(Number(this.currentAccountSet.level)))
@@ -247,7 +248,7 @@ export default {
       return getAccountSetList().then(response => {
         const rows = response.data
         this.accountSets = rows.filter(item => item && item.initialized)
-        if (!this.accountSetId || !this.accountSets.some(item => Number(item.id) === Number(this.accountSetId))) {
+        if (!this.accountSetId || !this.accountSets.some(item => parseId(item.id) === parseId(this.accountSetId))) {
           const preferred = this.accountSets.find(item => item.defaultStatus) || this.accountSets[0]
           this.accountSetId = preferred ? preferred.id : 0
         }
@@ -256,12 +257,12 @@ export default {
       })
     },
     handleAccountSetChange(id) {
-      const current = this.accountSets.find(item => Number(item.id) === Number(id))
+      const current = this.accountSets.find(item => parseId(item.id) === parseId(id))
       if (current) saveFmsAccountSet(current)
       this.getParameterData()
     },
     getParameterData() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.requestSequence
       if (!accountSetId) {
         this.accountSet = null
@@ -277,13 +278,13 @@ export default {
         FmsFinanceParameterApi.getFinanceParameter(accountSetId),
         FmsCurrencyApi.getCurrencySimpleList(accountSetId)
       ]).then(responses => {
-        if (sequence !== this.requestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.requestSequence || accountSetId !== parseId(this.accountSetId)) return
         const accountSet = responses[0].data
         const financeParameter = responses[1].data
         const currencies = responses[2].data
         this.accountSet = accountSet
         this.currency = this.accountSet
-          ? currencies.find(item => Number(item.id) === Number(this.accountSet.currencyId))
+          ? currencies.find(item => parseId(item.id) === parseId(this.accountSet.currencyId))
           : null
         this.financeParameter = financeParameter || null
         if (!financeParameter) {
@@ -319,7 +320,7 @@ export default {
         if (!valid) return
         this.submitLoading = true
         FmsFinanceParameterApi.updateFinanceParameter({
-          accountSetId: Number(this.accountSetId),
+          accountSetId: parseId(this.accountSetId),
           standard: this.formData.standard,
           level: this.formData.level,
           subjectCodeRule: this.formData.subjectCodeRules.join('-'),

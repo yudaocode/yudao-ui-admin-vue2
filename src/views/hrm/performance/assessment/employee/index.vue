@@ -163,6 +163,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { Message, MessageBox } from 'element-ui'
 import { ref, reactive, computed, onMounted, unref, getCurrentInstance } from 'vue'
 import { defineComponent as _defineComponent } from 'vue'
@@ -188,7 +189,7 @@ export default /* @__PURE__*/ _defineComponent({
     const currentRoute = __router.currentRoute
     const push = (...args) => __router.push(...args) // 路由操作
     const delView = (view) => proxy.$store.dispatch('tagsView/delView', view) // 页签操作
-    const employeeId = Number(route.params.employeeId) // 员工编号
+    const employeeId = parseId(route.params.employeeId) // 员工编号
     const loading = ref(false) // 加载中
     const total = ref(0) // 列表总数
     const list = ref([]) // 列表数据

@@ -141,6 +141,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as KnowledgeDocumentApi from '@/api/pms/kb/content/document'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter, defaultShortcuts } from '@/utils/formatTime'
@@ -163,8 +164,8 @@ export default {
         pageNo: 1,
         pageSize: 10,
         keyword: String(query.keyword || ''),
-        libraryId: query.libraryId ? Number(query.libraryId) : undefined,
-        creatorUserId: query.creatorUserId ? Number(query.creatorUserId) : undefined,
+        libraryId: query.libraryId ? parseId(query.libraryId) : undefined,
+        creatorUserId: query.creatorUserId ? parseId(query.creatorUserId) : undefined,
         updateTime: query.updateTime ? String(query.updateTime).split(',') : []
       }
     }
@@ -174,9 +175,9 @@ export default {
       deep: true,
       handler(query) {
         this.queryParams.keyword = String(query.keyword || '')
-        this.queryParams.libraryId = query.libraryId ? Number(query.libraryId) : undefined
+        this.queryParams.libraryId = query.libraryId ? parseId(query.libraryId) : undefined
         this.queryParams.creatorUserId = query.creatorUserId
-          ? Number(query.creatorUserId)
+          ? parseId(query.creatorUserId)
           : undefined
         this.queryParams.updateTime = query.updateTime ? String(query.updateTime).split(',') : []
         this.queryParams.pageNo = 1

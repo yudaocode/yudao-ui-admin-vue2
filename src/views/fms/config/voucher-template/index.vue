@@ -160,6 +160,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAccountSetList } from '@/api/fms/config/account-set'
 import { FmsVoucherTemplateApi } from '@/api/fms/config/voucher-template'
 import { FmsVoucherTemplateCategoryApi } from '@/api/fms/config/voucher-template-category'
@@ -182,14 +183,14 @@ export default {
   },
   computed: {
     currentAccountSet() {
-      return this.accountSets.find(item => Number(item.id) === Number(this.accountSetId)) || null
+      return this.accountSets.find(item => parseId(item.id) === parseId(this.accountSetId)) || null
     },
     isWritable() {
       return Boolean(this.currentAccountSet && [1, 3].includes(Number(this.currentAccountSet.level)))
     },
     currentTemplates() {
       if (!this.currentCategory) return []
-      return this.templates.filter(item => Number(item.categoryId) === Number(this.currentCategory.id))
+      return this.templates.filter(item => parseId(item.categoryId) === parseId(this.currentCategory.id))
     }
   },
   created() {
@@ -203,7 +204,7 @@ export default {
       return getAccountSetList().then(response => {
         const rows = response.data
         this.accountSets = rows.filter(item => item && item.initialized !== false)
-        if (!this.accountSetId || !this.accountSets.some(item => Number(item.id) === Number(this.accountSetId))) {
+        if (!this.accountSetId || !this.accountSets.some(item => parseId(item.id) === parseId(this.accountSetId))) {
           const preferred = this.accountSets.find(item => item.defaultStatus) || this.accountSets[0]
           this.accountSetId = preferred ? preferred.id : 0
         }
@@ -212,7 +213,7 @@ export default {
       })
     },
     handleAccountSetChange(id) {
-      const current = this.accountSets.find(item => Number(item.id) === Number(id))
+      const current = this.accountSets.find(item => parseId(item.id) === parseId(id))
       if (current) saveFmsAccountSet(current)
       this.templates = []
       this.categories = []
@@ -220,7 +221,7 @@ export default {
       return this.getList()
     },
     getList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.requestSequence
       if (!accountSetId) {
         this.templates = []
@@ -234,13 +235,13 @@ export default {
         FmsVoucherTemplateApi.getVoucherTemplateList(accountSetId),
         FmsVoucherTemplateCategoryApi.getVoucherTemplateCategoryList(accountSetId)
       ]).then(responses => {
-        if (sequence !== this.requestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.requestSequence || accountSetId !== parseId(this.accountSetId)) return
         const templates = responses[0].data
         const categories = responses[1].data
         this.templates = templates
         this.categories = categories
         const currentId = this.currentCategory && this.currentCategory.id
-        this.currentCategory = this.categories.find(item => Number(item.id) === Number(currentId)) ||
+        this.currentCategory = this.categories.find(item => parseId(item.id) === parseId(currentId)) ||
           this.categories[0] || null
         this.$nextTick(() => {
           if (this.$refs.categoryTable) this.$refs.categoryTable.setCurrentRow(this.currentCategory)
@@ -250,19 +251,19 @@ export default {
       })
     },
     getCategoryTemplateCount(categoryId) {
-      return this.templates.filter(item => Number(item.categoryId) === Number(categoryId)).length
+      return this.templates.filter(item => parseId(item.categoryId) === parseId(categoryId)).length
     },
     handleCategoryChange(row) {
       this.currentCategory = row
     },
     openCategoryForm(type, row) {
       if (!this.accountSetId || !this.isWritable) return
-      this.$refs.categoryForm.open(type, Number(this.accountSetId), row)
+      this.$refs.categoryForm.open(type, parseId(this.accountSetId), row)
     },
     handleDeleteCategory(row) {
       if (!this.accountSetId || !this.isWritable) return
       this.$modal.confirm('确认删除凭证模板分类“' + row.name + '”吗？').then(() => {
-        return FmsVoucherTemplateCategoryApi.deleteVoucherTemplateCategory(Number(this.accountSetId), row.id)
+        return FmsVoucherTemplateCategoryApi.deleteVoucherTemplateCategory(parseId(this.accountSetId), row.id)
       }).then(() => {
         this.$modal.msgSuccess('删除成功')
         return this.getList()
@@ -271,7 +272,7 @@ export default {
     handleDeleteTemplate(row) {
       if (!this.accountSetId || !this.isWritable) return
       this.$modal.confirm('确认删除凭证模板“' + row.name + '”吗？').then(() => {
-        return FmsVoucherTemplateApi.deleteVoucherTemplate(Number(this.accountSetId), row.id)
+        return FmsVoucherTemplateApi.deleteVoucherTemplate(parseId(this.accountSetId), row.id)
       }).then(() => {
         this.$modal.msgSuccess('删除成功')
         return this.getList()

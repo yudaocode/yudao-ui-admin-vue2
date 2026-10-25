@@ -229,6 +229,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as KnowledgeFavoriteApi from '@/api/pms/kb/interaction/favorite'
 import * as KnowledgeGroupApi from '@/api/pms/kb/library/group'
 import * as KnowledgeLibraryApi from '@/api/pms/kb/library'
@@ -264,7 +265,7 @@ export default {
         return this.queryParams.groupId == null ? '' : String(this.queryParams.groupId)
       },
       set(value) {
-        this.queryParams.groupId = value === '' ? undefined : Number(value)
+        this.queryParams.groupId = parseId(value)
       }
     },
     moveTargetGroupList() {
@@ -300,7 +301,7 @@ export default {
       return this.handleQuery()
     },
     handleGroupQuery(tab) {
-      this.queryParams.groupId = Number(tab.name)
+      this.queryParams.groupId = parseId(tab.name)
       return this.handleQuery()
     },
     openForm(type, id) {

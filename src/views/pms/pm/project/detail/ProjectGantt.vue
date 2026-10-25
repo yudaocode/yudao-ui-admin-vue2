@@ -205,7 +205,7 @@ export default {
   name: 'PmsProjectGantt',
   components: { WorkItemDetail },
   props: {
-    projectId: { type: Number, required: true },
+    projectId: { type: [Number, String], required: true },
     projectType: { type: Number, required: true },
     editable: { type: Boolean, required: true }
   },

@@ -137,6 +137,7 @@
   </div>
 </template>
 <script>
+import { parseId } from '@/utils/id'
 import QrcodeVue from 'qrcode.vue'
 import { getOrder, submitOrder } from '@/api/pay/order'
 import { PayChannelEnum, PayDisplayModeEnum, PayOrderStatusEnum } from '@/utils/constants'
@@ -218,7 +219,7 @@ export default {
   },
   created() {
     if (typeof this.$route.query.id === 'string') {
-      this.id = Number(this.$route.query.id)
+      this.id = parseId(this.$route.query.id)
     }
     if (typeof this.$route.query.returnUrl === 'string') {
       this.returnUrl = decodeURIComponent(this.$route.query.returnUrl)

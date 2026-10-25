@@ -17,10 +17,11 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 export default {
   name: 'FmsVoucherWordSelect',
   props: {
-    value: { type: Number, default: undefined },
+    value: { type: [Number, String], default: undefined },
     options: { type: Array, required: true },
     disabled: { type: Boolean, default: false },
     clearable: { type: Boolean, default: false },
@@ -29,7 +30,7 @@ export default {
   },
   methods: {
     handleChange(value) {
-      this.$emit('input', typeof value === 'number' ? value : undefined)
+      this.$emit('input', parseId(value))
     }
   }
 }

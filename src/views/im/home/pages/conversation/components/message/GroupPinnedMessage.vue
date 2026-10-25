@@ -91,7 +91,7 @@ const __sfc__ = /* @__PURE__*/_defineComponent({
   __name: 'GroupPinnedMessage',
   props: {
     groupId: {
-      type: Number,
+      type: [Number, String],
       required: true
     }
   },

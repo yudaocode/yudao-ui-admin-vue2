@@ -27,7 +27,7 @@ export default /* @__PURE__*/ _defineComponent({
   __name: 'HrmPerformanceRaterLevelSelect',
   model: { prop: 'modelValue', event: 'update:modelValue' },
   props: {
-    modelValue: { type: Number, required: false },
+    modelValue: { type: [Number, String], required: false },
     raterType: { type: Number, required: false },
     disabled: { type: Boolean, required: false, default: false },
     clearable: { type: Boolean, required: false, default: false },

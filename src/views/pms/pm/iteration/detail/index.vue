@@ -345,6 +345,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as IterationApi from '@/api/pms/pm/iteration'
 import * as ProjectApi from '@/api/pms/pm/project'
 import * as WorkItemApi from '@/api/pms/pm/workitem'
@@ -528,7 +529,7 @@ export default {
   async mounted() {
     this.loading = true
     try {
-      const iterationResponse = await IterationApi.getIteration(Number(this.$route.params.id))
+      const iterationResponse = await IterationApi.getIteration(parseId(this.$route.params.id))
       this.iteration = iterationResponse.data
       const projectResponse = await ProjectApi.getProject(this.iteration.projectId)
       this.project = projectResponse.data

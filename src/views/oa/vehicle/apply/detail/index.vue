@@ -58,6 +58,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as VehicleApplyApi from '@/api/oa/vehicle/apply'
 import { DICT_TYPE, getDictLabel } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
@@ -103,7 +104,7 @@ export default {
       }
       this.detailLoading = true
       this.detailData = { fileUrls: [] }
-      VehicleApplyApi.getVehicleApply(Number(id)).then(response => {
+      VehicleApplyApi.getVehicleApply(parseId(id)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

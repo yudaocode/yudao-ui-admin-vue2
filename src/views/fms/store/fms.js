@@ -1,3 +1,4 @@
+import { isPositiveId, parseId } from '@/utils/id'
 import Vue from 'vue'
 import { FmsClosingPeriodApi } from '@/api/fms/closing/period'
 import { getAccountSetList } from '@/api/fms/config/account-set'
@@ -9,8 +10,8 @@ function readCachedAccountSet() {
   if (typeof localStorage === 'undefined') return undefined
   try {
     const accountSet = JSON.parse(localStorage.getItem(FMS_ACCOUNT_SET_CACHE_KEY) || 'null')
-    const id = Number(accountSet && accountSet.id)
-    if (!Number.isFinite(id) || id <= 0) return undefined
+    const id = parseId(accountSet && accountSet.id)
+    if (!isPositiveId(id)) return undefined
     return {
       id,
       companyName: accountSet.companyName || '',
@@ -90,7 +91,7 @@ const fmsStore = {
     if (!accountSet || !accountSet.id) return
     if (!state.accountSet || state.accountSet.id !== accountSet.id) state.currentMonth = undefined
     const value = {
-      id: Number(accountSet.id),
+      id: parseId(accountSet.id),
       companyName: accountSet.companyName || '',
       level: Number(accountSet.level)
     }

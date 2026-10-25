@@ -219,6 +219,7 @@
 </template>
 
 <script>
+import { isIdType, parseId } from '@/utils/id'
 import * as CouponTemplateApi from '@/api/mall/promotion/coupon/couponTemplate'
 import { CouponTemplateTakeTypeEnum } from '@/utils/constants'
 import { DICT_TYPE, getDictDatas } from '@/utils/dict'
@@ -316,7 +317,7 @@ export default {
     /** 根据详情接口的 Map 查询优惠券并恢复每张赠送数量。 */
     initGiveCouponList() {
       const counts = this.rewardRule && this.rewardRule.giveCouponTemplateCounts
-      const templateIds = Object.keys(counts || {}).map(Number).filter(Number.isFinite)
+      const templateIds = Object.keys(counts || {}).map(parseId).filter(isIdType)
       this.couponList = []
       if (templateIds.length === 0) return Promise.resolve()
       return CouponTemplateApi.getCouponTemplateList(templateIds).then((response) => {

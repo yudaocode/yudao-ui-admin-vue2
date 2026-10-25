@@ -116,6 +116,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as SupplyApplyApi from '@/api/oa/supply/apply'
 import UploadFile from '@/components/UploadFile'
 import { DICT_TYPE } from '@/utils/dict'
@@ -151,7 +152,7 @@ export default {
       const id = this.id || (this.$route && this.$route.query && this.$route.query.id)
       if (!id) return
       this.detailLoading = true
-      return SupplyApplyApi.getSupplyApply(Number(id)).then(response => {
+      return SupplyApplyApi.getSupplyApply(parseId(id)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

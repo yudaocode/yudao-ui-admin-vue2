@@ -154,7 +154,7 @@ export default /* @__PURE__*/ _defineComponent({
   ...{ name: 'DeviceModbusConfigForm' },
   __name: 'DeviceModbusConfigForm',
   props: {
-    deviceId: { type: Number, required: true },
+    deviceId: { type: [Number, String], required: true },
     protocolType: { type: String, required: true }
   },
   emits: ['success'],

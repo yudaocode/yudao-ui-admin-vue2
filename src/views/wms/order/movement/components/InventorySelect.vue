@@ -119,7 +119,7 @@ import { formatQuantity } from '@/views/wms/utils/format'
 
 export default {
   name: 'WmsMovementInventorySelect',
-  props: { warehouseId: { type: Number, default: undefined }},
+  props: { warehouseId: { type: [Number, String], default: undefined }},
   data() {
     return {
       visible: false,

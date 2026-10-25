@@ -115,6 +115,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { ChatConversationApi } from '@/api/ai/chat/conversation'
 import RoleRepository from '../role/RoleRepository.vue'
 
@@ -145,7 +146,7 @@ export default {
     activeId: {
       immediate: true,
       handler(value) {
-        this.activeConversationId = value ? Number(value) : null
+        this.activeConversationId = parseId(value) ?? null
       }
     }
   },

@@ -25,7 +25,7 @@ import { getRecruitChannel, getRecruitChannelSimpleList } from '@/api/hrm/recrui
 export default {
   name: 'HrmRecruitChannelSelect',
   props: {
-    value: { type: Number, default: undefined },
+    value: { type: [Number, String], default: undefined },
     disabled: { type: Boolean, default: false },
     clearable: { type: Boolean, default: true },
     filterable: { type: Boolean, default: true },

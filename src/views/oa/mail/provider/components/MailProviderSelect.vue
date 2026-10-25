@@ -25,7 +25,7 @@ export default {
   name: 'OaMailProviderSelect',
   props: {
     value: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     },
     disabled: {

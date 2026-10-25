@@ -47,7 +47,7 @@
     <ClosingSchemeList
       v-if="ready && accountSetId"
       ref="schemeList"
-      :account-set-id="Number(accountSetId)"
+      :account-set-id="accountSetId"
       :month="month"
       :current-period="isCurrentPeriod"
       :closed="overview.closed"
@@ -197,6 +197,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsClosingPeriodApi } from '@/api/fms/closing/period'
 import { getAccountSetList } from '@/api/fms/config/account-set'
 import { formatMoney } from '@/views/fms/utils/format'
@@ -253,7 +254,7 @@ export default {
     return {
       accountSetLoading: false,
       accountSets: [],
-      accountSetId: Number(readFmsAccountSetId(this.$route)) || 0,
+      accountSetId: readFmsAccountSetId(this.$route) || 0,
       accountSet: null,
       month: currentMonth,
       currentMonth,
@@ -315,7 +316,7 @@ export default {
   },
   watch: {
     '$route.query.accountSetId'() {
-      const routeAccountSetId = Number(readFmsAccountSetId(this.$route)) || 0
+      const routeAccountSetId = readFmsAccountSetId(this.$route) || 0
       if (routeAccountSetId && routeAccountSetId !== this.accountSetId) {
         this.accountSetId = routeAccountSetId
         this.initialize()
@@ -339,7 +340,7 @@ export default {
         if (sequence !== this.initSequence) return
         const rows = response.data
         this.accountSets = rows.filter(item => item && item.initialized !== false)
-        let selected = this.accountSets.find(item => Number(item.id) === Number(this.accountSetId))
+        let selected = this.accountSets.find(item => parseId(item.id) === parseId(this.accountSetId))
         if (!selected) selected = this.accountSets.find(item => item.defaultStatus) || this.accountSets[0]
         if (!selected) {
           this.accountSetId = 0
@@ -347,7 +348,7 @@ export default {
           return
         }
         this.accountSet = selected
-        this.accountSetId = Number(selected.id)
+        this.accountSetId = parseId(selected.id)
         saveFmsAccountSet(selected)
         this.startMonth = toMonth(selected.startTime, currentMonthValue())
         return this.loadCurrentMonth().then(() => {

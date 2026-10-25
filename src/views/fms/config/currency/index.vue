@@ -122,6 +122,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAccountSetList } from '@/api/fms/config/account-set'
 import { FmsCurrencyApi } from '@/api/fms/config/currency'
 import { DICT_TYPE } from '@/utils/dict'
@@ -143,7 +144,7 @@ export default {
   },
   computed: {
     currentAccountSet() {
-      return this.accountSets.find(item => Number(item.id) === Number(this.accountSetId)) || null
+      return this.accountSets.find(item => parseId(item.id) === parseId(this.accountSetId)) || null
     },
     isWritable() {
       return !!(this.currentAccountSet && [1, 3].includes(Number(this.currentAccountSet.level)))
@@ -158,7 +159,7 @@ export default {
       return getAccountSetList().then(response => {
         const rows = response.data
         this.accountSets = rows.filter(item => item && item.initialized !== false)
-        if (!this.accountSetId || !this.accountSets.some(item => Number(item.id) === Number(this.accountSetId))) {
+        if (!this.accountSetId || !this.accountSets.some(item => parseId(item.id) === parseId(this.accountSetId))) {
           const preferred = this.accountSets.find(item => item.defaultStatus) || this.accountSets[0]
           this.accountSetId = preferred ? preferred.id : 0
         }
@@ -168,7 +169,7 @@ export default {
       })
     },
     handleAccountSetChange(id) {
-      const current = this.accountSets.find(item => Number(item.id) === Number(id))
+      const current = this.accountSets.find(item => parseId(item.id) === parseId(id))
       if (current) saveFmsAccountSet(current)
       this.getList()
     },

@@ -18,13 +18,14 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as TemplateApi from '@/api/oa/officialdoc/template'
 
 export default {
   name: 'OaOfficialDocTemplateSelect',
   props: {
     value: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     },
     disabled: {
@@ -55,8 +56,8 @@ export default {
   },
   methods: {
     handleChange(value) {
-      this.$emit('input', typeof value === 'number' ? value : undefined)
-      this.$emit('change', typeof value === 'number' ? value : undefined)
+      this.$emit('input', parseId(value))
+      this.$emit('change', parseId(value))
     },
     // 获得套红模板列表
     getList() {

@@ -64,6 +64,7 @@
 
 </template>
 <script>
+import { parseId } from '@/utils/id'
 import { defineComponent as _defineComponent } from 'vue'
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { useMessage } from '@/views/im/utils/messageUi'
@@ -324,8 +325,8 @@ export default /* #__PURE__*/_defineComponent({
       // 已加入的远端：实际推流；屏幕共享在网格里独占该成员的格子，无则降级 Camera
       const joined = new Set()
       for (const rp of lk.remoteParticipants.value) {
-        const userId = Number(rp.identity)
-        if (Number.isNaN(userId)) {
+        const userId = parseId(rp.identity)
+        if (userId === undefined) {
           continue
         }
         joined.add(userId)

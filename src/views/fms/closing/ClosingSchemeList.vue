@@ -126,7 +126,7 @@ export default {
     SpecialClosingSettingsForm
   },
   props: {
-    accountSetId: { type: Number, required: true },
+    accountSetId: { type: [Number, String], required: true },
     month: { type: String, required: true },
     currentPeriod: { type: Boolean, required: true },
     closed: { type: Boolean, required: true },

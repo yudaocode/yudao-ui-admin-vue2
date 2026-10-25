@@ -53,6 +53,7 @@
   </div>
 </template>
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { DICT_TYPE, getDictData, getDictDataLabel } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
 import { getOperateLogPage } from '@/api/hrm/operate-log'
@@ -68,7 +69,7 @@ export default {
   name: 'HrmRecruitCandidateDetail',
   components: { RecruitCandidateForm, RecruitCandidateDetailsHeader, RecruitCandidateDetailsInfo, RecruitCandidateInterviewList, RecruitCandidateMaterialFiles },
   data() { return { candidateId: undefined, loading: true, activeTab: 'detail', candidate: {}, interviewList: [], logList: [] } },
-  created() { this.candidateId = Number(this.$route.params.id); if (!Number.isSafeInteger(this.candidateId) || this.candidateId <= 0) { this.$modal.msgWarning('参数错误，招聘候选人不能为空！'); this.close(); return } this.getCandidate() },
+  created() { this.candidateId = parseId(this.$route.params.id); if (!isPositiveId(this.candidateId)) { this.$modal.msgWarning('参数错误，招聘候选人不能为空！'); this.close(); return } this.getCandidate() },
   methods: {
     formatDate,
     close() { this.$store.dispatch('tagsView/delView', this.$route); this.$router.push({ name: 'HrmRecruitCandidate' }) },

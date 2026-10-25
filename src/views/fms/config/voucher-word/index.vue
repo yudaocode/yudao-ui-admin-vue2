@@ -117,6 +117,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAccountSetList } from '@/api/fms/config/account-set'
 import { FmsVoucherWordApi } from '@/api/fms/config/voucher-word'
 import { DICT_TYPE } from '@/utils/dict'
@@ -138,7 +139,7 @@ export default {
   },
   computed: {
     currentAccountSet() {
-      return this.accountSets.find(item => Number(item.id) === Number(this.accountSetId)) || null
+      return this.accountSets.find(item => parseId(item.id) === parseId(this.accountSetId)) || null
     },
     isWritable() {
       return Boolean(this.currentAccountSet && [1, 3].includes(Number(this.currentAccountSet.level)))
@@ -155,7 +156,7 @@ export default {
       return getAccountSetList().then(response => {
         const rows = response.data
         this.accountSets = rows.filter(item => item && item.initialized !== false)
-        if (!this.accountSetId || !this.accountSets.some(item => Number(item.id) === Number(this.accountSetId))) {
+        if (!this.accountSetId || !this.accountSets.some(item => parseId(item.id) === parseId(this.accountSetId))) {
           const preferred = this.accountSets.find(item => item.defaultStatus) || this.accountSets[0]
           this.accountSetId = preferred ? preferred.id : 0
         }
@@ -164,12 +165,12 @@ export default {
       })
     },
     handleAccountSetChange(id) {
-      const current = this.accountSets.find(item => Number(item.id) === Number(id))
+      const current = this.accountSets.find(item => parseId(item.id) === parseId(id))
       if (current) saveFmsAccountSet(current)
       return this.getList()
     },
     getList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.requestSequence
       if (!accountSetId) {
         this.list = []
@@ -178,7 +179,7 @@ export default {
       }
       this.loading = true
       return FmsVoucherWordApi.getVoucherWordList(accountSetId).then(response => {
-        if (sequence !== this.requestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.requestSequence || accountSetId !== parseId(this.accountSetId)) return
         const rows = response.data
         this.list = rows
       }).finally(() => {
@@ -187,7 +188,7 @@ export default {
     },
     openForm(type, row) {
       if (!this.accountSetId) return
-      this.$refs.form.open(type, Number(this.accountSetId), row)
+      this.$refs.form.open(type, parseId(this.accountSetId), row)
     },
     handleDelete(row) {
       if (!this.accountSetId) return
@@ -196,7 +197,7 @@ export default {
         return
       }
       this.$modal.confirm('是否确认删除凭证字“' + row.name + '”？').then(() => {
-        return FmsVoucherWordApi.deleteVoucherWord(Number(this.accountSetId), row.id)
+        return FmsVoucherWordApi.deleteVoucherWord(parseId(this.accountSetId), row.id)
       }).then(() => {
         this.$modal.msgSuccess('删除成功')
         return this.getList()

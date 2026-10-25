@@ -108,6 +108,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsFinanceIndicatorApi } from '@/api/fms/config/finance-indicator'
 import { CommonStatusEnum } from '@/utils/constants'
 import { DICT_TYPE, getDictDatas } from '@/utils/dict'
@@ -139,7 +140,7 @@ export default {
     defaultForm(accountSetId) {
       return {
         id: undefined,
-        accountSetId: Number(accountSetId) || 0,
+        accountSetId: parseId(accountSetId) || 0,
         name: '',
         code: '',
         type: FMS_FINANCE_INDICATOR_TYPE.INCOME_STATEMENT,

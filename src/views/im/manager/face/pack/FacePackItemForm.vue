@@ -112,7 +112,7 @@ export default {
   name: 'ImManagerFacePackItemForm',
   components: { UploadImg },
   props: {
-    packId: { type: Number, required: true }
+    packId: { type: [Number, String], required: true }
   },
   data() {
     return {

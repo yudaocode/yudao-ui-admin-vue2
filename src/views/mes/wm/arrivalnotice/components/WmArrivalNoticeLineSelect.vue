@@ -30,7 +30,7 @@ import { WmArrivalNoticeLineApi } from '@/api/mes/wm/arrivalnotice/line'
 import WmArrivalNoticeLineSelectDialog from './WmArrivalNoticeLineSelectDialog.vue'
 export default {
   name: 'WmArrivalNoticeLineSelect', components: { WmArrivalNoticeLineSelectDialog }, inheritAttrs: false,
-  props: { value: { type: Number, default: undefined }, modelValue: { type: Number, default: undefined }, noticeId: { type: Number, default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择到货通知单行' }},
+  props: { value: { type: [Number, String], default: undefined }, modelValue: { type: [Number, String], default: undefined }, noticeId: { type: [Number, String], default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择到货通知单行' }},
   data() { return { hovering: false, selectedItem: undefined } },
   computed: { currentValue() { return this.modelValue !== undefined ? this.modelValue : this.value }, displayLabel() { return this.selectedItem ? this.selectedItem.itemCode + ' - ' + this.selectedItem.itemName : '' }, showClear() { return this.clearable && !this.disabled && this.hovering && this.currentValue != null }, suffixIcon() { return this.showClear ? 'el-icon-circle-close' : 'el-icon-search' } },
   watch: { currentValue: { immediate: true, handler(value) { this.resolveItemById(value) } }, noticeId() { this.selectedItem = undefined; this.$emit('input', undefined); this.$emit('update:modelValue', undefined); this.$emit('change', undefined) } },

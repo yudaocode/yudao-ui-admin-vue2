@@ -25,7 +25,7 @@ import { getRecruitPost, getRecruitPostSimpleList } from '@/api/hrm/recruit/post
 export default {
   name: 'HrmRecruitPostSelect',
   props: {
-    value: { type: Number, default: undefined },
+    value: { type: [Number, String], default: undefined },
     disabled: { type: Boolean, default: false },
     clearable: { type: Boolean, default: true },
     filterable: { type: Boolean, default: true },

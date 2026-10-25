@@ -455,6 +455,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import draggable from 'vuedraggable'
 import { dateFormatter, formatDate } from '@/utils/formatTime'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
@@ -493,7 +494,7 @@ function getDefaultQuery(projectId, type, iterationId, assigneeUserId) {
     iterationId,
     iterationIds: [],
     excludedIterationIds: [],
-    assigneeUserIds: assigneeUserId ? [Number(assigneeUserId)] : [],
+    assigneeUserIds: assigneeUserId ? [parseId(assigneeUserId)] : [],
     labelIds: [],
     rootOnly: true,
     lifecycleStatus: PmsWorkItemLifecycleStatus.ACTIVE
@@ -514,12 +515,12 @@ export default {
   },
   props: {
     active: { type: Boolean, default: true },
-    projectId: { type: Number, required: true },
+    projectId: { type: [Number, String], required: true },
     projectType: { type: Number, required: true },
     type: { type: Number, required: true },
     editable: { type: Boolean, required: true },
     defaultViewMode: { type: String, default: 'list' },
-    iterationId: { type: Number, default: undefined }
+    iterationId: { type: [Number, String], default: undefined }
   },
   data() {
     return {

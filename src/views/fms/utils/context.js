@@ -1,12 +1,13 @@
+import { isPositiveId, parseId } from '@/utils/id'
 import { useFmsStore } from '@/views/fms/store/fms'
 
 export const FMS_ACCOUNT_SET_CACHE_KEY = 'fmsAccountSet'
 
 export function readFmsAccountSetId(route) {
   const queryId = route && route.query && route.query.accountSetId
-  const parsedQueryId = Number(queryId)
-  if (Number.isFinite(parsedQueryId) && parsedQueryId > 0) return parsedQueryId
-  return Number(useFmsStore().getAccountSetId) || 0
+  const parsedQueryId = parseId(queryId)
+  if (isPositiveId(parsedQueryId)) return parsedQueryId
+  return parseId(useFmsStore().getAccountSetId) || 0
 }
 
 export function saveFmsAccountSet(accountSet) {

@@ -82,6 +82,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as CustomerLimitConfigApi from '@/api/crm/customer/limitConfig'
 import { getSimpleDeptList } from '@/api/system/dept'
 import { getSimpleUserList } from '@/api/system/user'
@@ -102,8 +103,8 @@ function normalizeIds(value) {
   if (Array.isArray(value)) return value
   if (value === undefined || value === null || value === '') return []
   return String(value).split(',').map(id => {
-    const numberId = Number(id)
-    return Number.isNaN(numberId) ? id : numberId
+    const numberId = parseId(id)
+    return numberId === undefined ? id : numberId
   })
 }
 

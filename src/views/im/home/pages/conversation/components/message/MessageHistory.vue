@@ -261,6 +261,7 @@
   </el-dialog>
 </template>
 <script>
+import { compareId, isPositiveId } from '@/utils/id'
 import { defineComponent as _defineComponent } from 'vue'
 import { computed, inject, ref, watch } from 'vue'
 import { formatDateKey, formatHistoryTime } from '@/views/im/utils/time'
@@ -524,8 +525,8 @@ const __sfc__ = /* @__PURE__*/_defineComponent({
       loadingMore.value = true
       try {
         // 本地占位没有服务端 id，不参与历史游标
-        const earliestId = allMessages.value.filter(message => !!message.id && message.id > 0).reduce((min, message) => Math.min(min, message.id || min), Number.POSITIVE_INFINITY)
-        const maxId = Number.isFinite(earliestId) ? earliestId : undefined
+        const earliestId = allMessages.value.map(message => message.id).filter(isPositiveId).sort(compareId)[0]
+        const maxId = earliestId
         const pageLength = await loadEarlierMessages(requestedType, requestedTargetId, maxId, HISTORY_PAGE_SIZE)
         // 返回数量 < limit 视为到顶；请求或落库失败时保留入口供重试
         if (pageLength < HISTORY_PAGE_SIZE) {

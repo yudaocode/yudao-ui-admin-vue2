@@ -35,6 +35,10 @@ const service = axios.create({
 service.interceptors.request.use(config => {
   // 是否需要设置 token
   const isToken = (config.headers || {}).isToken === false
+  if (isToken) {
+    delete config.headers.Authorization
+    delete config.headers['visit-tenant-id']
+  }
   if (getAccessToken() && !isToken) {
     config.headers['Authorization'] = 'Bearer ' + getAccessToken() // 让每个请求携带自定义token 请根据实际情况自行修改
   }
@@ -131,6 +135,8 @@ service.interceptors.response.use(async res => {
   if (ignoreMsgs.indexOf(msg) !== -1) { // 如果是忽略的错误码，直接返回 msg 异常
     return Promise.reject(msg)
   } else if (code === 401) {
+    // 匿名登录请求失败时直接返回，不刷新旧令牌或弹出旧账号的退出确认。
+    if (res.config.headers?.isToken === false) return Promise.reject(new Error(msg))
     // 如果未认证，并且未进行刷新令牌，说明可能是访问令牌过期了
     if (!isRefreshToken) {
       isRefreshToken = true

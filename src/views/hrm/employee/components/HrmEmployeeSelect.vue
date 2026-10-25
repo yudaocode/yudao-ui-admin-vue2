@@ -44,7 +44,7 @@ export default {
   inheritAttrs: false,
   model: { prop: 'value', event: 'input' },
   props: {
-    value: { type: [Number, Array], default: undefined },
+    value: { type: [Number, String, Array], default: undefined },
     multiple: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     disabledIds: { type: Array, default: () => [] },

@@ -112,7 +112,7 @@ export default {
       }
     },
     accountId() {
-      return Number(this.mpAccountContext.value)
+      return this.mpAccountContext.value
     }
   },
   watch: {

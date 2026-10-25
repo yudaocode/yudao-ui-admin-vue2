@@ -266,6 +266,7 @@
 </template>
 
 <script>
+import { isIdType, parseId } from '@/utils/id'
 import * as ProductSpuApi from '@/api/mall/product/spu'
 import * as ProductCategoryApi from '@/api/mall/product/category'
 import { ProductSpuStatusEnum } from '@/utils/constants'
@@ -311,7 +312,7 @@ export default {
     dateFormatter,
     async init() {
       if (this.$route.query.categoryId) {
-        this.queryParams.categoryId = Number(this.$route.query.categoryId)
+        this.queryParams.categoryId = parseId(this.$route.query.categoryId)
       }
       await this.getTabsCount()
       await this.getList()
@@ -384,7 +385,7 @@ export default {
       this.handleQuery()
     },
     openForm(id) {
-      if (typeof id === 'number') {
+      if (isIdType(id)) {
         this.$router.push({ name: 'ProductSpuEdit', params: { id }})
         return
       }

@@ -177,6 +177,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAttendanceMonthDetail } from '@/api/hrm/attendance/statistics'
 import { DICT_TYPE, getDictDatas } from '@/utils/dict'
 import { HRM_WEEK_OPTIONS } from '@/views/hrm/utils/constants'
@@ -227,7 +228,7 @@ export default {
   },
   computed: {
     employeeId() {
-      return Number(this.$route.params.employeeId)
+      return parseId(this.$route.params.employeeId)
     },
     year() {
       return Number(this.$route.query.year) || new Date().getFullYear()

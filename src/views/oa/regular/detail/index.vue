@@ -83,6 +83,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as RegularApplyApi from '@/api/oa/regular'
 import { DICT_TYPE } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
@@ -127,7 +128,7 @@ export default {
         return
       }
       this.detailLoading = true
-      return RegularApplyApi.getRegularApply(Number(this.detailId)).then(response => {
+      return RegularApplyApi.getRegularApply(parseId(this.detailId)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

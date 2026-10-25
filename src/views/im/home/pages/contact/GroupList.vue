@@ -58,7 +58,7 @@ const __sfc__ = /* @__PURE__*/_defineComponent({
       required: true
     },
     activeId: {
-      type: Number,
+      type: [Number, String],
       required: false
     }
   },

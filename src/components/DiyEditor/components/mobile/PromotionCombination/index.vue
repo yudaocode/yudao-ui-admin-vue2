@@ -112,6 +112,7 @@
 </template>
 
 <script>
+import { isIdType, parseId } from '@/utils/id'
 import * as ProductSpuApi from '@/api/mall/product/spu'
 import * as ActivityApi from '@/api/mall/promotion/combination/combinationActivity'
 import { fenToYuan } from '@/utils'
@@ -140,7 +141,7 @@ export default {
             this.spuList = []
             this.spuIdList = this.combinationActivityList
               .map(activity => activity.spuId)
-              .filter(spuId => typeof spuId === 'number')
+              .map(parseId).filter(isIdType)
             if (this.spuIdList.length > 0) {
               const spuResponse = await ProductSpuApi.getSpuDetailList(this.spuIdList)
               this.spuList = spuResponse.data

@@ -63,6 +63,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import UserSelectV2 from '@/views/system/user/components/UserSelectV2.vue'
 import * as ResignApplyApi from '@/api/oa/resign'
 import { DICT_TYPE } from '@/utils/dict'
@@ -109,7 +110,7 @@ export default {
         return
       }
       this.detailLoading = true
-      return ResignApplyApi.getResignApply(Number(this.detailId)).then(response => {
+      return ResignApplyApi.getResignApply(parseId(this.detailId)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

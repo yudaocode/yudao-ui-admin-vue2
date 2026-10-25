@@ -16,6 +16,7 @@
         <div class="form-cont">
           <el-tabs
             v-model="loginForm.loginType"
+            :before-leave="beforeLoginTabLeave"
             class="form"
             style=" float:none;"
             @tab-click="handleTabClick"
@@ -36,9 +37,19 @@
               label="忘记密码"
               name="forget"
             />
+            <el-tab-pane
+              label="扫码登录"
+              name="qrcode"
+            />
           </el-tabs>
           <div>
+            <QrcodeLogin
+              v-if="loginForm.loginType === 'qrcode'"
+              :redirect="redirect || '/'"
+              @back="loginForm.loginType = 'uname'"
+            />
             <el-form
+              v-else
               ref="loginForm"
               :model="loginForm"
               :rules="activeRules"
@@ -373,6 +384,7 @@ import { getTenantByWebsite, getTenantIdByName, sendSmsCode, socialAuthRedirect 
 import { register, smsResetPassword } from '@/api/login'
 import { SystemUserSocialTypeEnum } from '@/utils/constants'
 import { buildSocialRedirectUri } from '@/utils/social'
+import { parseId } from '@/utils/id'
 import { getCaptchaEnable, getTenantEnable } from '@/utils/ruoyi'
 import {
   getPassword,
@@ -386,10 +398,12 @@ import {
 } from '@/utils/auth'
 
 import Verify from '@/components/Verifition/Verify'
+import QrcodeLogin from '@/views/login/components/QrcodeLogin.vue'
 export default {
   name: 'UserLogin',
   components: {
-    Verify
+    Verify,
+    QrcodeLogin
   },
   data() {
     return {
@@ -500,8 +514,9 @@ export default {
   created() {
     // 租户开关
     this.tenantEnable = getTenantEnable()
+    let tenantReady = Promise.resolve()
     if (this.tenantEnable) {
-      getTenantIdByName(this.loginForm.tenantName).then(res => { // 设置租户
+      tenantReady = getTenantIdByName(this.loginForm.tenantName).then(res => { // 设置租户
         const tenantId = res.data
         if (tenantId && tenantId >= 0) {
           setTenantId(tenantId)
@@ -511,10 +526,10 @@ export default {
     // 验证码开关
     this.captchaEnable = getCaptchaEnable()
     // 重定向地址
-    this.redirect = this.$route.query.redirect ? decodeURIComponent(this.$route.query.redirect) : undefined
+    this.redirect = typeof this.$route.query.redirect === 'string' ? this.$route.query.redirect : undefined
     this.getCookie()
     // 根据域名识别租户
-    this.getTenantByWebsite()
+    this._tenantReady = Promise.all([tenantReady.catch(() => {}), this.getTenantByWebsite()])
   },
   methods: {
     /** 根据域名，获得租户信息 */
@@ -538,8 +553,28 @@ export default {
         callback()
       }
     },
+    async beforeLoginTabLeave(name) {
+      if (name !== 'qrcode' || !this.tenantEnable) return true
+      await this._tenantReady
+      const tenantName = this.loginForm.tenantName.trim()
+      if (!tenantName) {
+        this.$message.warning('请输入租户名称')
+        return Promise.reject()
+      }
+      try {
+        const tenantId = parseId((await getTenantIdByName(tenantName)).data)
+        if (tenantId == null) {
+          this.$message.warning('租户不存在')
+          return Promise.reject()
+        }
+        setTenantId(tenantId)
+        return true
+      } catch {
+        return Promise.reject()
+      }
+    },
     handleTabClick() {
-      this.$refs.loginForm.clearValidate()
+      this.$nextTick(() => this.$refs.loginForm && this.$refs.loginForm.clearValidate())
     },
     getCode() {
       // 注册

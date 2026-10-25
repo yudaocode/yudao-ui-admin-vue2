@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 /** 消息状态优先级；高优先级终态不可被普通消息覆盖 */
 export const MessageTerminalPriority = Object.freeze({
   NORMAL: 0,
@@ -110,7 +111,7 @@ function applyRelationState(clientConversationId, terminated, messageId) {
   if (!terminated && current?.localTerminationPending) {
     return false
   }
-  if (current && messageId <= current.messageId) {
+  if (current && compareId(messageId, current.messageId) <= 0) {
     return false
   }
   relationStates.set(clientConversationId, {

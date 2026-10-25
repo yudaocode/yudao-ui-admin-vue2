@@ -48,6 +48,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAttendanceLeave } from '@/api/hrm/attendance/leave'
 import { DICT_TYPE } from '@/utils/dict'
 import { formatHrmDateTime } from '@/views/hrm/utils/format'
@@ -78,7 +79,7 @@ export default {
   methods: {
     formatDateTime: formatHrmDateTime,
     async getLeave() {
-      const id = Number(this.id)
+      const id = parseId(this.id)
       if (!id) {
         return
       }

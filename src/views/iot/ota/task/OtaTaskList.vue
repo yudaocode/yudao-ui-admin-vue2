@@ -172,8 +172,8 @@ export default /* @__PURE__*/ _defineComponent({
   },
   __name: 'OtaTaskList',
   props: {
-    firmwareId: { type: Number, required: true },
-    productId: { type: Number, required: true }
+    firmwareId: { type: [Number, String], required: true },
+    productId: { type: [Number, String], required: true }
   },
   emits: ['success'],
   setup(__props, { expose: __expose, emit: __emit }) {

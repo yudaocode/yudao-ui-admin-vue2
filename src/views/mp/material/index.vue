@@ -92,6 +92,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import WxAccountSelect from '@/views/mp/components/wx-account-select'
 import ImageTable from './components/ImageTable.vue'
 import VoiceTable from './components/VoiceTable.vue'
@@ -140,7 +141,7 @@ export default {
   },
   methods: {
     onAccountChanged(id) {
-      this.accountId = Number(id)
+      this.accountId = parseId(id)
       this.accountContext.value = this.accountId
       this.queryParams.accountId = this.accountId
       this.queryParams.pageNo = 1

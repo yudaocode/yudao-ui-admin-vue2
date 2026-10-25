@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 import { defineStore } from './storeFactory'
 import { agreeGroupRequest as apiAgreeGroupRequest, getMyGroupRequest as apiGetMyGroupRequest, getUnhandledRequestList as apiGetUnhandledRequestList, pullMyGroupRequestList as apiPullMyGroupRequestList, refuseGroupRequest as apiRefuseGroupRequest } from '@/api/im/group/request'
 import { ImGroupRequestHandleResult } from '@/views/im/utils/constants'
@@ -46,7 +47,7 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', {
         if (cached.length === 0) {
           return
         }
-        this.unhandledList = cached.filter(request => request.handleResult === ImGroupRequestHandleResult.UNHANDLED).sort((requestA, requestB) => requestB.id - requestA.id)
+        this.unhandledList = cached.filter(request => request.handleResult === ImGroupRequestHandleResult.UNHANDLED).sort((requestA, requestB) => compareId(requestB.id, requestA.id))
       } catch (e) {
         console.warn('[IM groupRequestStore] 本地加群申请缓存读取失败', e)
       }

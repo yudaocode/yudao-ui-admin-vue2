@@ -60,7 +60,7 @@
   ref="form"
   @success="getList"
 /></div></template>
-<script>import { dateFormatter2 } from '@/utils'; import { getEmployeeCertificateList, deleteEmployeeCertificate } from '@/api/hrm/employee/certificate'; import EmployeeCertificateForm from './EmployeeCertificateForm.vue'; export default { name: 'HrmEmployeeCertificateList', components: { EmployeeCertificateForm }, props: { employeeId: { type: Number, required: true }}, data() { return { loading: true, list: [] } }, created() { this.getList() }, methods: { dateFormatter2, async getList() { this.loading = true; try { const response = await getEmployeeCertificateList(this.employeeId); this.list = response.data } finally { this.loading = false } }, openForm(row) { this.$refs.form.open(this.employeeId, row) }, async handleDelete(id) {
+<script>import { dateFormatter2 } from '@/utils'; import { getEmployeeCertificateList, deleteEmployeeCertificate } from '@/api/hrm/employee/certificate'; import EmployeeCertificateForm from './EmployeeCertificateForm.vue'; export default { name: 'HrmEmployeeCertificateList', components: { EmployeeCertificateForm }, props: { employeeId: { type: [Number, String], required: true }}, data() { return { loading: true, list: [] } }, created() { this.getList() }, methods: { dateFormatter2, async getList() { this.loading = true; try { const response = await getEmployeeCertificateList(this.employeeId); this.list = response.data } finally { this.loading = false } }, openForm(row) { this.$refs.form.open(this.employeeId, row) }, async handleDelete(id) {
   if (!id) return; try { await this.$modal.confirm('是否确认删除该证书?'); await deleteEmployeeCertificate(id); this.$modal.msgSuccess('删除成功'); await this.getList() } catch (error) {
   // 取消操作或请求失败时保留当前状态
   }

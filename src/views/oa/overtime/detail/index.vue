@@ -58,6 +58,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as OvertimeApplyApi from '@/api/oa/overtime'
 import { DICT_TYPE } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
@@ -102,7 +103,7 @@ export default {
         return
       }
       this.detailLoading = true
-      return OvertimeApplyApi.getOvertimeApply(Number(this.detailId)).then(response => {
+      return OvertimeApplyApi.getOvertimeApply(parseId(this.detailId)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

@@ -228,7 +228,7 @@ export default {
       default: ''
     },
     accountId: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     },
     newsType: {

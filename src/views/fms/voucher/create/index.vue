@@ -481,6 +481,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { FmsAuxiliaryItemApi } from '@/api/fms/config/auxiliary/item'
 import { FmsAuxiliaryTypeApi } from '@/api/fms/config/auxiliary/type'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
@@ -564,7 +565,7 @@ export default {
       )
     },
     subjectBalanceMap() {
-      return new Map(this.subjectBalances.map(item => [Number(item.subjectId), item]))
+      return new Map(this.subjectBalances.map(item => [parseId(item.subjectId), item]))
     },
     isApproved() {
       return Boolean(this.detail && Number(this.detail.status) === FMS_VOUCHER_STATUS.APPROVED)
@@ -589,10 +590,10 @@ export default {
       return this.canSave && checkPermi(['fms:voucher:create'])
     },
     voucherIds() {
-      return String(this.$route.query.ids || '').split(',').map(Number).filter(id => id > 0)
+      return String(this.$route.query.ids || '').split(',').map(parseId).filter(isPositiveId)
     },
     currentVoucherIndex() {
-      return this.voucherIds.indexOf(Number(this.$route.query.id || 0))
+      return this.voucherIds.indexOf(parseId(this.$route.query.id || 0))
     },
     previousVoucherId() {
       return this.currentVoucherIndex > 0 ? this.voucherIds[this.currentVoucherIndex - 1] : undefined
@@ -659,7 +660,7 @@ export default {
       return this.initializeCreatePage()
     },
     initializeCreatePage() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!accountSetId) return Promise.resolve()
       const sequence = ++this.createRequestSequence
       this.loading = true
@@ -669,7 +670,7 @@ export default {
         FmsSubjectApi.getSubjectSimpleList(accountSetId),
         FmsAuxiliaryTypeApi.getAuxiliaryTypeSimpleList(accountSetId)
       ]).then(responses => {
-        if (sequence !== this.createRequestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.createRequestSequence || accountSetId !== parseId(this.accountSetId)) return
         const words = responses[0].data
         const subjects = responses[1].data
         const auxiliaryTypes = responses[2].data
@@ -686,17 +687,17 @@ export default {
       if (this.accountSetId && this.voucherWords.length) this.loadRouteVoucher()
     },
     loadRouteVoucher() {
-      const voucherId = Number(this.$route.query.id || 0)
+      const voucherId = parseId(this.$route.query.id || 0)
       if (voucherId) return this.loadDetail(voucherId)
-      const copyFrom = Number(this.$route.query.copyFrom || 0)
+      const copyFrom = parseId(this.$route.query.copyFrom || 0)
       if (copyFrom) return this.initializeCopiedVoucher(copyFrom)
       return this.resetForm(false)
     },
     loadDetail(id) {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!accountSetId) return Promise.resolve()
       return FmsVoucherApi.getVoucher(accountSetId, id).then(response => {
-        if (accountSetId !== Number(this.accountSetId)) return
+        if (accountSetId !== parseId(this.accountSetId)) return
         const data = response.data
         if (!data) return
         this.detail = data
@@ -754,11 +755,11 @@ export default {
     },
     refreshVoucherNumber() {
       if (this.formData.id || !this.accountSetId || !this.formData.voucherWordId || !this.formData.voucherTime) return Promise.resolve()
-      const accountSetId = Number(this.accountSetId)
-      const voucherWordId = Number(this.formData.voucherWordId)
+      const accountSetId = parseId(this.accountSetId)
+      const voucherWordId = parseId(this.formData.voucherWordId)
       const voucherTime = this.formData.voucherTime
       return FmsVoucherApi.getNextVoucherNumber(accountSetId, voucherWordId, formatDateTime(voucherTime)).then(response => {
-        if (accountSetId !== Number(this.accountSetId) || voucherWordId !== Number(this.formData.voucherWordId) || voucherTime !== this.formData.voucherTime) return
+        if (accountSetId !== parseId(this.accountSetId) || voucherWordId !== parseId(this.formData.voucherWordId) || voucherTime !== this.formData.voucherTime) return
         this.formData.voucherNumber = Number(response.data) || undefined
       })
     },
@@ -771,9 +772,9 @@ export default {
     },
     loadSubjectBalances(month) {
       if (!this.accountSetId || !month) return Promise.resolve()
-      const accountSetId = Number(this.accountSetId)
+      const accountSetId = parseId(this.accountSetId)
       return FmsVoucherApi.getVoucherSubjectBalanceList(accountSetId, month).then(response => {
-        if (accountSetId !== Number(this.accountSetId) || month !== formatMonth(this.formData.voucherTime)) return
+        if (accountSetId !== parseId(this.accountSetId) || month !== formatMonth(this.formData.voucherTime)) return
         const rows = response.data
         this.subjectBalances = rows
       })
@@ -842,19 +843,19 @@ export default {
     },
     loadEntryAuxiliaryOptions(entry) {
       const typeIds = this.getSubjectAuxiliaryTypeIds(entry.subjectId)
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!typeIds.length || !accountSetId) return Promise.resolve()
       return Promise.all(typeIds.map(typeId => {
         if (this.auxiliaryOptions[typeId]) return Promise.resolve()
         return FmsAuxiliaryItemApi.getAuxiliaryItemSimpleList(accountSetId, typeId).then(response => {
-          if (accountSetId !== Number(this.accountSetId)) return
+          if (accountSetId !== parseId(this.accountSetId)) return
           const rows = response.data
           this.$set(this.auxiliaryOptions, typeId, rows)
         })
       })).then(() => this.loadEntryAuxiliaryBalance(entry))
     },
     loadEntryAuxiliaryBalance(entry) {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const subject = this.getSubject(entry.subjectId)
       const typeIds = this.getSubjectAuxiliaryTypeIds(entry.subjectId)
       const itemIds = typeIds.map(typeId => this.getEntryAuxiliaryItemId(entry, typeId))
@@ -864,16 +865,16 @@ export default {
       }
       const month = formatMonth(this.formData.voucherTime)
       return FmsVoucherApi.getVoucherAuxiliaryBalance(accountSetId, month, subject.id, itemIds).then(response => {
-        if (accountSetId !== Number(this.accountSetId) || month !== formatMonth(this.formData.voucherTime) || Number(subject.id) !== Number(entry.subjectId)) return
+        if (accountSetId !== parseId(this.accountSetId) || month !== formatMonth(this.formData.voucherTime) || parseId(subject.id) !== parseId(entry.subjectId)) return
         this.$set(this.auxiliaryBalances, entry.rowKey, response.data)
       })
     },
     getSubject(subjectId) {
-      return this.flatSubjects.find(subject => Number(subject.id) === Number(subjectId))
+      return this.flatSubjects.find(subject => parseId(subject.id) === parseId(subjectId))
     },
     getEntrySubjectOptions(entry) {
       const currentSubject = this.getSubject(entry.subjectId)
-      if (!currentSubject || this.leafSubjects.some(subject => Number(subject.id) === Number(currentSubject.id))) return this.leafSubjects
+      if (!currentSubject || this.leafSubjects.some(subject => parseId(subject.id) === parseId(currentSubject.id))) return this.leafSubjects
       return this.leafSubjects.concat(currentSubject)
     },
     getSubjectAuxiliaryTypeIds(subjectId) {
@@ -881,14 +882,14 @@ export default {
       return subject && Array.isArray(subject.auxiliaryTypeIds) ? subject.auxiliaryTypeIds : []
     },
     getAuxiliaryType(typeId) {
-      return this.auxiliaryTypes.find(item => Number(item.id) === Number(typeId))
+      return this.auxiliaryTypes.find(item => parseId(item.id) === parseId(typeId))
     },
     getAuxiliaryTypeName(typeId) {
       const type = this.getAuxiliaryType(typeId)
       return type ? type.name : ''
     },
     getEntryAuxiliary(entry, typeId) {
-      let auxiliary = (entry.auxiliaries || []).find(item => Number(item.typeId) === Number(typeId))
+      let auxiliary = (entry.auxiliaries || []).find(item => parseId(item.typeId) === parseId(typeId))
       if (!auxiliary) {
         auxiliary = { typeId, type: this.getAuxiliaryType(typeId) && this.getAuxiliaryType(typeId).type, itemId: undefined }
         entry.auxiliaries.push(auxiliary)
@@ -896,7 +897,7 @@ export default {
       return auxiliary
     },
     getEntryAuxiliaryItemId(entry, typeId) {
-      const auxiliary = (entry.auxiliaries || []).find(item => Number(item.typeId) === Number(typeId))
+      const auxiliary = (entry.auxiliaries || []).find(item => parseId(item.typeId) === parseId(typeId))
       return auxiliary && auxiliary.itemId
     },
     setEntryAuxiliary(entry, typeId, itemId) {
@@ -906,7 +907,7 @@ export default {
     formatEntryBalance(entry) {
       const balance = this.getSubjectAuxiliaryTypeIds(entry.subjectId).length
         ? this.auxiliaryBalances[entry.rowKey]
-        : this.subjectBalanceMap.get(Number(entry.subjectId))
+        : this.subjectBalanceMap.get(parseId(entry.subjectId))
       return formatSubjectBalance(balance && balance.balance, balance && balance.balanceDirection)
     },
     formatEntrySubject(entry) {
@@ -952,10 +953,10 @@ export default {
       this.$refs.subjectForm.open('create', subjectType)
     },
     refreshSubjectOptions() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!accountSetId) return Promise.resolve()
       return FmsSubjectApi.getSubjectSimpleList(accountSetId).then(response => {
-        if (accountSetId !== Number(this.accountSetId)) return
+        if (accountSetId !== parseId(this.accountSetId)) return
         const rows = response.data
         this.subjects = buildTree(rows)
       })
@@ -967,11 +968,11 @@ export default {
       this.$refs.auxiliaryItemForm.open(type, undefined, this.accountSetId)
     },
     refreshAuxiliaryItemOptions() {
-      const accountSetId = Number(this.accountSetId) || 0
-      const typeId = Number(this.creatingAuxiliaryTypeId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
+      const typeId = parseId(this.creatingAuxiliaryTypeId) || 0
       if (!accountSetId || !typeId) return Promise.resolve()
       return FmsAuxiliaryItemApi.getAuxiliaryItemSimpleList(accountSetId, typeId).then(response => {
-        if (accountSetId !== Number(this.accountSetId)) return
+        if (accountSetId !== parseId(this.accountSetId)) return
         const rows = response.data
         this.$set(this.auxiliaryOptions, typeId, rows)
         this.creatingAuxiliaryTypeId = undefined
@@ -1128,7 +1129,7 @@ export default {
       }
       return {
         id: this.formData.id,
-        accountSetId: Number(this.accountSetId),
+        accountSetId: parseId(this.accountSetId),
         voucherWordId,
         voucherNumber,
         voucherTime: this.formData.voucherTime,
@@ -1183,11 +1184,11 @@ export default {
       this.loading = true
       const request = payload.id
         ? FmsVoucherApi.updateVoucher(payload).then(() => payload.id)
-        : FmsVoucherApi.createVoucher(payload).then(response => Number(response.data))
+        : FmsVoucherApi.createVoucher(payload).then(response => parseId(response.data))
       request.then(voucherId => {
         this.$modal.msgSuccess('保存成功')
         if (saveAndCreate) return this.resetForm()
-        if (Number(this.$route.query.id) === Number(voucherId)) return this.loadDetail(voucherId)
+        if (parseId(this.$route.query.id) === parseId(voucherId)) return this.loadDetail(voucherId)
         return this.$router.replace({
           path: '/fms/voucher/create',
           query: { accountSetId: this.accountSetId, id: voucherId }

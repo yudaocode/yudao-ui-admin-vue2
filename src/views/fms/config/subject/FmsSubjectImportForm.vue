@@ -83,6 +83,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as SubjectApi from '@/api/fms/config/subject'
 
 export default {
@@ -102,7 +103,7 @@ export default {
   },
   methods: {
     open(accountSetId) {
-      this.accountSetId = Number(accountSetId) || 0
+      this.accountSetId = parseId(accountSetId) || 0
       this.visible = true
       this.reset()
     },

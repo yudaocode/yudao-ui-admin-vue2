@@ -107,20 +107,21 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { ProRouteProductBomApi } from '@/api/mes/pro/route/productbom'
 import { ProRouteProcessApi } from '@/api/mes/pro/route/process'
 import MdProductBomSelect from '@/views/mes/md/item/components/MdProductBomSelect.vue'
 
 export default {
   name: 'RouteProductBomList', components: { MdProductBomSelect },
-  props: { routeId: { type: Number, required: true }, productId: { type: Number, required: true }, productName: { type: String, default: undefined }},
+  props: { routeId: { type: [Number, String], required: true }, productId: { type: [Number, String], required: true }, productName: { type: String, default: undefined }},
   data() { return { loading: false, bomList: [], processList: [], activeProcessId: '', formVisible: false, formTitle: '', formLoading: false, formType: '', formData: {}, formRules: { itemId: [{ required: true, message: 'BOM 物料不能为空', trigger: 'change' }], quantity: [{ required: true, message: '用料比例不能为空', trigger: 'blur' }] }} },
   created() { this.loadProcessList() },
   methods: {
     async loadProcessList() { const response = await ProRouteProcessApi.getRouteProcessListByRoute(this.routeId); this.processList = response.data; if (this.processList.length) { this.activeProcessId = String(this.processList[0].processId); await this.getBomList() } },
-    async getBomList() { if (!this.activeProcessId) return; this.loading = true; try { const response = await ProRouteProductBomApi.getRouteProductBomList({ routeId: this.routeId, processId: Number(this.activeProcessId), productId: this.productId }); this.bomList = response.data } finally { this.loading = false } },
+    async getBomList() { if (!this.activeProcessId) return; this.loading = true; try { const response = await ProRouteProductBomApi.getRouteProductBomList({ routeId: this.routeId, processId: parseId(this.activeProcessId), productId: this.productId }); this.bomList = response.data } finally { this.loading = false } },
     handleTabChange() { return this.getBomList() },
-    openForm(type, row) { this.formVisible = true; this.formTitle = type === 'create' ? '添加 BOM 物料' : '编辑 BOM 物料'; this.formType = type; this.formData = type === 'create' ? { routeId: this.routeId, processId: Number(this.activeProcessId), productId: this.productId, itemId: undefined, quantity: 1, remark: undefined } : { ...row }; this.$nextTick(() => { if (this.$refs.form) this.$refs.form.resetFields() }) },
+    openForm(type, row) { this.formVisible = true; this.formTitle = type === 'create' ? '添加 BOM 物料' : '编辑 BOM 物料'; this.formType = type; this.formData = type === 'create' ? { routeId: this.routeId, processId: parseId(this.activeProcessId), productId: this.productId, itemId: undefined, quantity: 1, remark: undefined } : { ...row }; this.$nextTick(() => { if (this.$refs.form) this.$refs.form.resetFields() }) },
     handleBomItemChange(bom) { if (bom) this.formData.quantity = bom.quantity == null ? 1 : bom.quantity },
     submitForm() { this.$refs.form.validate(async valid => { if (!valid) return; this.formLoading = true; try { if (this.formType === 'create') { await ProRouteProductBomApi.createRouteProductBom(this.formData); this.$modal.msgSuccess('新增成功') } else { await ProRouteProductBomApi.updateRouteProductBom(this.formData); this.$modal.msgSuccess('修改成功') } this.formVisible = false; await this.getBomList() } finally { this.formLoading = false } }) },
     async handleDelete(id) { try { await this.$modal.confirm('是否确认删除该产品 BOM？'); await ProRouteProductBomApi.deleteRouteProductBom(id); this.$modal.msgSuccess('删除成功'); await this.getBomList() } catch (error) { /* canceled */ } }

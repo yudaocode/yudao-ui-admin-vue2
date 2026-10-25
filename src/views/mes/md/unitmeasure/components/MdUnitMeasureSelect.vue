@@ -57,8 +57,8 @@ export default {
   name: 'MdUnitMeasureSelect',
   inheritAttrs: false,
   props: {
-    value: { type: Number, default: undefined },
-    modelValue: { type: Number, default: undefined },
+    value: { type: [Number, String], default: undefined },
+    modelValue: { type: [Number, String], default: undefined },
     disabled: { type: Boolean, default: false },
     clearable: { type: Boolean, default: true },
     placeholder: { type: String, default: '请选择计量单位' }

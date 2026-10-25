@@ -149,6 +149,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import {
   deletePropertyValue,
   getProperty,
@@ -169,7 +170,7 @@ export default {
       queryParams: {
         pageNo: 1,
         pageSize: 10,
-        propertyId: Number(this.$route.params.propertyId),
+        propertyId: parseId(this.$route.params.propertyId),
         name: undefined
       }
     }

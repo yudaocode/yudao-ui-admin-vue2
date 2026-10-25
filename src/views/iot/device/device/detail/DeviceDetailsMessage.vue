@@ -163,7 +163,7 @@ export default /* @__PURE__*/ _defineComponent({
     Icon: IotIcon
   },
   props: {
-    deviceId: { type: Number, required: true }
+    deviceId: { type: [Number, String], required: true }
   },
   setup(__props, { expose: __expose }) {
     const props = __props

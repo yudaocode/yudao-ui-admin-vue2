@@ -111,6 +111,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import * as KnowledgeDocumentApi from '@/api/pms/kb/content/document'
 import * as KnowledgeDocumentLabelApi from '@/api/pms/kb/content/document/label'
 import * as KnowledgeFolderApi from '@/api/pms/kb/content/folder'
@@ -167,7 +168,7 @@ export default {
   },
   computed: {
     libraryId() {
-      return Number(this.$route.params.libraryId)
+      return parseId(this.$route.params.libraryId)
     },
     treeData() {
       if (!this.tree) return []
@@ -241,16 +242,16 @@ export default {
     },
     async getRouteContent() {
       if (!this.library || this.library.id !== this.libraryId) return
-      const documentId = Number(this.$route.params.documentId)
-      if (Number.isFinite(documentId) && documentId > 0) {
+      const documentId = parseId(this.$route.params.documentId)
+      if (isPositiveId(documentId)) {
         const response = await KnowledgeDocumentApi.getKnowledgeDocument(documentId, true)
         this.selectedDocument = response.data
         this.selectedFolder = undefined
         this.activeView = 'document'
         return
       }
-      const folderId = Number(this.$route.params.folderId)
-      if (Number.isFinite(folderId) && folderId > 0) {
+      const folderId = parseId(this.$route.params.folderId)
+      if (isPositiveId(folderId)) {
         const response = await KnowledgeFolderApi.getKnowledgeFolder(folderId, true)
         this.selectedFolder = response.data
         this.selectedDocument = undefined

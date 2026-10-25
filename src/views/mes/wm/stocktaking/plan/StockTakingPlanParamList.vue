@@ -216,6 +216,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { ref, reactive, computed, watch, toRefs, getCurrentInstance } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { StockTakingPlanParamApi } from '@/api/mes/wm/stocktaking/plan/param'
@@ -341,7 +342,7 @@ export default {
         const data = {
           ...formData.value,
           planId: props.planId,
-          valueId: formData.value.valueId != null ? Number(formData.value.valueId) : undefined
+          valueId: formData.value.valueId != null ? parseId(formData.value.valueId) : undefined
         }
         if (formType.value === 'create') {
           (await StockTakingPlanParamApi.createStockTakingPlanParam(data)).data

@@ -19,13 +19,14 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as NoteCategoryApi from '@/api/oa/note/category'
 
 export default {
   name: 'OaNoteCategorySelect',
   props: {
     value: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     },
     categories: {
@@ -66,7 +67,7 @@ export default {
   methods: {
     /** 选中变化 */
     handleChange(value) {
-      this.$emit('input', typeof value === 'number' ? value : undefined)
+      this.$emit('input', parseId(value))
     },
     /** 查询分类列表 */
     getCategoryList() {

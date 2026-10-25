@@ -49,6 +49,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsVoucherApi } from '@/api/fms/voucher'
 import { checkPermi } from '@/utils/permission'
 import { useFmsStore } from '@/views/fms/store/fms'
@@ -80,8 +81,8 @@ export default {
   },
   methods: {
     open(accountSetId, voucher) {
-      this.accountSetId = Number(accountSetId) || 0
-      this.voucherId = Number(voucher && voucher.id) || 0
+      this.accountSetId = parseId(accountSetId) || 0
+      this.voucherId = parseId(voucher && voucher.id) || 0
       this.attachmentUrls = Array.isArray(voucher && voucher.attachmentUrls)
         ? voucher.attachmentUrls.slice()
         : []

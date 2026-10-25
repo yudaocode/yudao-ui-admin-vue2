@@ -59,7 +59,7 @@ export default {
   },
   computed: {
     accountId() {
-      return Number(this.mpAccountContext.value)
+      return this.mpAccountContext.value
     }
   },
   watch: {

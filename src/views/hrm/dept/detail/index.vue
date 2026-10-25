@@ -54,6 +54,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { getEmployeeDeptStatistics } from '@/api/hrm/employee'
 import { getDept, getSimpleDeptList } from '@/api/system/dept'
 import { getSimpleUserList } from '@/api/system/user'
@@ -82,8 +83,8 @@ export default {
     }
   },
   created() {
-    this.deptId = Number(this.$route.params.id)
-    if (!Number.isSafeInteger(this.deptId) || this.deptId <= 0) {
+    this.deptId = parseId(this.$route.params.id)
+    if (!isPositiveId(this.deptId)) {
       this.$modal.msgWarning('参数错误，部门不能为空！')
       this.close()
       return

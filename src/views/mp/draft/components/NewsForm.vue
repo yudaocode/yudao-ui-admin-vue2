@@ -205,7 +205,7 @@ export default {
     editorConfig() {
       return createEditorConfig(
         UPLOAD_URL,
-        Number(this.mpAccountContext.value),
+        this.mpAccountContext.value,
         message => this.$message.error(message)
       )
     }

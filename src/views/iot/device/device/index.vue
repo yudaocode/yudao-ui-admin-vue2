@@ -503,6 +503,7 @@
   </div>
 </template>
 <script>
+import { parseId } from '@/utils/id'
 import '@/views/iot/styles/vue2.css'
 import { createIotMessage } from '@/views/iot/utils/ui'
 import { useIotI18n } from '@/views/iot/utils/ui'
@@ -662,7 +663,7 @@ export default /* @__PURE__*/ _defineComponent({
       // 处理 productId 参数
       const { productId } = route.query
       if (productId) {
-        queryParams.productId = Number(productId)
+        queryParams.productId = parseId(productId)
       }
       await getList()
       // 获取产品列表

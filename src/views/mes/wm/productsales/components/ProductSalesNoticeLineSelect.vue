@@ -18,8 +18,8 @@ export default {
   components: { ProductSalesEntitySelect },
   inheritAttrs: false,
   props: {
-    value: { type: Number, default: undefined },
-    noticeId: { type: Number, default: undefined }
+    value: { type: [Number, String], default: undefined },
+    noticeId: { type: [Number, String], default: undefined }
   }
 }
 </script>

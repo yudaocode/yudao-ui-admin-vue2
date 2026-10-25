@@ -178,6 +178,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsFinanceParameterApi } from '@/api/fms/config/finance-parameter'
 import * as SubjectApi from '@/api/fms/config/subject'
 import { getDictDatas, DICT_TYPE } from '@/utils/dict'
@@ -268,7 +269,7 @@ export default {
     },
     async open(type, subjectType, row, parent) {
       this.formType = type
-      this.accountSetId = Number((row && row.accountSetId) || (parent && parent.accountSetId) || readFmsAccountSetId(this.$route))
+      this.accountSetId = parseId((row && row.accountSetId) || (parent && parent.accountSetId) || readFmsAccountSetId(this.$route))
       if (!this.accountSetId) return
       this.title = type === 'update' ? '编辑科目' : (parent ? '新建下级科目' : '新建科目')
       this.resetForm(this.accountSetId, subjectType, parent)
@@ -460,7 +461,7 @@ export default {
     },
     findById(items, id) {
       for (let i = 0; i < (items || []).length; i += 1) {
-        if (Number(items[i].id) === Number(id)) return items[i]
+        if (parseId(items[i].id) === parseId(id)) return items[i]
         const child = this.findById(items[i].children, id)
         if (child) return child
       }

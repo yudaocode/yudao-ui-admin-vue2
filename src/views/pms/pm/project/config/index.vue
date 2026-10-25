@@ -75,6 +75,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as ProjectApi from '@/api/pms/pm/project'
 import { Icon } from '@/components/Icon'
 import { PmsProjectStatus } from '@/views/pms/pm/utils/constants'
@@ -87,7 +88,7 @@ export default {
   components: { Icon, ProjectAnnouncementList, ProjectBasicInfo, ProjectCollaborationConfig, ProjectMemberList },
   data() { return { loading: false, project: {}, activeTab: 'basic' } },
   computed: {
-    projectId() { return Number(this.$route.params.id) },
+    projectId() { return parseId(this.$route.params.id) },
     editable() { return this.project.writeStatus && this.project.status === PmsProjectStatus.ACTIVE }
   },
   watch: {
@@ -115,7 +116,7 @@ export default {
       return this.$router.push({ name: 'PmsProjectDetail', params: { id: this.projectId }})
     },
     init() {
-      if (!this.projectId || Number.isNaN(this.projectId)) {
+      if (!this.projectId || this.projectId === undefined) {
         this.$message.warning('参数错误，项目不能为空！')
         return this.close()
       }

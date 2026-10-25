@@ -24,8 +24,8 @@ export default {
   name: 'PmsWorkItemStatusSelect',
   model: { prop: 'modelValue', event: 'update:modelValue' },
   props: {
-    modelValue: { type: Number, default: undefined },
-    projectId: { type: Number, required: true },
+    modelValue: { type: [Number, String], default: undefined },
+    projectId: { type: [Number, String], required: true },
     workItemType: { type: Number, required: true },
     placeholder: { type: String, default: '请选择状态' }
   },

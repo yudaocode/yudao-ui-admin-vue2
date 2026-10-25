@@ -28,7 +28,7 @@
   ref="form"
   @success="getSalaryCard"
 /></el-card></template>
-<script>import { getEmployeeSalaryCard, deleteEmployeeSalaryCard } from '@/api/hrm/employee/salary-card'; import EmployeeSalaryCardForm from './EmployeeSalaryCardForm.vue'; export default { name: 'HrmEmployeeSalaryCardInfo', components: { EmployeeSalaryCardForm }, props: { employeeId: { type: Number, required: true }}, data() { return { loading: true, salaryCard: undefined } }, created() { this.getSalaryCard() }, methods: { async getSalaryCard() { this.loading = true; try { const response = await getEmployeeSalaryCard(this.employeeId); this.salaryCard = response.data } finally { this.loading = false } }, openForm() { this.$refs.form.open(this.employeeId) }, async handleDelete() {
+<script>import { getEmployeeSalaryCard, deleteEmployeeSalaryCard } from '@/api/hrm/employee/salary-card'; import EmployeeSalaryCardForm from './EmployeeSalaryCardForm.vue'; export default { name: 'HrmEmployeeSalaryCardInfo', components: { EmployeeSalaryCardForm }, props: { employeeId: { type: [Number, String], required: true }}, data() { return { loading: true, salaryCard: undefined } }, created() { this.getSalaryCard() }, methods: { async getSalaryCard() { this.loading = true; try { const response = await getEmployeeSalaryCard(this.employeeId); this.salaryCard = response.data } finally { this.loading = false } }, openForm() { this.$refs.form.open(this.employeeId) }, async handleDelete() {
   try { await this.$modal.confirm('确定删除当前员工的工资卡信息吗？'); await deleteEmployeeSalaryCard(this.employeeId); this.$modal.msgSuccess('工资卡删除成功'); await this.getSalaryCard() } catch (error) {
   // 取消操作或请求失败时保留当前状态
   }

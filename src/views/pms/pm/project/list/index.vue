@@ -437,6 +437,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { dateFormatter } from '@/utils/formatTime'
 import { checkPermi } from '@/utils/permission'
 import { Icon } from '@/components/Icon'
@@ -577,7 +578,7 @@ export default {
     async handleProjectCommand(command, project) {
       if (command === 'config') return this.openProjectConfig(project.id)
       if (command === 'exit') return this.handleExit(project)
-      if (command.startsWith('group:')) return this.handleMoveGroup(project.id, Number(command.substring(6)))
+      if (command.startsWith('group:')) return this.handleMoveGroup(project.id, parseId(command.substring(6)))
       if (command !== 'archive' && command !== 'recycle') return
       try {
         await this.$confirm(command === 'archive' ? '确认归档项目“' + project.name + '”吗？' : '确认将项目“' + project.name + '”移入回收站吗？', '提示', { type: 'warning' })

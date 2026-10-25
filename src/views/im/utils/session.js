@@ -1,6 +1,7 @@
+import { isPositiveId, parseId } from '@/utils/id'
 import store from '@/store'
 
 export function getCurrentUserId() {
-  const id = Number(store.getters.userId)
-  return Number.isFinite(id) && id > 0 ? id : 0
+  const id = parseId(store.getters.userId)
+  return isPositiveId(id) ? id : 0
 }

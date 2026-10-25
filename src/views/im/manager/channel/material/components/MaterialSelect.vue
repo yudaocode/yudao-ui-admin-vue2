@@ -21,8 +21,8 @@ export default {
   name: 'ImMaterialSelect',
   inheritAttrs: false,
   props: {
-    value: { type: Number, default: undefined },
-    channelId: { type: Number, default: undefined }
+    value: { type: [Number, String], default: undefined },
+    channelId: { type: [Number, String], default: undefined }
   },
   data() {
     return { materialList: [] }

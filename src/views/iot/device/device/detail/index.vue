@@ -91,6 +91,7 @@
   </div>
 </template>
 <script>
+import { parseId } from '@/utils/id'
 import '@/views/iot/styles/vue2.css'
 import { createIotMessage } from '@/views/iot/utils/ui'
 import { useRoute, useRouter } from '@/views/iot/utils/composables'
@@ -125,7 +126,7 @@ export default /* @__PURE__*/ _defineComponent({
     __expose()
     const route = useRoute()
     const message = createIotMessage()
-    const id = Number(route.params.id) // 将字符串转换为数字
+    const id = parseId(route.params.id) // 将字符串转换为数字
     const loading = ref(true) // 加载中
     const product = ref({}) // 产品详情
     const device = ref({}) // 设备详情

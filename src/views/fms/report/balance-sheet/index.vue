@@ -137,6 +137,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsBalanceSheetApi } from '@/api/fms/report/balanceSheet'
 import FmsReportCheckAlert from '@/views/fms/report/components/FmsReportCheckAlert.vue'
 import FmsReportFormulaForm from '@/views/fms/report/components/FmsReportFormulaForm.vue'
@@ -185,11 +186,11 @@ export default {
   methods: {
     handleQuery(value) {
       this.periodLabel = value.label
-      Object.assign(this.queryParams, value, { accountSetId: Number(this.accountSetId) || 0 })
+      Object.assign(this.queryParams, value, { accountSetId: parseId(this.accountSetId) || 0 })
       return this.getList()
     },
     getList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.requestSequence
       if (!accountSetId || !this.queryParams.endMonth) {
         this.list = []
@@ -202,7 +203,7 @@ export default {
         FmsBalanceSheetApi.getBalanceSheet(params),
         FmsBalanceSheetApi.checkBalanceSheet(params)
       ]).then(responses => {
-        if (sequence !== this.requestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.requestSequence || accountSetId !== parseId(this.accountSetId)) return
         this.list = responses[0].data
         this.checkResult = responses[1].data
       }).finally(() => {

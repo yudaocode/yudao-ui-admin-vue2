@@ -226,6 +226,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsCashFlowStatementApi } from '@/api/fms/report/cashFlowStatement'
 import FmsReportCheckAlert from '@/views/fms/report/components/FmsReportCheckAlert.vue'
 import FmsReportFormulaForm from '@/views/fms/report/components/FmsReportFormulaForm.vue'
@@ -284,11 +285,11 @@ export default {
   methods: {
     handleQuery(value) {
       this.periodLabel = value.label
-      Object.assign(this.queryParams, value, { accountSetId: Number(this.accountSetId) || 0 })
+      Object.assign(this.queryParams, value, { accountSetId: parseId(this.accountSetId) || 0 })
       return this.getList()
     },
     getList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.listRequestSequence
       if (!accountSetId || !this.queryParams.endMonth) {
         this.list = []
@@ -301,7 +302,7 @@ export default {
         FmsCashFlowStatementApi.getCashFlowStatement(params),
         FmsCashFlowStatementApi.checkCashFlowStatement(params)
       ]).then(responses => {
-        if (sequence !== this.listRequestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.listRequestSequence || accountSetId !== parseId(this.accountSetId)) return
         this.list = responses[0].data
         this.checkResult = responses[1].data
       }).finally(() => {
@@ -345,7 +346,7 @@ export default {
       })
     },
     getAdjustmentList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.adjustmentRequestSequence
       if (!accountSetId || !this.queryParams.endMonth) {
         this.adjustmentList = []
@@ -354,7 +355,7 @@ export default {
       const params = Object.assign({}, this.queryParams, { accountSetId })
       this.loading = true
       return FmsCashFlowStatementApi.getCashFlowAdjustmentList(params).then(response => {
-        if (sequence !== this.adjustmentRequestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.adjustmentRequestSequence || accountSetId !== parseId(this.accountSetId)) return
         const list = response.data
         this.adjustmentList = list
       }).finally(() => {
@@ -370,7 +371,7 @@ export default {
       if (!this.accountSetId || !items.length || !this.isWritable) return
       this.submitting = true
       FmsCashFlowStatementApi.updateCashFlowAdjustment({
-        accountSetId: Number(this.accountSetId),
+        accountSetId: parseId(this.accountSetId),
         items
       }).then(() => {
         this.$modal.msgSuccess('保存成功')

@@ -68,6 +68,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as LeaveApplyApi from '@/api/oa/leave'
 import UploadFile from '@/components/UploadFile'
 import { DICT_TYPE } from '@/utils/dict'
@@ -114,7 +115,7 @@ export default {
         return
       }
       this.detailLoading = true
-      return LeaveApplyApi.getLeaveApply(Number(this.detailId)).then(response => {
+      return LeaveApplyApi.getLeaveApply(parseId(this.detailId)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

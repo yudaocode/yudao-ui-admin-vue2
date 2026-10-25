@@ -375,6 +375,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { Message, MessageBox } from 'element-ui'
 import { ref, reactive, computed, onMounted, unref, getCurrentInstance } from 'vue'
 import { defineComponent as _defineComponent } from 'vue'
@@ -409,7 +410,7 @@ export default /* @__PURE__*/ _defineComponent({
     const push = (...args) => __router.push(...args) // 路由操作
     const __store = getCurrentInstance().proxy.$store
     const delView = (view) => __store.dispatch('tagsView/delView', view) // 页签操作
-    const id = Number(route.params.id) // 绩效计划编号
+    const id = parseId(route.params.id) // 绩效计划编号
     const loading = ref(false) // 详情加载中
     const employeeLoading = ref(false) // 参评员工加载中
     const plan = ref({ name: '' }) // 绩效计划

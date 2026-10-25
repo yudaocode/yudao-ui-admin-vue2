@@ -20,13 +20,14 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsAuxiliaryItemApi } from '@/api/fms/config/auxiliary/item'
 import { readFmsAccountSetId } from '@/views/fms/utils/context'
 
 export default {
   name: 'FmsAuxiliaryItemSelect',
   props: {
-    value: { type: [Number, Array], default: undefined },
+    value: { type: [Number, String, Array], default: undefined },
     auxiliaryTypeId: { type: [Number, String], default: undefined },
     accountSetId: { type: [Number, String], default: undefined },
     multiple: { type: Boolean, default: false },
@@ -40,10 +41,10 @@ export default {
   },
   computed: {
     resolvedAccountSetId() {
-      return Number(this.accountSetId || readFmsAccountSetId(this.$route)) || 0
+      return parseId(this.accountSetId || readFmsAccountSetId(this.$route)) || 0
     },
     contextKey() {
-      return String(this.resolvedAccountSetId) + ':' + String(Number(this.auxiliaryTypeId) || 0)
+      return String(this.resolvedAccountSetId) + ':' + String(parseId(this.auxiliaryTypeId) || 0)
     }
   },
   watch: {
@@ -60,7 +61,7 @@ export default {
     },
     getAuxiliaryItemList() {
       const accountSetId = this.resolvedAccountSetId
-      const auxiliaryTypeId = Number(this.auxiliaryTypeId) || 0
+      const auxiliaryTypeId = parseId(this.auxiliaryTypeId) || 0
       const sequence = ++this.requestSequence
       if (!accountSetId || !auxiliaryTypeId) {
         this.auxiliaryItemList = []

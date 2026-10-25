@@ -57,7 +57,7 @@ export function removePassword() {
 /** 获取当前登录用户编号。Vuex 延迟加载，避免 auth 与 request 初始化时形成循环依赖。 */
 export function getCurrentUserId() {
   const currentStore = require('@/store').default
-  return Number(currentStore.getters && currentStore.getters.userId) || 0
+  return (currentStore.getters && currentStore.getters.userId) || 0
 }
 
 export function getRememberMe() {

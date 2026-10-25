@@ -62,6 +62,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsVoucherWordApi } from '@/api/fms/config/voucher-word'
 import { DICT_TYPE, getDictDatas } from '@/utils/dict'
 
@@ -92,14 +93,14 @@ export default {
     defaultForm(accountSetId) {
       return {
         id: undefined,
-        accountSetId: Number(accountSetId) || 0,
+        accountSetId: parseId(accountSetId) || 0,
         name: '',
         printTitle: '记账凭证',
         defaultStatus: false
       }
     },
     open(type, accountSetId, row) {
-      const resolvedAccountSetId = Number(accountSetId) || 0
+      const resolvedAccountSetId = parseId(accountSetId) || 0
       if (!resolvedAccountSetId) return
       this.dialogVisible = true
       this.dialogTitle = type === 'create' ? '新增' : '修改'

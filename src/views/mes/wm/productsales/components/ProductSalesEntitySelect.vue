@@ -71,15 +71,15 @@ export default {
   components: { ProductSalesEntitySelectDialog },
   inheritAttrs: false,
   props: {
-    value: { type: Number, default: undefined },
+    value: { type: [Number, String], default: undefined },
     kind: { type: String, required: true },
     placeholder: { type: String, default: '请选择' },
     disabled: { type: Boolean, default: false },
     clearable: { type: Boolean, default: true },
     status: { type: Number, default: undefined },
-    noticeId: { type: Number, default: undefined },
-    itemId: { type: Number, default: undefined },
-    batchId: { type: Number, default: undefined }
+    noticeId: { type: [Number, String], default: undefined },
+    itemId: { type: [Number, String], default: undefined },
+    batchId: { type: [Number, String], default: undefined }
   },
   data() {
     return { hovering: false, selectedItem: undefined }

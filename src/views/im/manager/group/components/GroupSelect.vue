@@ -48,7 +48,7 @@ export default {
   components: { GroupSelectDialog },
   inheritAttrs: false,
   props: {
-    value: { type: Number, default: undefined },
+    value: { type: [Number, String], default: undefined },
     disabled: { type: Boolean, default: false },
     clearable: { type: Boolean, default: true },
     placeholder: { type: String, default: '请选择群' }

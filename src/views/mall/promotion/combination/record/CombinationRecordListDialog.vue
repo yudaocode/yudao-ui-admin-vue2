@@ -88,6 +88,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as CombinationRecordApi from '@/api/mall/promotion/combination/combinationRecord'
 import { DICT_TYPE } from '@/utils/dict'
 import { parseTime } from '@/utils/ruoyi'
@@ -132,7 +133,7 @@ export default {
         })
     },
     isHead(row) {
-      return Number(row.headId) === 0
+      return parseId(row.headId) === 0
     },
     parseTime
   }

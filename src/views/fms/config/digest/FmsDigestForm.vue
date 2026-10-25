@@ -41,6 +41,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsDigestApi } from '@/api/fms/config/digest'
 
 export default {
@@ -59,10 +60,10 @@ export default {
   },
   methods: {
     defaultForm(accountSetId) {
-      return { id: undefined, accountSetId: Number(accountSetId) || 0, content: '' }
+      return { id: undefined, accountSetId: parseId(accountSetId) || 0, content: '' }
     },
     open(type, accountSetId, row) {
-      const resolvedAccountSetId = Number(accountSetId) || 0
+      const resolvedAccountSetId = parseId(accountSetId) || 0
       if (!resolvedAccountSetId) return
       this.formType = type
       this.dialogTitle = type === 'create' ? '新增常用摘要' : '修改常用摘要'

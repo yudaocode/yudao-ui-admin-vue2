@@ -115,6 +115,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as ContractApi from '@/api/crm/contract'
 import { getOperateLogPage } from '@/api/crm/operateLog'
 import { BizTypeEnum } from '@/api/crm/permission'
@@ -169,7 +170,7 @@ export default {
   },
   created() {
     const rawId = this.id || this.$route.params.id
-    this.contractId = rawId ? Number(rawId) : undefined
+    this.contractId = rawId ? parseId(rawId) : undefined
     if (!this.contractId) {
       this.$modal.msgWarning('参数错误，合同不能为空！')
       this.close()

@@ -110,6 +110,7 @@
   </div>
 </template>
 <script>
+import { parseId } from '@/utils/id'
 import '@/views/iot/styles/vue2.css'
 import { useRoute } from '@/views/iot/utils/composables'
 import { ref, onMounted } from 'vue'
@@ -129,7 +130,7 @@ export default /* @__PURE__*/ _defineComponent({
   setup(__props, { expose: __expose }) {
     __expose()
     const route = useRoute() // 路由
-    const firmwareId = ref(Number(route.params.id)) // 固件编号
+    const firmwareId = ref(parseId(route.params.id)) // 固件编号
     const firmwareLoading = ref(false) // 固件加载状态
     const firmware = ref({}) // 固件信息
     const firmwareStatisticsLoading = ref(false) // 统计信息加载状态

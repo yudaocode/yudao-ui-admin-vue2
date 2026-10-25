@@ -127,6 +127,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { ChatConversationApi } from '@/api/ai/chat/conversation'
 import { ChatMessageApi } from '@/api/ai/chat/message'
 import ConversationList from './components/conversation/ConversationList.vue'
@@ -192,7 +193,7 @@ export default {
   async mounted() {
     const queryId = this.$route.query.conversationId
     if (queryId) {
-      await this.getConversation(Number(queryId))
+      await this.getConversation(parseId(queryId))
       await this.getMessageList()
     }
   },

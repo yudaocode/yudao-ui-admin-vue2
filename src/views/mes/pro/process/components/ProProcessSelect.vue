@@ -43,7 +43,7 @@ import { ProProcessApi } from '@/api/mes/pro/process'
 export default {
   name: 'ProProcessSelect',
   inheritAttrs: false,
-  props: { value: { type: Number, default: undefined }, modelValue: { type: Number, default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择工序' }},
+  props: { value: { type: [Number, String], default: undefined }, modelValue: { type: [Number, String], default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择工序' }},
   data() { return { allList: [], filteredList: [], selectedItem: undefined } },
   computed: { currentValue() { return this.modelValue !== undefined ? this.modelValue : this.value } },
   watch: { currentValue(value) { if (value == null) this.selectedItem = undefined; else if (this.allList.length && (!this.selectedItem || this.selectedItem.id !== value)) this.selectedItem = this.allList.find(item => item.id === value) } },

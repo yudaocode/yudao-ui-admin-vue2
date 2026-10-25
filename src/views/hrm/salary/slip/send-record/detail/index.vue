@@ -16,6 +16,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getSalarySlipSendRecord } from '@/api/hrm/salary/slip/send-record'
 import { formatHrmYearMonth } from '@/views/hrm/utils/format'
 import SalarySlipList from './SalarySlipList.vue'
@@ -25,7 +26,7 @@ export default {
   components: { SalarySlipList },
   data() {
     return {
-      recordId: Number(this.$route.params.id),
+      recordId: parseId(this.$route.params.id),
       loading: false,
       record: {}
     }

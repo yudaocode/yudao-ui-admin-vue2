@@ -23,6 +23,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { getSalaryMonthRecord } from '@/api/hrm/salary/month-record'
 import { HrmSalaryMonthStatus } from '@/views/hrm/utils/constants'
 import SalaryMonthEmployeeRecordList from './SalaryMonthEmployeeRecordList.vue'
@@ -33,7 +34,7 @@ export default {
   components: { SalaryMonthEmployeeRecordList, SalaryMonthRecordDetailsInfo },
   data() {
     return {
-      recordId: Number(this.$route.params.id),
+      recordId: parseId(this.$route.params.id),
       loading: true,
       record: {}
     }
@@ -59,7 +60,7 @@ export default {
       }
     },
     async init() {
-      if (!Number.isSafeInteger(this.recordId) || this.recordId <= 0) {
+      if (!isPositiveId(this.recordId)) {
         this.$modal.msgWarning('参数错误，历史工资表不能为空！')
         this.close()
         return

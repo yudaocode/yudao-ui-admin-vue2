@@ -35,6 +35,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsVoucherTemplateCategoryApi } from '@/api/fms/config/voucher-template-category'
 
 export default {
@@ -53,13 +54,13 @@ export default {
   },
   methods: {
     createDefaultForm(accountSetId) {
-      return { id: undefined, accountSetId: Number(accountSetId) || 0, name: '' }
+      return { id: undefined, accountSetId: parseId(accountSetId) || 0, name: '' }
     },
     open(type, accountSetId, row) {
       this.formType = type
       this.dialogTitle = type === 'create' ? '新增凭证模板分类' : '修改凭证模板分类'
       this.formData = Object.assign(this.createDefaultForm(accountSetId), row || {}, {
-        accountSetId: Number(accountSetId) || 0
+        accountSetId: parseId(accountSetId) || 0
       })
       this.dialogVisible = true
       this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())

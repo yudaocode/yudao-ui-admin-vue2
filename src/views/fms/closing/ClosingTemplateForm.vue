@@ -218,7 +218,7 @@ export default {
   name: 'FmsClosingTemplateForm',
   components: { FmsSubjectSelect },
   props: {
-    accountSetId: { type: Number, required: true },
+    accountSetId: { type: [Number, String], required: true },
     subjects: { type: Array, required: true }
   },
   data() {

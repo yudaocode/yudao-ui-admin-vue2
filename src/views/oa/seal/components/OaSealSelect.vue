@@ -20,13 +20,14 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as SealApplyApi from '@/api/oa/seal/apply'
 
 export default {
   name: 'OaSealSelect',
   props: {
     modelValue: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     },
     selectedSeal: {
@@ -82,8 +83,8 @@ export default {
   methods: {
     handleChange(value) {
       this.currentSeal = this.options.find(seal => seal.id === value)
-      this.$emit('input', typeof value === 'number' ? value : undefined)
-      this.$emit('update:modelValue', typeof value === 'number' ? value : undefined)
+      this.$emit('input', parseId(value))
+      this.$emit('update:modelValue', parseId(value))
     },
     getList(name) {
       this.loading = true

@@ -28,7 +28,7 @@ export default /* @__PURE__*/ _defineComponent({
   __name: 'PerformanceAssessmentTemplateSelect',
   model: { prop: 'modelValue', event: 'update:modelValue' },
   props: {
-    modelValue: { type: Number, required: false },
+    modelValue: { type: [Number, String], required: false },
     disabled: { type: Boolean, required: false, default: false },
     clearable: { type: Boolean, required: false, default: true },
     filterable: { type: Boolean, required: false, default: true },

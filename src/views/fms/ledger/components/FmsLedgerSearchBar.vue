@@ -110,6 +110,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
 import FmsSubjectSelect from '@/views/fms/config/subject/components/FmsSubjectSelect.vue'
 import { useFmsStore } from '@/views/fms/store/fms'
@@ -163,7 +164,7 @@ export default {
       return this.subjects || this.localSubjects
     },
     printCenterText() {
-      const subject = flattenTree(this.subjectOptions).find(item => Number(item.id) === Number(this.query.subjectId))
+      const subject = flattenTree(this.subjectOptions).find(item => parseId(item.id) === parseId(this.query.subjectId))
       return subject ? '科目：' + subject.code + ' ' + subject.name : ''
     }
   },
@@ -180,7 +181,7 @@ export default {
         this.localSubjects = []
         return
       }
-      return FmsSubjectApi.getSubjectSimpleList(Number(this.accountSetId)).then(response => {
+      return FmsSubjectApi.getSubjectSimpleList(parseId(this.accountSetId)).then(response => {
         if (sequence !== this.subjectSequence) return
         const rows = response.data
         this.localSubjects = buildTree(rows)

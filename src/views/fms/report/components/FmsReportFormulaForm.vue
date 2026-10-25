@@ -141,6 +141,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
 import { FmsBalanceSheetApi } from '@/api/fms/report/balanceSheet'
 import { FmsCashFlowStatementApi } from '@/api/fms/report/cashFlowStatement'
@@ -206,7 +207,7 @@ export default {
   },
   methods: {
     open(item, type) {
-      const accountSetId = Number(this.fmsStore.getAccountSetId) || 0
+      const accountSetId = parseId(this.fmsStore.getAccountSetId) || 0
       if (!accountSetId) return Promise.resolve()
       const sequence = ++this.requestSequence
       this.dialogVisible = true
@@ -218,7 +219,7 @@ export default {
       this.rules = type === 'balance' ? FMS_FORMULA_RULE.BALANCE : FMS_FORMULA_RULE.DEBIT_AMOUNT
       this.formulaList = this.parseFormula(item && item.formula)
       return FmsSubjectApi.getSubjectSimpleList(accountSetId).then(response => {
-        if (sequence !== this.requestSequence || accountSetId !== Number(this.fmsStore.getAccountSetId)) return
+        if (sequence !== this.requestSequence || accountSetId !== parseId(this.fmsStore.getAccountSetId)) return
         const rows = response.data
         this.subjects = this.treeToList(rows)
       }).finally(() => {
@@ -235,12 +236,12 @@ export default {
       }, [])
     },
     addFormula() {
-      const subject = this.subjects.find(item => Number(item.id) === Number(this.subjectId))
+      const subject = this.subjects.find(item => parseId(item.id) === parseId(this.subjectId))
       if (!subject) {
         this.$modal.msgWarning('请选择科目')
         return
       }
-      if (this.formulaList.some(item => Number(item.subjectId) === Number(subject.id))) {
+      if (this.formulaList.some(item => parseId(item.subjectId) === parseId(subject.id))) {
         this.$modal.msgWarning('科目不能重复添加')
         return
       }
@@ -261,7 +262,7 @@ export default {
       this.formulaList.splice(index, 1)
     },
     submitForm() {
-      const accountSetId = Number(this.fmsStore.getAccountSetId) || 0
+      const accountSetId = parseId(this.fmsStore.getAccountSetId) || 0
       if (!accountSetId || !this.currentItem) return
       if (this.formulaList.some(item => !item.subjectId)) {
         this.$modal.msgWarning('公式中存在已失效科目，请删除后保存')

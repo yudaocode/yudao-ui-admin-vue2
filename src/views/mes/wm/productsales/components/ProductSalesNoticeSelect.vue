@@ -19,7 +19,7 @@ export default {
   components: { ProductSalesEntitySelect },
   inheritAttrs: false,
   props: {
-    value: { type: Number, default: undefined },
+    value: { type: [Number, String], default: undefined },
     status: { type: Number, default: undefined },
     disabled: { type: Boolean, default: false }
   }

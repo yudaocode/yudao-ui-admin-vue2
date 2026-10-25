@@ -219,6 +219,7 @@
   </div>
 </template>
 <script>
+import { parseId } from '@/utils/id'
 import { defineComponent as _defineComponent } from 'vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Icon from '@/views/im/home/components/user/ImIcon.vue'
@@ -234,7 +235,7 @@ import { ensureMediaSizeWithinLimit, useMediaUploader } from '@/views/im/home/co
 import { useMuteOverlay } from '@/views/im/home/composables/useMuteOverlay'
 import { isOpenableUrl } from '@/utils/url'
 import { getConversationKey } from '@/views/im/utils/conversation'
-import { ImConversationType, ImGroupMemberRole, ImContentType } from '@/views/im/utils/constants'
+import { ImConversationType, ImGroupMemberRole, ImContentType, IM_AT_ALL_USER_ID } from '@/views/im/utils/constants'
 import { DANGEROUS_FILE_EXTENSIONS, MESSAGE_GROUP_READ_ENABLED } from '@/views/im/utils/config'
 import { serializeMessage, withQuotePayload } from '@/views/im/utils/message'
 import FacePicker from './FacePicker.vue'
@@ -413,8 +414,8 @@ const __sfc__ = /* @__PURE__*/_defineComponent({
         }
         if (tag === 'span' && el.dataset.id) {
           text += el.textContent || ''
-          const id = Number(el.dataset.id)
-          if (!Number.isNaN(id)) {
+          const id = el.dataset.id === String(IM_AT_ALL_USER_ID) ? IM_AT_ALL_USER_ID : parseId(el.dataset.id)
+          if (id !== undefined) {
             userIds.push(id)
           }
           return

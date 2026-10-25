@@ -93,6 +93,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { Message, MessageBox } from 'element-ui'
 import { ref, reactive, computed, onMounted, unref, getCurrentInstance } from 'vue'
 import { defineComponent as _defineComponent } from 'vue'
@@ -442,8 +443,8 @@ export default /* @__PURE__*/ _defineComponent({
         if (route.query.type !== 'update' && !viewMode.value) {
           return
         }
-        const id = Number(route.query.id)
-        if (!Number.isInteger(id) || id <= 0) {
+        const id = parseId(route.query.id)
+        if (!isPositiveId(id)) {
           message.error('KPI 考核编号不正确')
           close()
           return

@@ -94,6 +94,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { buildVoucherPrintHtml, DEFAULT_VOUCHER_PRINT_SETTING } from './print'
 
 export default {
@@ -119,7 +120,7 @@ export default {
   },
   methods: {
     open(accountSetId, companyName, vouchers) {
-      this.accountSetId = Number(accountSetId) || 0
+      this.accountSetId = parseId(accountSetId) || 0
       this.companyName = companyName || ''
       this.vouchers = Array.isArray(vouchers) ? vouchers : []
       let cached = {}

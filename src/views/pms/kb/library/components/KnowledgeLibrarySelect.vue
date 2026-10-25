@@ -26,7 +26,7 @@ import { getAllPageItems } from '@/utils/page'
 export default {
   name: 'PmsKnowledgeLibrarySelect',
   props: {
-    value: { type: [Number, Array], default: undefined },
+    value: { type: [Number, String, Array], default: undefined },
     multiple: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     clearable: { type: Boolean, default: true },

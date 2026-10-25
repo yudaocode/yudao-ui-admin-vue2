@@ -405,6 +405,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
 import { FmsVoucherWordApi } from '@/api/fms/config/voucher-word'
 import { FmsVoucherApi } from '@/api/fms/voucher'
@@ -495,7 +496,7 @@ export default {
       this.selectedRows = []
     },
     onVoucherContextReady() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!accountSetId) return Promise.resolve()
       this.queryParams.accountSetId = accountSetId
       this.monthRange = [this.currentMonth, this.currentMonth]
@@ -503,7 +504,7 @@ export default {
         FmsVoucherWordApi.getVoucherWordSimpleList(accountSetId),
         FmsSubjectApi.getSubjectSimpleList(accountSetId)
       ]).then(responses => {
-        if (accountSetId !== Number(this.accountSetId)) return
+        if (accountSetId !== parseId(this.accountSetId)) return
         const words = responses[0].data
         const subjects = responses[1].data
         this.voucherWords = words
@@ -512,12 +513,12 @@ export default {
       })
     },
     getList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       if (!accountSetId) return Promise.resolve()
       const sequence = ++this.listRequestSequence
       this.loading = true
       return FmsVoucherApi.getVoucherPage(this.buildQueryParams()).then(response => {
-        if (sequence !== this.listRequestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.listRequestSequence || accountSetId !== parseId(this.accountSetId)) return
         const data = response.data
         this.list = data.list
         this.total = Number(data.total)
@@ -541,7 +542,7 @@ export default {
       this.getList()
     },
     buildQueryParams(ids) {
-      const params = Object.assign({}, this.queryParams, { accountSetId: Number(this.accountSetId) })
+      const params = Object.assign({}, this.queryParams, { accountSetId: parseId(this.accountSetId) })
       if (ids && ids.length) params.ids = ids
       if (this.monthRange && this.monthRange.length === 2) {
         const begin = getMonthRange(this.monthRange[0])

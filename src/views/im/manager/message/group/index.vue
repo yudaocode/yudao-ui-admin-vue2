@@ -164,6 +164,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { dateFormatter } from '@/utils'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { getManagerGroupMessagePage } from '@/api/im/manager/message/group'
@@ -194,7 +195,7 @@ export default {
   },
   created() {
     const query = this.$route.query
-    if (query.groupId) this.queryParams.groupId = Number(query.groupId)
+    if (query.groupId) this.queryParams.groupId = parseId(query.groupId)
     this.getList()
   },
   methods: {

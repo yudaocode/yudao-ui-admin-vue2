@@ -215,6 +215,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as AfterSaleApi from '@/api/mall/trade/afterSale'
 import { fenToYuan } from '@/utils'
 import { DICT_TYPE, getDictData, getDictDataLabel } from '@/utils/dict'
@@ -258,7 +259,7 @@ export default {
     },
     /** 获得详情 */
     getDetail() {
-      const id = Number(this.$route.params.id)
+      const id = parseId(this.$route.params.id)
       if (!id) return Promise.resolve()
       return AfterSaleApi.getAfterSale(id).then((response) => {
         if (response.data == null) {

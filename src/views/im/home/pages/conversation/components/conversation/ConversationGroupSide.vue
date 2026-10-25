@@ -495,7 +495,8 @@
     <RecommendCardDialog ref="recommendCardDialogRef" />
   </el-drawer>
 </template>
-<script>
+<script>import { compareId } from '@/utils/id'
+
 import { defineComponent as _defineComponent } from 'vue'
 import { computed, ref, watch } from 'vue'
 import Icon from '@/views/im/home/components/user/ImIcon.vue'
@@ -602,7 +603,7 @@ const __sfc__ = /* @__PURE__*/_defineComponent({
       return props.members.filter(member => member.status !== CommonStatusEnum.DISABLE && (member.showName || '').includes(searchText.value)).sort((a, b) => {
         const roleA = a.role ?? ImGroupMemberRole.NORMAL
         const roleB = b.role ?? ImGroupMemberRole.NORMAL
-        return roleA !== roleB ? roleA - roleB : a.userId - b.userId
+        return roleA !== roleB ? roleA - roleB : compareId(a.userId, b.userId)
       })
     })
 

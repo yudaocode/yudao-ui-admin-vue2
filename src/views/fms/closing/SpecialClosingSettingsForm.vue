@@ -124,7 +124,7 @@ export default {
   name: 'FmsSpecialClosingSettingsForm',
   components: { FmsSubjectSelect, FmsVoucherWordSelect },
   props: {
-    accountSetId: { type: Number, required: true },
+    accountSetId: { type: [Number, String], required: true },
     subjects: { type: Array, required: true },
     voucherWords: { type: Array, required: true }
   },

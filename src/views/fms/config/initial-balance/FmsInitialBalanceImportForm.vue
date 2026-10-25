@@ -74,6 +74,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsInitialBalanceApi } from '@/api/fms/config/initial-balance'
 
 export default {
@@ -90,7 +91,7 @@ export default {
   },
   methods: {
     open(accountSetId) {
-      this.accountSetId = Number(accountSetId) || 0
+      this.accountSetId = parseId(accountSetId) || 0
       this.resetImport()
       this.visible = true
     },

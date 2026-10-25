@@ -29,7 +29,7 @@ import { DICT_TYPE } from '@/utils/dict'
 
 export default {
   name: 'AndonConfigSelect',
-  props: { value: { type: Number, default: undefined }, modelValue: { type: Number, default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择呼叫原因' }},
+  props: { value: { type: [Number, String], default: undefined }, modelValue: { type: [Number, String], default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择呼叫原因' }},
   data() { return { DICT_TYPE, allList: [], filteredList: [] } },
   computed: { currentValue() { return this.modelValue !== undefined ? this.modelValue : this.value } },
   async mounted() { const response = await ProAndonConfigApi.getAndonConfigList(); this.allList = response.data; this.filteredList = this.allList },

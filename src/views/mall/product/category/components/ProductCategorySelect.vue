@@ -38,7 +38,7 @@ export default {
       default: false
     },
     parentId: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     }
   },

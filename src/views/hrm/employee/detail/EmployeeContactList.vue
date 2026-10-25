@@ -49,7 +49,7 @@
   ref="form"
   @success="getList"
 /></div></template>
-<script>import { getEmployeeContactList, deleteEmployeeContact } from '@/api/hrm/employee/contact'; import EmployeeContactForm from './EmployeeContactForm.vue'; export default { name: 'HrmEmployeeContactList', components: { EmployeeContactForm }, props: { employeeId: { type: Number, required: true }}, data() { return { loading: true, list: [] } }, created() { this.getList() }, methods: { async getList() { this.loading = true; try { const response = await getEmployeeContactList(this.employeeId); this.list = response.data } finally { this.loading = false } }, openForm(row) { this.$refs.form.open(this.employeeId, row) }, async handleDelete(id) {
+<script>import { getEmployeeContactList, deleteEmployeeContact } from '@/api/hrm/employee/contact'; import EmployeeContactForm from './EmployeeContactForm.vue'; export default { name: 'HrmEmployeeContactList', components: { EmployeeContactForm }, props: { employeeId: { type: [Number, String], required: true }}, data() { return { loading: true, list: [] } }, created() { this.getList() }, methods: { async getList() { this.loading = true; try { const response = await getEmployeeContactList(this.employeeId); this.list = response.data } finally { this.loading = false } }, openForm(row) { this.$refs.form.open(this.employeeId, row) }, async handleDelete(id) {
   if (!id) return; try { await this.$modal.confirm('是否确认删除该联系人?'); await deleteEmployeeContact(id); this.$modal.msgSuccess('删除成功'); await this.getList() } catch (error) {
   // 取消操作或请求失败时保留当前状态
   }

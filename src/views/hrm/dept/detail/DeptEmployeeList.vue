@@ -129,7 +129,7 @@ import { HrmEmployeeStatusTab } from '@/views/hrm/utils/constants'
 export default {
   name: 'HrmDeptEmployeeList',
   props: {
-    deptId: { type: Number, required: true }
+    deptId: { type: [Number, String], required: true }
   },
   data() {
     return {

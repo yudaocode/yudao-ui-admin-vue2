@@ -22,7 +22,7 @@ import { getSimpleRoleList } from '@/api/system/role'
 export default {
   name: 'RoleSelect',
   props: {
-    value: { type: [Number, Array], default: undefined },
+    value: { type: [Number, String, Array], default: undefined },
     modelValue: { type: [Number, Array], default: undefined },
     multiple: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },

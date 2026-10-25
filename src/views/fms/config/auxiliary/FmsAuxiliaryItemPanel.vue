@@ -164,6 +164,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsAuxiliaryItemApi } from '@/api/fms/config/auxiliary/item'
 import { CommonStatusEnum } from '@/utils/constants'
 import { checkPermi } from '@/utils/permission'
@@ -200,10 +201,10 @@ export default {
   },
   computed: {
     auxiliaryTypeId() {
-      return Number(this.auxiliaryType && this.auxiliaryType.id) || 0
+      return parseId(this.auxiliaryType && this.auxiliaryType.id) || 0
     },
     contextKey() {
-      return String(Number(this.accountSetId) || 0) + ':' + String(this.auxiliaryTypeId)
+      return String(parseId(this.accountSetId) || 0) + ':' + String(this.auxiliaryTypeId)
     },
     isInventory() {
       return Number(this.auxiliaryType && this.auxiliaryType.type) === FMS_AUXILIARY_TYPE.INVENTORY
@@ -219,7 +220,7 @@ export default {
     contextKey: {
       immediate: true,
       handler() {
-        this.queryParams.accountSetId = Number(this.accountSetId) || 0
+        this.queryParams.accountSetId = parseId(this.accountSetId) || 0
         this.queryParams.auxiliaryTypeId = this.auxiliaryTypeId
         this.queryParams.pageNo = 1
         this.queryParams.search = ''
@@ -258,7 +259,7 @@ export default {
     },
     openForm(row) {
       if (!this.auxiliaryType) return
-      this.$refs.form.open(this.auxiliaryType, row, Number(this.accountSetId))
+      this.$refs.form.open(this.auxiliaryType, row, parseId(this.accountSetId))
     },
     handleStatusChange(row) {
       const nextStatus = row.status

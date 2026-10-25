@@ -40,7 +40,7 @@ export function parseCandidateIdList(value) {
     if (!text) return null
     const number = Number(text)
     if (!Number.isFinite(number)) return null
-    return Number.isSafeInteger(number) ? number : text
+    return Number.isSafeInteger(number) && Math.abs(number) < Number.MAX_SAFE_INTEGER ? number : text
   }).filter((item) => item !== null)
 }
 

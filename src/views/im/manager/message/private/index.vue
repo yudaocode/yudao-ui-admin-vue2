@@ -156,6 +156,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { dateFormatter } from '@/utils'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { getManagerPrivateMessagePage } from '@/api/im/manager/message/private'
@@ -181,8 +182,8 @@ export default {
   },
   created() {
     const query = this.$route.query
-    if (query.senderId) this.queryParams.senderId = Number(query.senderId)
-    if (query.receiverId) this.queryParams.receiverId = Number(query.receiverId)
+    if (query.senderId) this.queryParams.senderId = parseId(query.senderId)
+    if (query.receiverId) this.queryParams.receiverId = parseId(query.receiverId)
     this.getList()
   },
   methods: {

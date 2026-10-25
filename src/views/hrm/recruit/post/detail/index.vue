@@ -49,6 +49,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { DICT_TYPE, getDictData, getDictDataLabel } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
 import { getOperateLogPage } from '@/api/hrm/operate-log'
@@ -65,8 +66,8 @@ export default {
     return { postId: undefined, loading: true, post: {}, logList: [] }
   },
   created() {
-    this.postId = Number(this.$route.params.id)
-    if (!Number.isSafeInteger(this.postId) || this.postId <= 0) {
+    this.postId = parseId(this.$route.params.id)
+    if (!isPositiveId(this.postId)) {
       this.$modal.msgWarning('参数错误，招聘职位不能为空！')
       this.close()
       return

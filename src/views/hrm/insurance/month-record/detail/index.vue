@@ -254,6 +254,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { getInsuranceMonthRecord } from '@/api/hrm/insurance/month-record'
 import {
   getInsuranceMonthEmployeeRecordPage,
@@ -279,7 +280,7 @@ export default {
     InsuranceMonthEmployeeDetail
   },
   data() {
-    const id = Number(this.$route.params.id)
+    const id = parseId(this.$route.params.id)
     return {
       id,
       HrmInsuranceEmployeeStatus,
@@ -370,7 +371,7 @@ export default {
       await Promise.all([this.getMonthRecord(), this.getList()])
     },
     async init() {
-      if (!Number.isSafeInteger(this.id) || this.id <= 0) {
+      if (!isPositiveId(this.id)) {
         this.$modal.msgWarning('参数错误，月度社保表不能为空！')
         this.close()
         return

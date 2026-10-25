@@ -110,6 +110,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsLedgerApi } from '@/api/fms/ledger'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
 
@@ -136,9 +137,9 @@ export default {
     formatMoney,
     clearLedgerData() { this.subjects = []; this.result = { columns: [], rows: [] } },
     onLedgerContextReady() {
-      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: Number(this.accountSetId), startMonth: this.accountingMonth, endMonth: this.accountingMonth })
+      this.queryParams = Object.assign({}, this.queryParams, { accountSetId: parseId(this.accountSetId), startMonth: this.accountingMonth, endMonth: this.accountingMonth })
       const sequence = ++this.subjectSequence
-      return FmsSubjectApi.getSubjectSimpleList(Number(this.accountSetId)).then(response => {
+      return FmsSubjectApi.getSubjectSimpleList(parseId(this.accountSetId)).then(response => {
         if (sequence !== this.subjectSequence) return
         const rows = response.data
         this.subjects = buildTree(rows)
@@ -156,7 +157,7 @@ export default {
         this.result = value
       }).finally(() => { if (sequence === this.listSequence) this.loading = false })
     },
-    handleQuery(value) { this.queryParams = Object.assign({}, this.queryParams, value, { accountSetId: Number(this.accountSetId) }); this.getList() },
+    handleQuery(value) { this.queryParams = Object.assign({}, this.queryParams, value, { accountSetId: parseId(this.accountSetId) }); this.getList() },
     getColumnAmount(row, subjectId) { return row.columnAmounts && (row.columnAmounts[subjectId] === undefined ? row.columnAmounts[String(subjectId)] : row.columnAmounts[subjectId]) },
     getRowClassName({ row }) { return Number(row.rowType) === 2 ? '' : 'ledger-summary-row' },
     openVoucher(row) { this.$router.push({ path: '/fms/voucher/create', query: { id: row.voucherId, accountSetId: this.accountSetId }}) },

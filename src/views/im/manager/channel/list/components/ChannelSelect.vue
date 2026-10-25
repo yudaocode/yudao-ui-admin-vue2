@@ -20,7 +20,7 @@ export default {
   name: 'ImChannelSelect',
   inheritAttrs: false,
   props: {
-    value: { type: Number, default: undefined }
+    value: { type: [Number, String], default: undefined }
   },
   data() {
     return { channelList: [] }

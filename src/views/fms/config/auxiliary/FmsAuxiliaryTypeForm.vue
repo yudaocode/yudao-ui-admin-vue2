@@ -37,6 +37,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsAuxiliaryTypeApi } from '@/api/fms/config/auxiliary/type'
 import { readFmsAccountSetId } from '@/views/fms/utils/context'
 
@@ -55,10 +56,10 @@ export default {
   },
   methods: {
     defaultForm(accountSetId) {
-      return { id: undefined, accountSetId: Number(accountSetId) || 0, name: '' }
+      return { id: undefined, accountSetId: parseId(accountSetId) || 0, name: '' }
     },
     open(row, accountSetId) {
-      const resolvedAccountSetId = Number(accountSetId || (row && row.accountSetId) || readFmsAccountSetId(this.$route))
+      const resolvedAccountSetId = parseId(accountSetId || (row && row.accountSetId) || readFmsAccountSetId(this.$route))
       if (!resolvedAccountSetId) return
       this.dialogVisible = true
       this.dialogTitle = row ? '编辑类别' : '新增类别'

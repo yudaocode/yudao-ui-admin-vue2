@@ -131,7 +131,7 @@ import { formatHrmMoney } from '@/views/hrm/utils/format'
 
 export default {
   name: 'HrmSalaryChangeRecordList',
-  props: { employeeId: { type: Number, required: true }},
+  props: { employeeId: { type: [Number, String], required: true }},
   data() {
     return {
       DICT_TYPE,

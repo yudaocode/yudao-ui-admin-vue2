@@ -28,7 +28,7 @@ const __sfc__ = /* @__PURE__*/_defineComponent({
   __name: 'GroupAvatar',
   props: {
     groupId: {
-      type: Number,
+      type: [Number, String],
       required: true
     },
     url: {

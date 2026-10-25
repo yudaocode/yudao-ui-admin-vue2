@@ -375,6 +375,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getAccountSet, getAccountSetList } from '@/api/fms/config/account-set'
 import { FmsClosingPeriodApi } from '@/api/fms/closing/period'
 import { FmsInitialBalanceApi } from '@/api/fms/config/initial-balance'
@@ -455,7 +456,7 @@ export default {
     const options = getDictDatas(DICT_TYPE.FMS_SUBJECT_TYPE)
       .map(item => ({ label: item.label, value: Number(item.value) }))
       .filter(item => Number.isFinite(item.value))
-    const accountSetId = Number(readFmsAccountSetId(this.$route)) || 0
+    const accountSetId = parseId(readFmsAccountSetId(this.$route)) || 0
     return {
       FMS_DEBIT_CREDIT_DIRECTION,
       FMS_SUBJECT_TYPE,
@@ -481,7 +482,7 @@ export default {
   },
   computed: {
     currentAccountSet() {
-      return this.accountSet || this.accountSets.find(item => Number(item.id) === Number(this.accountSetId)) || null
+      return this.accountSet || this.accountSets.find(item => parseId(item.id) === parseId(this.accountSetId)) || null
     },
     isWritable() {
       return Boolean(this.currentAccountSet && [1, 3].includes(Number(this.currentAccountSet.level)))
@@ -498,8 +499,8 @@ export default {
   },
   watch: {
     '$route.query.accountSetId'() {
-      const routeAccountSetId = Number(readFmsAccountSetId(this.$route)) || 0
-      if (routeAccountSetId && routeAccountSetId !== Number(this.accountSetId)) {
+      const routeAccountSetId = parseId(readFmsAccountSetId(this.$route)) || 0
+      if (routeAccountSetId && routeAccountSetId !== parseId(this.accountSetId)) {
         this.accountSetId = routeAccountSetId
         this.loadedAccountSetId = routeAccountSetId
         this.initialize()
@@ -529,7 +530,7 @@ export default {
         if (sequence !== this.accountSetSequence) return
         const rows = response.data
         this.accountSets = rows.filter(item => item && item.initialized !== false)
-        let selected = this.accountSets.find(item => Number(item.id) === Number(this.accountSetId))
+        let selected = this.accountSets.find(item => parseId(item.id) === parseId(this.accountSetId))
         if (!selected) selected = this.accountSets.find(item => item.defaultStatus) || this.accountSets[0]
         if (!selected) {
           this.accountSetId = 0
@@ -538,7 +539,7 @@ export default {
           this.tableData = []
           return
         }
-        this.accountSetId = Number(selected.id)
+        this.accountSetId = parseId(selected.id)
         this.loadedAccountSetId = this.accountSetId
         this.accountSet = selected
         saveFmsAccountSet(selected)
@@ -548,11 +549,11 @@ export default {
       })
     },
     handleAccountSetChange(id) {
-      const nextId = Number(id) || 0
+      const nextId = parseId(id) || 0
       const applyChange = () => {
         this.accountSetId = nextId
         this.loadedAccountSetId = nextId
-        this.accountSet = this.accountSets.find(item => Number(item.id) === nextId) || null
+        this.accountSet = this.accountSets.find(item => parseId(item.id) === nextId) || null
         if (this.accountSet) saveFmsAccountSet(this.accountSet)
         this.loadPage()
       }
@@ -568,7 +569,7 @@ export default {
       })
     },
     loadPage() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const subjectType = Number(this.subjectType)
       const sequence = ++this.loadSequence
       if (!accountSetId) {
@@ -585,7 +586,7 @@ export default {
         FmsInitialBalanceApi.getInitialBalanceList(accountSetId, subjectType),
         FmsClosingPeriodApi.getCurrentMonth(accountSetId)
       ]).then(responses => {
-        if (sequence !== this.loadSequence || accountSetId !== Number(this.accountSetId) || subjectType !== Number(this.subjectType)) return
+        if (sequence !== this.loadSequence || accountSetId !== parseId(this.accountSetId) || subjectType !== Number(this.subjectType)) return
         const accountSet = responses[0].data
         const balances = responses[1].data
         const month = responses[2].data
@@ -697,13 +698,13 @@ export default {
       while (
         insertIndex < this.tableData.length &&
         this.tableData[insertIndex].isAssist &&
-        Number(this.tableData[insertIndex].subjectId) === Number(subject.subjectId)
+        parseId(this.tableData[insertIndex].subjectId) === parseId(subject.subjectId)
       ) insertIndex += 1
       const newRows = (combinations || []).filter(items => {
         return !this.tableData.some(row => {
-          if (!row.isAssist || Number(row.subjectId) !== Number(subject.subjectId)) return false
+          if (!row.isAssist || parseId(row.subjectId) !== parseId(subject.subjectId)) return false
           if (!row.auxiliaryItemIds || row.auxiliaryItemIds.length !== items.length) return false
-          return items.every(item => row.auxiliaryItemIds.some(id => Number(id) === Number(item.id)))
+          return items.every(item => row.auxiliaryItemIds.some(id => parseId(id) === parseId(item.id)))
         })
       }).map((items, index) => {
         return this.buildAssistViewRow(subject, Object.assign(zeroAmounts(), {
@@ -774,7 +775,7 @@ export default {
       const assistRows = this.tableData.filter(row => row.isAssist)
       const balances = this.tableData.filter(row => !row.isAssist && row.isLeaf).map(row => {
         return Object.assign({ subjectId: row.subjectId }, this.pickAmounts(row), {
-          assistBalances: assistRows.filter(item => Number(item.subjectId) === Number(row.subjectId)).map(item => {
+          assistBalances: assistRows.filter(item => parseId(item.subjectId) === parseId(row.subjectId)).map(item => {
             return Object.assign({ auxiliaryItemIds: item.auxiliaryItemIds || [] }, this.pickAmounts(item))
           })
         })

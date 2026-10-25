@@ -96,6 +96,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as UserApi from '@/api/member/user'
 import * as WalletApi from '@/api/pay/wallet/balance'
 import UserForm from '@/views/member/user/UserForm.vue'
@@ -135,7 +136,7 @@ export default {
     return { loading: true, id: undefined, user: {}, wallet: emptyWallet() }
   },
   created() {
-    this.id = this.$route && this.$route.params ? Number(this.$route.params.id) : undefined
+    this.id = this.$route && this.$route.params ? parseId(this.$route.params.id) : undefined
   },
   mounted() {
     if (!this.id) {

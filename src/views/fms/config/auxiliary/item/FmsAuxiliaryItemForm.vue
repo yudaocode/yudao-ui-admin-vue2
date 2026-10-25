@@ -82,6 +82,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsAuxiliaryItemApi } from '@/api/fms/config/auxiliary/item'
 import { FMS_AUXILIARY_TYPE } from '@/views/fms/utils/constants'
 import { readFmsAccountSetId } from '@/views/fms/utils/context'
@@ -110,8 +111,8 @@ export default {
     defaultForm(accountSetId, auxiliaryTypeId) {
       return {
         id: undefined,
-        accountSetId: Number(accountSetId) || 0,
-        auxiliaryTypeId: Number(auxiliaryTypeId) || 0,
+        accountSetId: parseId(accountSetId) || 0,
+        auxiliaryTypeId: parseId(auxiliaryTypeId) || 0,
         code: '',
         name: '',
         remark: '',
@@ -121,7 +122,7 @@ export default {
     },
     open(auxiliaryType, row, accountSetId) {
       if (!auxiliaryType) return
-      const resolvedAccountSetId = Number(accountSetId || (row && row.accountSetId) || readFmsAccountSetId(this.$route))
+      const resolvedAccountSetId = parseId(accountSetId || (row && row.accountSetId) || readFmsAccountSetId(this.$route))
       if (!resolvedAccountSetId) return
       this.currentAuxiliaryType = auxiliaryType
       this.dialogTitle = row ? '编辑辅助核算' : '新增' + auxiliaryType.name

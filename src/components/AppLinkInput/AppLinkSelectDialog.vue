@@ -91,6 +91,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import ProductCategorySelect from '@/views/mall/product/category/components/ProductCategorySelect.vue'
 import { APP_LINK_GROUP_LIST, APP_LINK_TYPE_ENUM } from './data'
 
@@ -180,7 +181,7 @@ export default {
     getUrlNumberValue(key, path) {
       const url = new URL(path || '', 'http://127.0.0.1')
       const value = url.searchParams.get(key)
-      return value === null || value === '' ? undefined : Number(value)
+      return parseId(value)
     },
     handleProductCategorySelected(id) {
       const url = new URL(this.activeAppLink.path, 'http://127.0.0.1')

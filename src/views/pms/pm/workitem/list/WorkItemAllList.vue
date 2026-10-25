@@ -278,6 +278,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { dateFormatter } from '@/utils/formatTime'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import * as WorkItemApi from '@/api/pms/pm/workitem'
@@ -306,7 +307,7 @@ function getDefaultQuery(projectId, iterationId, assigneeUserId) {
     iterationId,
     iterationIds: [],
     excludedIterationIds: [],
-    assigneeUserIds: assigneeUserId ? [Number(assigneeUserId)] : [],
+    assigneeUserIds: assigneeUserId ? [parseId(assigneeUserId)] : [],
     labelIds: [],
     unplannedOnly: false,
     rootOnly: true,
@@ -319,10 +320,10 @@ export default {
   components: { WorkItemDetail, WorkItemForm, IterationSelect, ProjectMemberSelect, WorkItemLabelSelect },
   props: {
     active: { type: Boolean, default: true },
-    projectId: { type: Number, required: true },
+    projectId: { type: [Number, String], required: true },
     projectType: { type: Number, required: true },
     editable: { type: Boolean, required: true },
-    iterationId: { type: Number, default: undefined }
+    iterationId: { type: [Number, String], default: undefined }
   },
   data() {
     return {

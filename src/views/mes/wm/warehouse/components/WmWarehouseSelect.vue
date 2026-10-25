@@ -33,7 +33,7 @@
 import { WmWarehouseApi } from '@/api/mes/wm/warehouse'
 export default {
   name: 'WmWarehouseSelect', inheritAttrs: false,
-  props: { value: { type: Number, default: undefined }, modelValue: { type: Number, default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择仓库' }},
+  props: { value: { type: [Number, String], default: undefined }, modelValue: { type: [Number, String], default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择仓库' }},
   data() { return { allList: [], filteredList: [], selectedItem: undefined } },
   computed: { currentValue() { return this.modelValue !== undefined ? this.modelValue : this.value } },
   watch: { currentValue(value) { this.selectedItem = value == null ? undefined : this.allList.find(item => item.id === value) } },

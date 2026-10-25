@@ -48,6 +48,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsVoucherTemplateApi } from '@/api/fms/config/voucher-template'
 import { FmsVoucherTemplateCategoryApi } from '@/api/fms/config/voucher-template-category'
 
@@ -77,7 +78,7 @@ export default {
   },
   methods: {
     open(id, entries) {
-      this.accountSetId = Number(id) || undefined
+      this.accountSetId = parseId(id) || undefined
       this.sourceEntries = this.cloneEntries(entries)
       this.formData.categoryId = undefined
       this.formData.name = ''
@@ -96,7 +97,7 @@ export default {
       }))
     },
     getCategoryList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.requestSequence
       if (!accountSetId) {
         this.categories = []
@@ -104,14 +105,14 @@ export default {
       }
       return FmsVoucherTemplateCategoryApi.getVoucherTemplateCategorySimpleList(accountSetId)
         .then(response => {
-          if (sequence !== this.requestSequence || accountSetId !== Number(this.accountSetId)) return
+          if (sequence !== this.requestSequence || accountSetId !== parseId(this.accountSetId)) return
           const rows = response.data
           this.categories = rows
         })
     },
     handleCategoryChange(nextCategories) {
       this.categories = Array.isArray(nextCategories) ? nextCategories : []
-      if (this.formData.categoryId && !this.categories.some(item => Number(item.id) === Number(this.formData.categoryId))) {
+      if (this.formData.categoryId && !this.categories.some(item => parseId(item.id) === parseId(this.formData.categoryId))) {
         this.formData.categoryId = undefined
       }
     },
@@ -133,7 +134,7 @@ export default {
         if (!valid || !this.accountSetId || !this.formData.categoryId) return
         this.submitting = true
         FmsVoucherTemplateApi.createVoucherTemplate({
-          accountSetId: Number(this.accountSetId),
+          accountSetId: parseId(this.accountSetId),
           categoryId: this.formData.categoryId,
           name: this.formData.name,
           entries: this.buildEntries()

@@ -145,7 +145,7 @@ export default {
   name: 'FmsProfitLossSettingsForm',
   components: { FmsSubjectSelect, FmsVoucherWordSelect },
   props: {
-    accountSetId: { type: Number, required: true },
+    accountSetId: { type: [Number, String], required: true },
     month: { type: String, required: true },
     subjects: { type: Array, required: true },
     voucherWords: { type: Array, required: true }

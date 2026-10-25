@@ -35,7 +35,7 @@ import ProCardSelectDialog from './ProCardSelectDialog.vue'
 
 export default {
   name: 'ProCardSelect', components: { ProCardSelectDialog }, inheritAttrs: false,
-  props: { value: { type: Number, default: undefined }, modelValue: { type: Number, default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择流转卡' }},
+  props: { value: { type: [Number, String], default: undefined }, modelValue: { type: [Number, String], default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择流转卡' }},
   data() { return { hovering: false, selectedItem: undefined } },
   computed: { currentValue() { return this.modelValue !== undefined ? this.modelValue : this.value }, displayLabel() { return this.selectedItem ? this.selectedItem.code : '' }, showClear() { return this.clearable && !this.disabled && this.hovering && this.currentValue != null } },
   watch: { currentValue: { immediate: true, handler(value) { this.resolveItemById(value) } }},

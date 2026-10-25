@@ -181,6 +181,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { getOperateLogPage } from '@/api/hrm/operate-log'
 import * as EmployeeApi from '@/api/hrm/employee'
 import { DICT_TYPE, getDictData, getDictDataLabel } from '@/utils/dict'
@@ -302,8 +303,8 @@ export default {
     }
   },
   created() {
-    this.employeeId = Number(this.$route.params.id)
-    if (!Number.isSafeInteger(this.employeeId) || this.employeeId <= 0) {
+    this.employeeId = parseId(this.$route.params.id)
+    if (!isPositiveId(this.employeeId)) {
       this.$modal.msgWarning('参数错误，员工编号不能为空！')
       this.close()
       return

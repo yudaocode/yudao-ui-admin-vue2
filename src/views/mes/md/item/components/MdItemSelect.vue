@@ -44,7 +44,7 @@ export default {
   name: 'MdItemSelect',
   components: { MdItemSelectDialog },
   inheritAttrs: false,
-  props: { value: { type: Number, default: undefined }, modelValue: { type: Number, default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择产品物料' }},
+  props: { value: { type: [Number, String], default: undefined }, modelValue: { type: [Number, String], default: undefined }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择产品物料' }},
   data() {
     return { hovering: false, selectedItem: undefined }
   },

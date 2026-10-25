@@ -24,9 +24,9 @@
         >
           <el-option
             v-for="item in accounts"
-            :key="parseInt(item.id)"
+            :key="item.id"
             :label="item.name"
-            :value="parseInt(item.id)"
+            :value="item.id"
           />
         </el-select>
       </el-form-item>
@@ -127,6 +127,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import MessageTemplateSendForm from './MessageTemplateSendForm.vue'
 import { MessageTemplateApi } from '@/api/mp/messageTemplate'
 import { getSimpleAccountList } from '@/api/mp/account'
@@ -160,7 +161,7 @@ export default {
         this.accounts = response.data
         // 默认选中第一个
         if (this.accounts.length > 0) {
-          this.queryParams.accountId = parseInt(this.accounts[0].id)
+          this.queryParams.accountId = parseId(this.accounts[0].id)
           this.getList()
         }
       })

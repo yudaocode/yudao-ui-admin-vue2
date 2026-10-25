@@ -1,3 +1,4 @@
+import { compareId, parseId } from '@/utils/id'
 export function currentMonthValue() {
   const now = new Date()
   return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
@@ -42,19 +43,19 @@ export function buildTree(items, parentId) {
   const rows = (items || []).map(item => Object.assign({}, item))
   const byParent = {}
   rows.forEach(item => {
-    const key = Number(item.parentId || 0)
+    const key = parseId(item.parentId || 0)
     if (!byParent[key]) byParent[key] = []
     byParent[key].push(item)
   })
   const attach = item => {
-    const children = (byParent[Number(item.id)] || []).map(attach)
+    const children = (byParent[parseId(item.id)] || []).map(attach)
     if (children.length) item.children = children
     return item
   }
   const rootId = parentId === undefined
-    ? Math.min.apply(Math, rows.map(item => Number(item.parentId || 0)).concat([0]))
-    : Number(parentId)
-  return (byParent[rootId] || rows.filter(item => !rows.some(parent => Number(parent.id) === Number(item.parentId)))).map(attach)
+    ? rows.map(item => parseId(item.parentId || 0)).concat([0]).sort(compareId)[0]
+    : parseId(parentId)
+  return (byParent[rootId] || rows.filter(item => !rows.some(parent => parseId(parent.id) === parseId(item.parentId)))).map(attach)
 }
 
 export function filterQuantitySubjects(subjects) {

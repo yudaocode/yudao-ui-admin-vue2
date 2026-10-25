@@ -72,6 +72,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as ReceivableApi from '@/api/crm/receivable'
 import { getOperateLogPage } from '@/api/crm/operateLog'
 import { BizTypeEnum } from '@/api/crm/permission'
@@ -110,7 +111,7 @@ export default {
   },
   created() {
     const rawId = this.id || this.$route.params.id
-    this.receivableId = rawId ? Number(rawId) : undefined
+    this.receivableId = rawId ? parseId(rawId) : undefined
     if (!this.receivableId) {
       this.$modal.msgWarning('参数错误，回款不能为空！')
       this.close()

@@ -170,6 +170,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getRecordPage } from '@/api/member/point/record'
 import { dateFormatter } from '@/utils'
 import { getIntDictOptions, DICT_TYPE } from '@/utils/dict'
@@ -197,7 +198,7 @@ export default {
   created() {
     const userId = this.$route && this.$route.query && this.$route.query.userId
     if (userId !== undefined && userId !== null && userId !== '') {
-      this.queryParams.userId = Number(userId)
+      this.queryParams.userId = parseId(userId)
     }
     this.getList()
   },

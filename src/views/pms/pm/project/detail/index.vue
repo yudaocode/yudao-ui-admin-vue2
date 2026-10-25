@@ -171,6 +171,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as ProjectApi from '@/api/pms/pm/project'
 import * as ProjectFavoriteApi from '@/api/pms/pm/project/favorite'
 import * as ProjectMemberApi from '@/api/pms/pm/project/member'
@@ -230,8 +231,8 @@ export default {
     }
   },
   mounted() {
-    const projectId = Number(this.$route.params.id)
-    if (!this.$route.params.id || Number.isNaN(projectId)) {
+    const projectId = parseId(this.$route.params.id)
+    if (!this.$route.params.id || projectId === undefined) {
       this.$message.warning('参数错误，项目不能为空！')
       this.close()
       return
@@ -242,7 +243,7 @@ export default {
     async getProject() {
       this.loading = true
       try {
-        const response = await ProjectApi.getProject(Number(this.$route.params.id))
+        const response = await ProjectApi.getProject(parseId(this.$route.params.id))
         this.project = response.data
         this.initActiveTab()
       } finally {

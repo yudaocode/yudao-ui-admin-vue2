@@ -1,3 +1,4 @@
+import { parseId } from '@/utils/id'
 import { useFmsStore } from '@/views/fms/store/fms'
 import { currentMonthValue } from './helpers'
 
@@ -12,7 +13,7 @@ export default {
   },
   computed: {
     accountSetId() {
-      return Number(this.fmsStore.getAccountSetId) || 0
+      return parseId(this.fmsStore.getAccountSetId) || 0
     },
     accountSetCompanyName() {
       const accountSet = this.fmsStore.getAccountSet

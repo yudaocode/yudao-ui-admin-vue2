@@ -134,6 +134,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as KnowledgeDocumentLabelApi from '@/api/pms/kb/content/document/label'
 import { dateFormatter } from '@/utils/formatTime'
 import KnowledgeLabelManageDialog from './KnowledgeLabelManageDialog.vue'
@@ -147,7 +148,7 @@ export default {
       loading: false,
       labelList: [],
       labelKeyword: '',
-      selectedLabelId: this.$route.query.labelId ? Number(this.$route.query.labelId) : undefined,
+      selectedLabelId: this.$route.query.labelId ? parseId(this.$route.query.labelId) : undefined,
       documentList: [],
       total: 0,
       queryParams: { pageNo: 1, pageSize: 10 }
@@ -164,7 +165,7 @@ export default {
   },
   watch: {
     '$route.query.labelId'(labelId) {
-      this.selectedLabelId = labelId ? Number(labelId) : undefined
+      this.selectedLabelId = labelId ? parseId(labelId) : undefined
       this.getDocumentList()
     }
   },

@@ -19,13 +19,14 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as ContactCategoryApi from '@/api/oa/contact/category'
 
 export default {
   name: 'OaContactCategorySelect',
   props: {
     value: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     },
     categories: {
@@ -61,7 +62,7 @@ export default {
   methods: {
     /** 选中变化 */
     handleChange(value) {
-      this.$emit('input', typeof value === 'number' ? value : undefined)
+      this.$emit('input', parseId(value))
     },
     /** 查询分类列表 */
     async getCategoryList() {

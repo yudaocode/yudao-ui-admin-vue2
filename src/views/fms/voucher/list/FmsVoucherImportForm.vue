@@ -104,6 +104,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsVoucherApi } from '@/api/fms/voucher'
 
 export default {
@@ -128,7 +129,7 @@ export default {
   },
   methods: {
     open(accountSetId) {
-      this.accountSetId = Number(accountSetId) || 0
+      this.accountSetId = parseId(accountSetId) || 0
       this.resetImport()
       this.dialogVisible = true
     },

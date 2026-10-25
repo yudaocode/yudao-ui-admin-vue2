@@ -1,3 +1,5 @@
+import { compareId } from '@/utils/id'
+import { maxImId } from '@/views/im/utils/pull'
 import { useConversationStore } from '../store/conversationStore'
 import { useMessageStore } from '../store/messageStore'
 import { sendPrivateMessage as apiSendPrivateMessage, readPrivateMessages as apiReadPrivateMessages, getPrivateMaxReadMessageId as apiGetPrivateMaxReadMessageId, recallPrivateMessage as apiRecallPrivateMessage } from '@/api/im/message/private'
@@ -191,8 +193,8 @@ export const useMessageSender = () => {
       return
     }
     const db = getDb()
-    const loadedMaxMessageId = messageStore.getMessages(getClientConversationId(conversation.type, conversation.targetId)).reduce((maxMessageId, message) => message.id && message.id > maxMessageId ? message.id : maxMessageId, 0)
-    const maxMessageId = Math.max(loadedMaxMessageId, conversation.lastMessageId || 0)
+    const loadedMaxMessageId = messageStore.getMessages(getClientConversationId(conversation.type, conversation.targetId)).reduce((maxMessageId, message) => message.id && compareId(message.id, maxMessageId) > 0 ? message.id : maxMessageId, 0)
+    const maxMessageId = maxImId(loadedMaxMessageId, conversation.lastMessageId || 0)
     const readReported = conversationStore.isReportedReadPositionCovered(conversation.type, conversation.targetId, maxMessageId)
     if (readReported) {
       conversationStore.markConversationRead(conversation.type, conversation.targetId, undefined, db)

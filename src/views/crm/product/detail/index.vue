@@ -52,6 +52,7 @@
 </template>
 
 <script>
+import { isPositiveId, parseId } from '@/utils/id'
 import { getProduct } from '@/api/crm/product'
 import { getOperateLogPage } from '@/api/crm/operateLog'
 import { BizTypeEnum } from '@/api/crm/permission'
@@ -76,8 +77,8 @@ export default {
     '$route.params.id': {
       immediate: true,
       handler(value) {
-        const id = Number(value)
-        if (!Number.isFinite(id) || id <= 0) {
+        const id = parseId(value)
+        if (!isPositiveId(id)) {
           this.$modal.msgWarning('参数错误，产品不能为空！')
           this.close()
           return

@@ -81,6 +81,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsVoucherTemplateCategoryApi } from '@/api/fms/config/voucher-template-category'
 import { FMS_ACCOUNT_SET_CACHE_KEY } from '@/views/fms/utils/context'
 
@@ -115,14 +116,14 @@ export default {
     readWritableStatus() {
       try {
         const current = JSON.parse(localStorage.getItem(FMS_ACCOUNT_SET_CACHE_KEY) || 'null')
-        return Boolean(current && Number(current.id) === Number(this.accountSetId) &&
+        return Boolean(current && parseId(current.id) === parseId(this.accountSetId) &&
           [1, 3].includes(Number(current.level)))
       } catch (error) {
         return false
       }
     },
     getCategoryList() {
-      const accountSetId = Number(this.accountSetId) || 0
+      const accountSetId = parseId(this.accountSetId) || 0
       const sequence = ++this.requestSequence
       if (!accountSetId) {
         this.categories = []
@@ -130,7 +131,7 @@ export default {
         return Promise.resolve()
       }
       return FmsVoucherTemplateCategoryApi.getVoucherTemplateCategoryList(accountSetId).then(response => {
-        if (sequence !== this.requestSequence || accountSetId !== Number(this.accountSetId)) return
+        if (sequence !== this.requestSequence || accountSetId !== parseId(this.accountSetId)) return
         const rows = response.data
         this.categories = rows
         this.$emit('change', this.categories)
@@ -152,7 +153,7 @@ export default {
         if (!valid) return
         this.submitting = true
         const payload = {
-          accountSetId: Number(this.accountSetId),
+          accountSetId: parseId(this.accountSetId),
           name: this.categoryFormData.name
         }
         const operation = this.categoryFormData.id
@@ -174,10 +175,10 @@ export default {
     deleteCategory(row) {
       if (!this.accountSetId || !this.isWritable) return
       this.$modal.confirm('确认删除该模板分类吗？').then(() => {
-        return FmsVoucherTemplateCategoryApi.deleteVoucherTemplateCategory(Number(this.accountSetId), row.id)
+        return FmsVoucherTemplateCategoryApi.deleteVoucherTemplateCategory(parseId(this.accountSetId), row.id)
       }).then(() => {
         this.$modal.msgSuccess('删除成功')
-        if (Number(this.categoryFormData.id) === Number(row.id)) this.resetCategoryForm()
+        if (parseId(this.categoryFormData.id) === parseId(row.id)) this.resetCategoryForm()
         return this.getCategoryList()
       }).catch(() => {})
     },

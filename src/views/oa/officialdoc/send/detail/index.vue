@@ -102,6 +102,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as SendApi from '@/api/oa/officialdoc/send'
 import * as TemplateApi from '@/api/oa/officialdoc/template'
 import { DICT_TYPE } from '@/utils/dict'
@@ -131,7 +132,7 @@ export default {
   computed: {
     detailId() {
       const id = this.id || this.$route.query.id
-      return id ? Number(id) : undefined
+      return id ? parseId(id) : undefined
     },
     currentUserId() {
       return this.$store.state.user.id

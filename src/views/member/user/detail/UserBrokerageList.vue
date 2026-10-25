@@ -66,7 +66,7 @@
         label="等级"
         align="center"
         width="110"
-      ><template slot-scope="scope"><el-tag>{{ Number(scope.row.bindUserId) === Number(bindUserId) ? '一级' : '二级' }}</el-tag></template></el-table-column>
+      ><template slot-scope="scope"><el-tag>{{ String(scope.row.bindUserId) === String(bindUserId) ? '一级' : '二级' }}</el-tag></template></el-table-column>
       <el-table-column
         label="绑定时间"
         align="center"

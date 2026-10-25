@@ -247,7 +247,7 @@ export default /* @__PURE__*/ _defineComponent({
     ProductSelect
   },
   props: {
-    gatewayId: { type: Number, required: true }
+    gatewayId: { type: [Number, String], required: true }
   },
   setup(__props, { expose: __expose }) {
     __expose()

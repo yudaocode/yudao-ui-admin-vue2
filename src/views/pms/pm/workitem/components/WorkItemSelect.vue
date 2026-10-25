@@ -26,10 +26,10 @@ export default {
   name: 'PmsWorkItemSelect',
   model: { prop: 'modelValue', event: 'update:modelValue' },
   props: {
-    modelValue: { type: Number, default: undefined },
-    projectId: { type: Number, required: true },
+    modelValue: { type: [Number, String], default: undefined },
+    projectId: { type: [Number, String], required: true },
     type: { type: Number, required: true },
-    excludeId: { type: Number, default: undefined },
+    excludeId: { type: [Number, String], default: undefined },
     placeholder: { type: String, default: '请选择工作项' }
   },
   data() {

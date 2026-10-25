@@ -204,7 +204,7 @@ import SalarySlipDetail from './SalarySlipDetail.vue'
 export default {
   name: 'HrmSalarySlipList',
   components: { DeptSelect, SalarySlipDetail },
-  props: { sendRecordId: { type: Number, required: true }},
+  props: { sendRecordId: { type: [Number, String], required: true }},
   data() {
     return {
       DICT_TYPE,

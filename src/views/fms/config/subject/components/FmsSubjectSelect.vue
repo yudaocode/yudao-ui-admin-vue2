@@ -18,6 +18,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as SubjectApi from '@/api/fms/config/subject'
 import { FMS_SUBJECT_STATUS } from '@/views/fms/utils/constants'
 import { readFmsAccountSetId } from '@/views/fms/utils/context'
@@ -59,7 +60,7 @@ export default {
       return result
     },
     handleInput(value) {
-      const normalized = value === '' || value === null ? undefined : (Number(value) || value)
+      const normalized = parseId(value)
       this.$emit('input', normalized)
       this.$emit('update:modelValue', normalized)
       this.$emit('change', normalized)

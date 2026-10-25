@@ -84,6 +84,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as MeetingRoomBookingApi from '@/api/oa/meetingroom/booking'
 import { DICT_TYPE } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
@@ -130,7 +131,7 @@ export default {
         return
       }
       this.detailLoading = true
-      MeetingRoomBookingApi.getMeetingRoomBooking(Number(id)).then(response => {
+      MeetingRoomBookingApi.getMeetingRoomBooking(parseId(id)).then(response => {
         this.detailData = response.data
       }).finally(() => {
         this.detailLoading = false

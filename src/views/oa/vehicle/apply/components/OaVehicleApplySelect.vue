@@ -41,7 +41,7 @@ export default {
   components: { OaVehicleApplySelectDialog },
   props: {
     value: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     },
     status: {

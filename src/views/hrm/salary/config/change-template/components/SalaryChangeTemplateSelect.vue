@@ -32,7 +32,7 @@ import { getSalaryChangeTemplateList } from '@/api/hrm/salary/config/change-temp
 export default {
   name: 'HrmSalaryChangeTemplateSelect',
   props: {
-    value: { type: Number, default: undefined },
+    value: { type: [Number, String], default: undefined },
     disabled: { type: Boolean, default: false },
     clearable: { type: Boolean, default: true },
     placeholder: { type: String, default: '全部薪资项' }

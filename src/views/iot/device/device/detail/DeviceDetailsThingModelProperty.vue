@@ -219,7 +219,7 @@ export default /* @__PURE__*/ _defineComponent({
     DeviceDetailsThingModelPropertyHistory
   },
   props: {
-    deviceId: { type: Number, required: true }
+    deviceId: { type: [Number, String], required: true }
   },
   setup(__props, { expose: __expose }) {
     __expose()

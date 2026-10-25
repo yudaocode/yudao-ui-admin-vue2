@@ -66,7 +66,7 @@ export default {
   name: 'SkuTableSelect',
   props: {
     spuId: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     }
   },

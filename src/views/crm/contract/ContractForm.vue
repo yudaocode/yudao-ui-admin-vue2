@@ -270,6 +270,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as ContractApi from '@/api/crm/contract'
 import * as CustomerApi from '@/api/crm/customer'
 import * as ContactApi from '@/api/crm/contact'
@@ -327,7 +328,7 @@ export default {
     businessOptions() {
       const customerId = this.formData.customerId
       if (customerId === undefined || customerId === null) return []
-      return this.businessList.filter(item => Number(item.customerId) === Number(customerId))
+      return this.businessList.filter(item => parseId(item.customerId) === parseId(customerId))
     }
   },
   watch: {

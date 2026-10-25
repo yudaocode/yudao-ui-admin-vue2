@@ -318,6 +318,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import * as TradeOrderApi from '@/api/mall/trade/order'
 import * as DeliveryExpressApi from '@/api/mall/trade/delivery/express'
 import * as DeliveryPickUpStoreApi from '@/api/mall/trade/delivery/pickUpStore'
@@ -339,7 +340,7 @@ export default {
     OrderUpdatePriceForm
   },
   props: {
-    id: { type: Number, default: undefined },
+    id: { type: [Number, String], default: undefined },
     showPickUp: { type: Boolean, default: true }
   },
   data() {
@@ -347,7 +348,7 @@ export default {
       DICT_TYPE,
       DeliveryTypeEnum,
       TradeOrderStatusEnum,
-      orderId: Number(this.$route.params.id || this.id),
+      orderId: parseId(this.$route.params.id || this.id),
       formData: {
         items: [],
         logs: []

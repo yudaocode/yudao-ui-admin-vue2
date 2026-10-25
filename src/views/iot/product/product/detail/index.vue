@@ -30,6 +30,7 @@
   </div>
 </template>
 <script>
+import { parseId } from '@/utils/id'
 import '@/views/iot/styles/vue2.css'
 import { createIotMessage } from '@/views/iot/utils/ui'
 import { useRoute } from '@/views/iot/utils/composables'
@@ -57,7 +58,7 @@ export default /* @__PURE__*/ _defineComponent({
     const { currentRoute } = useRouter()
     const route = useRoute()
     const message = createIotMessage()
-    const id = Number(route.params.id) // 编号
+    const id = parseId(route.params.id) // 编号
     const loading = ref(true) // 加载中
     const product = ref({}) // 详情
     const activeTab = ref('info') // 默认为 info 标签页

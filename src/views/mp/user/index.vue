@@ -25,9 +25,9 @@
         >
           <el-option
             v-for="item in accounts"
-            :key="parseInt(item.id)"
+            :key="item.id"
             :label="item.name"
-            :value="parseInt(item.id)"
+            :value="item.id"
           />
         </el-select>
       </el-form-item>
@@ -232,9 +232,9 @@
           >
             <el-option
               v-for="item in tags"
-              :key="parseInt(item.tagId)"
+              :key="item.tagId"
               :label="item.name"
-              :value="parseInt(item.tagId)"
+              :value="item.tagId"
             />
           </el-select>
         </el-form-item>

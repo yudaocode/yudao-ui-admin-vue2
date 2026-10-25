@@ -23,7 +23,7 @@ import { getSimpleDeptList } from '@/api/system/dept'
 
 export default {
   name: 'DeptSelect',
-  props: { value: { type: [Number, Array], default: undefined }, modelValue: { type: [Number, Array], default: undefined }, multiple: { type: Boolean, default: false }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择部门' }},
+  props: { value: { type: [Number, String, Array], default: undefined }, modelValue: { type: [Number, Array], default: undefined }, multiple: { type: Boolean, default: false }, disabled: { type: Boolean, default: false }, clearable: { type: Boolean, default: true }, placeholder: { type: String, default: '请选择部门' }},
   data() { return { loading: false, deptList: [], innerValue: this.value !== undefined ? this.value : this.modelValue } },
   watch: { value(value) { this.innerValue = value }, modelValue(value) { if (this.value === undefined) this.innerValue = value } },
   created() { this.loading = true; getSimpleDeptList().then(response => { this.deptList = this.flatten(response.data) }).finally(() => { this.loading = false }) },

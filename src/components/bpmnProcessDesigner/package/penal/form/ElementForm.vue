@@ -441,6 +441,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { getFormSimpleList } from '@/api/bpm/form'
 
 export default {
@@ -501,7 +502,7 @@ export default {
       // formKey as text so existing custom BPMN remains editable.
       this.formKey = currentFormKey === undefined || currentFormKey === null || currentFormKey === ''
         ? ''
-        : (/^\d+$/.test(String(currentFormKey)) ? Number(currentFormKey) : String(currentFormKey))
+        : (/^\d+$/.test(String(currentFormKey)) ? parseId(currentFormKey) : String(currentFormKey))
       // 获取元素扩展属性 或者 创建扩展属性
       this.elExtensionElements =
         this.bpmnELement.businessObject.get('extensionElements') || window.bpmnInstances.moddle.create('bpmn:ExtensionElements', { values: [] })

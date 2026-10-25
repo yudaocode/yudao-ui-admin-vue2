@@ -35,7 +35,7 @@ export default {
   model: { prop: 'modelValue', event: 'update:modelValue' },
   props: {
     modelValue: { type: [Number, Array], default: undefined },
-    projectId: { type: Number, required: true },
+    projectId: { type: [Number, String], required: true },
     placeholder: { type: String, default: '请选择迭代' },
     multiple: { type: Boolean, default: false }
   },

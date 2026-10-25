@@ -22,7 +22,7 @@ export default {
   name: 'OaMailAccountSelect',
   props: {
     value: {
-      type: Number,
+      type: [Number, String],
       default: undefined
     },
     accounts: {

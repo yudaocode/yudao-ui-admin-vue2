@@ -103,6 +103,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { FmsLedgerApi } from '@/api/fms/ledger'
 import * as FmsSubjectApi from '@/api/fms/config/subject'
 
@@ -136,10 +137,10 @@ export default {
     formatMoney,
     clearLedgerData() { this.subjects = []; this.list = [] },
     async onLedgerContextReady() {
-      this.queryParams.accountSetId = Number(this.accountSetId)
+      this.queryParams.accountSetId = parseId(this.accountSetId)
       this.queryParams.startMonth = String(this.$route.query.startMonth || this.accountingMonth)
       this.queryParams.endMonth = String(this.$route.query.endMonth || this.accountingMonth)
-      this.queryParams.subjectId = Number(this.$route.query.subjectId) || undefined
+      this.queryParams.subjectId = parseId(this.$route.query.subjectId) || undefined
       await this.loadSubjectTree()
       return this.getList()
     },
@@ -147,22 +148,22 @@ export default {
       if (!this.accountSetId) { this.subjects = []; return Promise.resolve() }
       const sequence = ++this.subjectSequence
       return FmsSubjectApi.getDetailSubjectList({
-        accountSetId: Number(this.accountSetId),
+        accountSetId: parseId(this.accountSetId),
         startMonth: this.queryParams.startMonth,
         endMonth: this.queryParams.endMonth
       }).then(response => {
         if (sequence !== this.subjectSequence) return
         const rows = response.data
         this.subjects = buildTree(rows)
-        const subjectIds = flattenTree(this.subjects).map(subject => Number(subject.id))
-        if (!subjectIds.includes(Number(this.queryParams.subjectId))) this.queryParams.subjectId = subjectIds[0]
+        const subjectIds = flattenTree(this.subjects).map(subject => parseId(subject.id))
+        if (!subjectIds.includes(parseId(this.queryParams.subjectId))) this.queryParams.subjectId = subjectIds[0]
         this.$nextTick(() => { if (this.$refs.subjectTree) this.$refs.subjectTree.setCurrentKey(this.queryParams.subjectId) })
       })
     },
     getList() {
       if (!this.accountSetId || !this.queryParams.subjectId) { this.list = []; return Promise.resolve() }
       const sequence = ++this.listSequence
-      const params = Object.assign({}, this.queryParams, { accountSetId: Number(this.accountSetId) })
+      const params = Object.assign({}, this.queryParams, { accountSetId: parseId(this.accountSetId) })
       this.loading = true
       return FmsLedgerApi.getDetailList(params).then(response => {
         if (sequence !== this.listSequence) return
@@ -174,7 +175,7 @@ export default {
     },
     async handleQuery(value) {
       const changed = value.startMonth !== this.queryParams.startMonth || value.endMonth !== this.queryParams.endMonth
-      this.queryParams = Object.assign({}, this.queryParams, value, { accountSetId: Number(this.accountSetId) })
+      this.queryParams = Object.assign({}, this.queryParams, value, { accountSetId: parseId(this.accountSetId) })
       if (changed) await this.loadSubjectTree()
       if (this.$refs.subjectTree) this.$refs.subjectTree.setCurrentKey(this.queryParams.subjectId)
       return this.getList()

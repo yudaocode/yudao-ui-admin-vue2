@@ -210,7 +210,7 @@ import { formatDate } from '@/utils/formatTime'
 export default {
   name: 'PmsWorkItemComment',
   props: {
-    workItemId: { type: Number, required: true },
+    workItemId: { type: [Number, String], required: true },
     editable: { type: Boolean, required: true },
     showTitle: { type: Boolean, default: true }
   },

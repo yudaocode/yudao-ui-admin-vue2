@@ -235,6 +235,7 @@
 </template>
 
 <script>
+import { parseId } from '@/utils/id'
 import { ref, computed, onMounted, unref, getCurrentInstance } from 'vue'
 import { defineComponent as _defineComponent } from 'vue'
 import { DICT_TYPE } from '@/utils/dict'
@@ -254,9 +255,9 @@ export default /* @__PURE__*/ _defineComponent({
     const push = (...args) => __router.push(...args) // 路由操作
     const __store = getCurrentInstance().proxy.$store
     const delView = (view) => __store.dispatch('tagsView/delView', view) // 页签操作
-    const assessmentId = Number(route.params.id) // 考核编号
-    const employeeId = Number(route.query.employeeId) // 员工编号
-    const planId = Number(route.query.planId) // 绩效计划编号
+    const assessmentId = parseId(route.params.id) // 考核编号
+    const employeeId = parseId(route.query.employeeId) // 员工编号
+    const planId = parseId(route.query.planId) // 绩效计划编号
     const archived = route.query.archived === 'true' // 是否已归档
     const loading = ref(false) // 加载中
     const recordLoading = ref(false) // 流程记录加载中

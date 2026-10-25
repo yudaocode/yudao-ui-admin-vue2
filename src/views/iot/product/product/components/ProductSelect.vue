@@ -30,7 +30,7 @@ export default /* @__PURE__*/ _defineComponent({
   ...{ name: 'ProductSelect' },
   __name: 'ProductSelect',
   props: {
-    value: { type: Number, required: false },
+    value: { type: [Number, String], required: false },
     deviceType: { type: Number, required: false }
   },
   emits: ['input', 'change'],
