@@ -132,7 +132,7 @@ module.exports = {
                   test: /[\\/]node_modules[\\/]_?element-ui(.*)/ // in order to adapt to cnpm
                 },
                 commons: {
-                  name: 'chunk-commons',
+                  // 不设固定 name，避免固定公共包合并无关的重组件
                   test: resolve('src/components'), // can customize your rules
                   minChunks: 3, //  minimum common number
                   priority: 5,

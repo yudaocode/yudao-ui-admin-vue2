@@ -201,7 +201,12 @@ export const normalizeViewPath = (view) => {
 
 export const loadView = (view) => { // 路由懒加载
   const path = normalizeViewPath(view)
-  return (resolve) => require([`@/views/${path}`], resolve)
+  if (process.env.NODE_ENV === 'development') {
+    // 开发环境保留 AMD require，兼容 Babel 的 dynamic-import-node
+    return (resolve) => require([`@/views/${path}`], resolve)
+  }
+  // 生产环境按页面拆分，避免动态菜单一次加载全部视图
+  return () => import(/* webpackInclude: /\.vue$/ */ `@/views/${path}`)
 }
 
 export default permission
